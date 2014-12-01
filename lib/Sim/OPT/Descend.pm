@@ -38,7 +38,7 @@ $VERSION = '0.37'; # our $VERSION = '';
 # HERE FOLLOWS THE CONTENT OF "Descend.pm", Sim::OPT::Descend
 ##############################################################################
 
-sub getglobals
+sub getglobsals
 {
 	$configfile = shift;
 	require $configfile;
@@ -50,6 +50,7 @@ sub merge_reports    # Self-explaining
 	my $swap = shift;
 	my %dat = %$swap;
 	my @instances = @{ $dat{instances} };
+	my %vals = %{ $dat{vals} };
 	my $countcase = $dat{$countcase};
 	my @rootnames = @{ $dat{rootnames} };
 	my $countblock = $dat{$countblock};
@@ -68,12 +69,52 @@ sub merge_reports    # Self-explaining
 	my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	
+	my $configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
+		
+	my $mypath = $main::mypath;  #say "dumpINDESCEND(\$mypath): " . dump($mypath);
+	my $exeonfiles = $main::exeonfiles; #say "dumpINDESCEND(\$exeonfiles): " . dump($exeonfiles);
+	my $generatechance = $main::generatechance; 
+	my $file = $main::file;
+	my $preventsim = $main::preventsim;
+	my $fileconfig = $main::fileconfig;
+	my $outfile = $main::outfile;
+	my $toshell = $main::toshell;
+	my $report = $main::report;
+	my $simnetwork = $main::simnetwork;
+	my $reportloadsdata = $main::reportloadsdata;
+
+	my @themereports = @main::themereports; #say "dumpINMORPH(\@themereports): " . dump(@themereports);
+	my @simtitles = @main::simtitles; #say "dumpINMORPH(\@simtitles): " . dump(@simtitles);
+	my @reporttitles = @main::reporttitles;
+	my @simdata = @main::simdata;
+	my @retrievedata = @main::retrievedata;
+	my @keepcolumns = @main::keepcolumns;
+	my @weights = @main::weights;
+	my @weightsaim = @main::weightsaim;
+	my @varthemes_report = @main::varthemes_report;
+	my @varthemes_variations = @vmain::arthemes_variations;
+	my @varthemes_steps = @main::varthemes_steps;
+	my @rankdata = @main::rankdata;
+	my @rankcolumn = @main::rankcolumn;
+	my @reporttempsdata = @main::reporttempsdata;
+	my @reportcomfortdata = @main::reportcomfortdata;
+	my @reportradiationenteringdata = @main::reportradiationenteringdata;
+	my @reporttempsstats = @main::reporttempsstats;
+	my @files_to_filter = @main::files_to_filter;
+	my @filter_reports = @main::filter_reports;
+	my @base_columns = @main::base_columns;
+	my @maketabledata = @main::maketabledata;
+	my @filter_columns = @main::filter_columns;
+	
+	my $filenew = "$file"."_";
+	
 	my @simcases = @{ $dat{simcases} };
 	my @simstruct = @{ $dat{simstruct} };
 	my @morphcases = @{ $dat{morphcase} };
 	my @morphstruct = @{ $dat{morphstruct} };
 	my @rescases = @{ $dat{rescases} };
 	my @resstruct = @{ $dat{resstruct} };
+	
 	my $morphlist = $dat{morphlist};
 	my $morphblock = $dat{morphblock};
 	my $simlist = $dat{simlist};
@@ -370,7 +411,7 @@ sub merge_reports    # Self-explaining
 	}
 	&weighttwo();	
 
-	$sortmerged = "$mergefile-sortmerged"; # GLOBAL!
+	$sortmerged = "$mergefile-sortmerged"; # globsAL!
 	sub sortmerged
 	{
 		open (WEIGHTTWO, $weighttwo); # or die;
@@ -410,6 +451,66 @@ sub takeoptima
 	my @winnerlines = Sim::OPT::getlines( \@winneritems ); #say "dump(\@winnerlines): " . dump(@winnerlines);
 	my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
+	
+	my @simcases = @{ $dat{simcases} };
+	my @simstruct = @{ $dat{simstruct} };
+	my @morphcases = @{ $dat{morphcase} };
+	my @morphstruct = @{ $dat{morphstruct} };
+	my @rescases = @{ $dat{rescases} };
+	my @resstruct = @{ $dat{resstruct} };
+	
+	my $configfile = $dat{configfile};
+	
+	my $morphlist = $dat{morphlist};
+	my $morphblock = $dat{morphblock};
+	my $simlist = $dat{simlist};
+	my $simblock = $dat{simblock};
+	my $reslist = $dat{reslist};
+	my $resblock = $dat{resblock};
+	my $retlist = $dat{retlist};
+	my $retblock = $dat{retblock};
+	my $mergecase = $dat{mergecase};
+	my $mergeblock = $dat{mergeblock};
+	
+	my %globs = $dat{globs};
+	
+	my $mypath = $globs{mypath};
+	my $exeonfiles = $globs{exeonfiles};
+	my $generatechance = $globs{generatechance};
+	my $file = $globs{file};
+	my $preventsim = $globs{preventsim};
+	my $fileconfig = $globs{fileconfig};
+	my $outfilerep = $globs{outfile};
+	my $toshellrep = $globs{toshell};
+	my $report = $globs{report};
+	my $simnetwork = $globs{simnetwork};
+	my $reportloadsdata = $globs{reportloadsdata};
+
+	my @themereports = @{ $globs{themereports} };
+	my @simtitles = @{ $globs{simtitles} };
+	my @reporttitles = @{ $globs{reporttitles} };
+	my @simdata = @{ $globs{simdata} };
+	my @retrievedata = @{ $globs{retrievedata} };
+	my @keepcolumns = @{ $globs{keepcolumns} };
+	my @weights = @{ $globs{weights} };
+	my @weightsaim = @{ $globs{weightsaim} };
+	my @varthemes_report = @{ $globs{varthemes_report} };
+	my @varthemes_variations = @{ $globs{varthemes_variations} };
+	my @varthemes_steps = @{ $globs{varthemes_steps} };
+	my @rankdata = @{ $globs{rankdata} };
+	my @rankcolumn = @{ $globs{rankcolumn} };
+	my @reporttempsdata = @{ $globs{reporttempsdata} };
+	my @reportcomfortdata = @{ $globs{reportcomfortdata} };
+	my @reportradiationenteringdata = @{ $globs{reportradiationenteringdata} };
+	my @reporttempsstats = @{ $globs{reporttempsstats} };
+	my @files_to_filter = @{ $globs{files_to_filter} };
+	my @filter_reports = @{ $globs{filter_reports} };
+	my @base_columns = @{ $globs{base_columns} };
+	my @maketabledata = @{ $globs{maketabledata} };
+	my @filter_columns = @{ $globs{filter_columns} };
+	
+	my $filenew = "$file"."_";
+	
 	
 	#open ( TOSHELL, ">>$toshell" ); # or die;
 	#open ( OUTFILE, ">>$outfile" ); # or die;
@@ -458,7 +559,7 @@ sub takeoptima
 	#@winnerarray = uniq(@winnerarray);
 	#@winnerarray = sort(@winnerarray);
 	
-	#$winnermodel = "$filenew"; #BEGINNING # GLOBAL
+	#$winnermodel = "$filenew"; #BEGINNING # globsAL
 	#$count = 0;
 	#foreach $elt (@winnerarray)
 	#{
@@ -550,10 +651,11 @@ sub takeoptima
 	my @taken = Sim::OPT::extractcase("$copy", \%mids); #say "------->taken: " . dump(@taken);
 	my $to = $taken[0]; #say "to-------->: $to";
 	my %newcarrier = %{$taken[1]}; #say "\%instancecarrier:--------->" . dump(%instancecarrier);
-	%{ $miditers[$countcase] } = %newcarrier; say "------->\%miditers: " . dump(%miditers);
+	%{ $miditers[$countcase] } = %newcarrier; #say "->\%miditers: " . dump(%miditers);
 	
 	Sim::OPT::callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => ($countblock + 1), # INCREMENT
-	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems } );
+	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
+	morphcases => \@morphcases, morphstruct => \@morphstruct } );
 	
 } # END OF SUB TAKEOPTIMA
 

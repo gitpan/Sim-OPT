@@ -5,6 +5,8 @@ package Sim::OPT;
 
 use v5.14;
 use Exporter;
+use parent 'Exporter'; # imports and subclasses Exporter
+
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 use Math::Trig;
 use Math::Round;
@@ -32,19 +34,37 @@ no warnings;
 use Sim::OPT::Morph;
 use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
-#use Sim::OPT::Report;
+use Sim::OPT::Report;
 use Sim::OPT::Descend;
 #use Sim::OPT::Pursue;
 
-@ISA = qw(Exporter); # our @adamkISA = qw(Exporter);
+our @ISA = qw(Exporter); # our @adamkISA = qw(Exporter);
 #%EXPORT_TAGS = ( DEFAULT => [qw( &opt &prepare )]); # our %EXPORT_TAGS = ( 'all' => [ qw( ) ] );
 #@EXPORT_OK   = qw(); # our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-@EXPORT = qw( opt odd even _mean_ flattenvariables count_variables fromopt_tosweep fromsweep_toopt convcaseseed 
+
+our @EXPORT = qw( 
+opt odd even _mean_ flattenvariables count_variables fromopt_tosweep fromsweep_toopt convcaseseed 
 convchanceseed makeflatvarnsnum calcoverlaps calcmiditers getitersnum definerootcases
 callcase callblocks deffiles makefilename extractcase setlaunch exe start
 _clean_ getblocks getblockelts getrootname definerootcases populatewinners 
-getitem getline getlines getcase getstepsvar ); # our @EXPORT = qw( );
-$VERSION = '0.39.1_01'; # our $VERSION = '';
+getitem getline getlines getcase getstepsvar 
+$mypath $exeonfiles $generatechance $file $preventsim $fileconfig $outfile $toshell $report 
+$simnetwork $reportloadsdata @themereports @simtitles @reporttitles @simdata @retrievedata 
+@keepcolumns @weights @weightsaim @varthemes_report @varthemes_variations @varthemes_steps 
+@rankdata @rankcolumn @reporttempsdata @reportcomfortdata @reportradiationenteringdata 
+@reporttempsstats @files_to_filter @filter_reports @base_columns @maketabledata @filter_columns
+@files_to_filter @filter_reports @base_columns @maketabledata @filter_columns
+); # our @EXPORT = qw( );
+
+
+our ( $mypath, $exeonfiles, $generatechance, $file, $preventsim, $fileconfig, $outfile, $toshell, $report, 
+$simnetwork, $reportloadsdata, @themereports, @simtitles, @reporttitles, @simdata, @retrievedata, 
+@keepcolumns, @weights, @weightsaim, @varthemes_report, @varthemes_variations, @varthemes_steps, 
+@rankdata, @rankcolumn, @reporttempsdata, @reportcomfortdata, @reportradiationenteringdata, 
+@reporttempsstats, @files_to_filter, @filter_reports, @base_columns, @maketabledata, @filter_columns, 
+@files_to_filter, @filter_reports, @base_columns, @maketabledata, @filter_columns );
+
+$VERSION = '0.39.3_01'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -69,6 +89,20 @@ sub even
 }
 
 sub _mean_ { return @_ ? sum(@_) / @_ : 0 }
+
+
+sub countarray
+{
+	$c = 1;
+	foreach (@_)
+	{
+		foreach (@$_)
+		{
+			$c++;
+		}
+	}
+	return ($c);
+}
 
 sub _clean_
 { # IT CLEANS A BASKET FROM CASES LIKE "-", "1-", "-1", "".
@@ -201,7 +235,7 @@ sub convcaseseed # IT ADEQUATES THE POINT OF ATTACHMENT OF EACH BLOCK TO THE FAC
 			@{$_}[0] = @{$_}[0] + $flatvarnsnum[$countcase];
 		}
 		$countcase++;
-	} # TO BE CALLED WITH: convcaseseed. @caseseed IS GLOBAL.
+	} # TO BE CALLED WITH: convcaseseed. @caseseed IS globsAL.
 }
 
 sub convchanceseed # IT EXTENDS @chancegroup BY JOINING EACH PARAMETERS SEQUENCE WITH TWO COPIES OF ITSELF, TO IMITATE CIRCULAR LISTS.
@@ -212,7 +246,7 @@ sub convchanceseed # IT EXTENDS @chancegroup BY JOINING EACH PARAMETERS SEQUENCE
 		{
 			push (@$_, @$_, @$_);
 		}
-	} # IT ACTS ON @chanceseed, WHICH IS GLOBAL.
+	} # IT ACTS ON @chanceseed, WHICH IS globsAL.
 }
 
 sub makeflatvarnsnum # IT COUNTS HOW MANY PARAMETERS THERE ARE IN A SEARCH STRUCTURE,
@@ -227,7 +261,7 @@ sub makeflatvarnsnum # IT COUNTS HOW MANY PARAMETERS THERE ARE IN A SEARCH STRUC
 		}
 		@basket = uniq(@basket); #say "\@basket2: @basket";
 		push ( @flatvarnsnum, scalar ( @basket ) ); #say "\@flatvarnsnum: @flatvarnsnum";
-	} # IT ACTS ON @chanceseed, WHICH IS GLOBAL.
+	} # IT ACTS ON @chanceseed, WHICH IS globsAL.
 }
 
 sub calcoverlaps
@@ -247,7 +281,7 @@ sub calcoverlaps
 			push (@caseoverlaps, [ @intersection ] );
 			$countblock++;
 		}
-		push (@casesoverlaps, [@overlaps]); # GLOBAL!
+		push (@casesoverlaps, [@overlaps]); # globsAL!
 		$countcase++;
 	}
 }
@@ -389,7 +423,7 @@ sub populatewinners
 	my $countcase = 0;
 	foreach $case (@rootnames)
 	{
-		push ( @{ $winneritems[$countcase] }, $case ); #GLOBAL
+		push ( @{ $winneritems[$countcase] }, $case ); #globsAL
 		$countcase++;
 	}
 	return(@winneritems);
@@ -462,6 +496,9 @@ sub callcase # IT PROCESSES THE CASES.
 	my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
 	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers); # IT BECOMES THE CARRIER. INITIALIZED AT FIRST BLOCKS; INHERITED AFTER.
 	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
+	my @morphcases = @{ $dat{morphcases} }; #say "dumpIN( \@morphcases) " . dump(@morphcases);
+	my @morphstruct = @{ $dat{morphstruct} }; #say "dumpIN( \@morphstruct) " . dump(@morphstruct);
+	my %vals = %{ $dat{ vals} };
 	#eval($getparshere);
 	
 	my $rootname = getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
@@ -478,17 +515,21 @@ sub callcase # IT PROCESSES THE CASES.
 	# STOP CONDITION
 	if ( $counblock >= scalar( @{ $sweeps[$countcase] } ) ) # NUMBER OF BLOCK OF THE CURRENT CASE
 	{ 
+		my $cn = 0;
+		foreach my $e (@winneritems)
+		{
+			say "Optimal option for case number $countcase: $winneritems[$countcase][$#$winneritems]";
+			say makefilename(%mids);
+			say "Gross number of instances: " . scalar ( countarray( @morphstruct ) ) ;
+			say "Net number of instances: " . scalar ( @{ $morphcases[$countcase] } ) ;
+			$cn++;
+		}
+			
 		$countblock = 0;
 		$countcase = $countcase++;
 		if ( $countcase >= scalar( @sweeps ) )# NUMBER OF CASES OF THE CURRENT PROBLEM
 		{
 			say "END RUN.";
-			my $cn = 0;
-			foreach my $e (@winneritems)
-			{
-				say "Optimal option for case number $countcase: $winneritems[$countcase][$#$winneritems]";
-				$cn++;
-			}
 			exit;
 		}
 	}
@@ -499,7 +540,8 @@ sub callcase # IT PROCESSES THE CASES.
 
 	my $casedata = { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
 	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
-	instancecarrier => \%instancecarrier, to => $to, basket => \@basket }; #say "\n\dumpCASE(\$casedata): " . dump($casedata) . "\n\n";
+	instancecarrier => \%instancecarrier, to => $to, basket => \@basket, morphcases => \@morphcases, 
+	morphstruct => \@morphstruct, vals => \%vals }; #say "\n\dumpCASE(\$casedata): " . dump($casedata) . "\n\n";
 	callblocks( $casedata ); 
 }
 
@@ -514,6 +556,9 @@ sub callblocks # IT CALLS THE SEARCH ON BLOCKS.
 	my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
 	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
 	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
+	my @morphcases = @{ $dat{morphcases} }; #say "dumpIN( \@morphcases) " . dump(@morphcases);
+	my @morphstruct = @{ $dat{morphstruct} }; #say "dumpIN( \@morphstruct) " . dump(@morphstruct);
+	my %vals = %{ $dat{ vals} };
 	#eval($getparshere);
 	
 	my $rootname = getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
@@ -528,7 +573,8 @@ sub callblocks # IT CALLS THE SEARCH ON BLOCKS.
 	#eval($getfly);
 	
 	my $blockdata = { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
-	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems }; #say "\ndumpBLOCK($blockdata): " . dump($blockdata) . "\n\n";
+	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
+	morphcases => \@morphcases, morphstruct => \@morphstruct, vals => \%vals }; #say "\ndumpBLOCK($blockdata): " . dump($blockdata) . "\n\n";
 	deffiles( $blockdata );
 }
 	
@@ -543,6 +589,9 @@ sub deffiles # IT DEFINED THE FILES TO BE CALLED.
 	my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
 	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
 	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
+	my @morphcases = @{ $dat{morphcases} }; #say "dumpIN( \@morphcases) " . dump(@morphcases);
+	my @morphstruct = @{ $dat{morphstruct} }; #say "dumpIN( \@morphstruct) " . dump(@morphstruct);
+	my %vals = %{ $dat{ vals} };
 	#eval($getparshere);
 	
 	my $rootname = getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
@@ -592,7 +641,7 @@ sub deffiles # IT DEFINED THE FILES TO BE CALLED.
 	my @basket = @newbasket; #say "newbasketOUTOUT: " . dump(@newbasket);
 	my $datatowork = { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
 	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
-	basket => \@basket } ; #say "\ndumper-datatowork: " . dump($datatowork) . "\n\n";
+	basket => \@basket, morphcases => \@morphcases, morphstruct => \@morphstruct, vals => \%vals } ; #say "\ndumper-datatowork: " . dump($datatowork) . "\n\n";
 	setlaunch( $datatowork );
 }	
 
@@ -607,6 +656,9 @@ sub setlaunch # IT SETS THE DATA FOR THE SEARCH ON THE ACTIVE BLOCK.
 	my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
 	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
 	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
+	my @morphcases = @{ $dat{morphcases} }; #say "dumpIN( \@morphcases) " . dump(@morphcases);
+	my @morphstruct = @{ $dat{morphstruct} }; #say "dumpIN( \@morphstruct) " . dump(@morphstruct);
+	my %vals = %{ $dat{ vals} };
 	#eval($getparshere);
 	
 	my @basket = @{ $dat{basket} }; #say "dump(\@basket): " . dump(@basket);
@@ -632,7 +684,7 @@ sub setlaunch # IT SETS THE DATA FOR THE SEARCH ON THE ACTIVE BLOCK.
 		my $prov = "_" . "$winnerline";
 		%carrier = extractcase( $prov , \%carrier ); #say "\%carrierB:--->" . dump(%carrier);
 	}
-	
+
 	foreach my $elt ( @basket )
 	{
 		
@@ -644,7 +696,8 @@ sub setlaunch # IT SETS THE DATA FOR THE SEARCH ON THE ACTIVE BLOCK.
 		my %instancecarrier = %{$taken[1]}; #say "\%instancecarrier:--------->" . dump(%instancecarrier);
 		push (@instances, { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
 					sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
-					to => $to, instancecarrier => \%instancecarrier, countvar => $countvar, countstep => $countstep } );
+					to => $to, instancecarrier => \%instancecarrier, countvar => $countvar, countstep => $countstep, 
+					morphcases => \@morphcases, morphstruct => \@morphstruct, vals => \%vals } );
 	} 
 	#say "\ninstances: " . Dumper(@instances). "\n\n"; ### ZZZ
 	exe( @instances ); # IT HAS TO BE CALLED WITH: setlaunch(@datatowork). @datatowork ARE CONSTITUTED BY AN ARRAY OF: ( [ \@blocks, \%varnums, \%bases, $name, $countcase, \@blockelts, $countblock ], ... )
@@ -659,6 +712,7 @@ sub exe
 	my %dat = %{ $firstinst };
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
 	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
+	my %vals = %{ $dat{ vals} };
 
 	my $simlist = "$mypath/$file-simlist-$countcase";
 	my $simblock = "$mypath/$file-simblock-$countcase-$countblock";
@@ -680,12 +734,13 @@ sub exe
 	{ 
 		Sim::OPT::Morph::morph( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
 			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
 
@@ -693,24 +748,26 @@ sub exe
 	{ 
 		Sim::OPT::Sim::sim( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
 			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
 	if ( $dowhat{retrieve} eq "y" )
 	{ 
 		Sim::OPT::Retrieve::retrieve( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-	simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
+			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
 	
@@ -718,99 +775,105 @@ sub exe
 	{ 
 		Sim::OPT::Report::report( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
 			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
 	if ( $dowhat{mergeresults} eq "y" )
 	{ 
 		 Sim::OPT::Descend::merge_reports( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
 			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
 	if ( $dowhat{report} eq "y" )
 	{
 		 Sim::OPT::Report::convert_report( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
 			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
 	if ( $dowhat{substitutenames} eq "y" )
 	{
 		 Sim::OPT::Report::filter_reports( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
 			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
 	if ( $dowhat{filterconverted} eq "y" )
 	{
 		 Sim::OPT::Report::convert_filtered_reports( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
 			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
 	if ( $dowhat{make3dtable} eq "y" )
 	{
 		 Sim::OPT::Report::maketable( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
 			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
 	if ( $dowhat{takeoptima} eq "y" )
 	{
 		Sim::OPT::Descend::takeoptima( 
 		{ 
-			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
 			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
 			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
 			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
 			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock
+			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
+			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
-	} say "getexe: " . dump(@instances);
+	} #say "getexe: " . dump(@instances);
 } # END SUB exe
-			
+	
 sub start
 {
 ###########################################
 print "THIS IS OPT.
 Copyright by Gian Luca Brunetti and Politecnico di Milano, 2008-14.
-DAStU Department, Polytechnic of Milan
+{ DAStU Department, Polytechnic of Milan }
 
--------------------
+.  .  .  .  .  .  .  .  .  .  .  .  .
 
-To use OPT, an OPT configuration file and a target ESP-r model should have been prepared.
-Please insert the name of a configuration file (Unix path):\n";
+Please insert the name of a configuration file for OPT (Unix path)\n\n";
 ###########################################
 	$configfile = <STDIN>;
 	chomp $configfile;
@@ -819,32 +882,27 @@ Please insert the name of a configuration file (Unix path):\n";
 }
 
 ###########################################################################################
-
-my $_outfile_ = OUTFILE ;
-my $_toshell_ = TOSHELL ;
 		
 sub opt
 {
+	
+	###############################################################
+
+	
 	&start;
 	# eval `cat $configfile`; # The file where the program data are
-	require $configfile or die;
-	Sim::OPT::Morph::getglobals($configfile);
-	Sim::OPT::Sim::getglobals($configfile);
-	Sim::OPT::Retrieve::getglobals($configfile);
-	#Sim::OPT::Report::getglobals($configfile);
-	Sim::OPT::Descend::getglobals($configfile);
-	#Sim::OPT::Pursue::getglobals($configfile); ### ZZZ
 	
+	require $configfile;
+
 #	if ($casefile) { eval `cat $casefile` or die; }
 #	if ($chancefile) { eval `cat $chancefile` or die; }
 
-	print "\nNow in Sim::OPT.
-\n";
+	print "\nNow in Sim::OPT.\n";
 	
-	$filenew = "$file"."_";
+	my $filenew = "$file"."_";
 	
-	if ( ($outfile) and (-e $outfile) ) { open ( $_outfile_, ">$outfile" ) or die "Can't open $outfile: $!"; }
-	if ( ($toshell) and (-e $toshell) ) { open ( $_toshell_, ">$toshell" ) or die "Can't open $toshell: $!"; }	
+	if ( ($outfile) and (-e $outfile) ) { open ( OUTFILE, ">$outfile" ) or die "Can't open $outfile: $!"; }
+	if ( ($toshell) and (-e $toshell) ) { open ( TOSHELL, ">$toshell" ) or die "Can't open $toshell: $!"; }	
 	
 	unless (-e "$mypath") 
 	{ 
@@ -855,12 +913,9 @@ sub opt
 	}
 	unless (-e "$mypath") 
 	{ 
-		print $_toshell_ "mkdir $mypath\n\n"; 
+		print TOSHELL "mkdir $mypath\n\n"; 
 	}
 	
-	my $simlist = "$mypath/$simlist.txt";
-	open (my $_simlist_, ">$simlist") or ( say "\$simlist: $simlist" and die );
-
 	#####################################################################################
 	# INSTRUCTIONS THAT LAUNCH OPT AT EACH SWEEP (SUBSPACE SEARCH) CYCLE
 	
@@ -880,9 +935,9 @@ sub opt
 	
 	#my  $itersnum = $varinumbers[$countcase]{$varinumber}; say "\$itersnum: $itersnum"; 
 	#say "dump(\@varinumbers), " . dump(@varinumbers); #say "dumpBEFORE(\@miditers), " . dump(@miditers);
-	calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS GLOBAL. ZZZ
+	calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS globsAL. ZZZ
 	
-	calcmiditers(@varinumbers); #say "dumpAFTER(\@miditers), " . dump(@miditers); # GLOBALS. ZZZ
+	calcmiditers(@varinumbers); #say "dumpAFTER(\@miditers), " . dump(@miditers); # globsALS. ZZZ
 	#$itersnum = getitersnum($countcase, $varinumber, @varinumbers); #say "\$itersnum OUT = $itersnum";
 	
 	@rootnames = definerootcases(\@sweeps, \@miditers); 
@@ -893,14 +948,11 @@ sub opt
 	my @winneritems = populatewinners(@rootnames);
 	
 	callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
-	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems } );
+	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, vals => \%vals } );
 	
-	close ($_simlist_);
-	close ($_simblock_);
-	close ($_morphlist_);
-	close ($_morphblock_);
-	close($_outfile_);
-	close($_toshell_);
+
+	close(OUTFILE);
+	close(TOSHELL);
 	exit;
 } # END 
 
@@ -921,28 +973,31 @@ Sim::OPT is a tool for detailed metadesign managing parametric explorations thro
 
 =head1 DESCRIPTION
 
-Sim::OPT it a tool for detailed metadesign. It morphs models by propagation of constraints through the ESP-r building performance simulation platform and performs optimization by overlapping block coordinate descent.
+Sim::OPT it a tool for detailed metadesign of buildings. It morphs models by propagation of constraints through the ESP-r building performance simulation platform and performs optimization by overlapping block coordinate descent.
 
 A working knowledge of ESP-r is necessary to use OPT. Information about ESP-r can be found at http://www.esru.strath.ac.uk/Programs/ESP-r.htm.
 
-To install OPT, the command <cpanm Sim::OPT> has to be issued. Perl will take care to install all dependencies. OPT can be loaded through the command <use Sim::OPT> in Perl. For that purpose, the "Devel::REPL" module can be used. As an alternative, the batch file "opt" (which can be found in the "example" folder in this distribution) may be copied in a work directory and the command <opt> may be issued. That command will activate the OPT functions, following the settings specified in a previously prepared configuration file. When launched, OPT will ask the path to that file. Its activity will start after receiving that information. 
-The OPT configuration file has to contain a suitable description of the operations to be accomplished pointing to an existing ESP-r model. The OPT configuration file is extended by other files in which the search structures to be searched into or to be generated are specified. Those files are designated with the "$casefile", "$chancefile", "$caseed" and "$chanceseed" variables. But if wanted the variables contained in those files can be written directly in the main configuration file.
+To install OPT, the command <cpanm Sim::OPT> has to be issued. Perl will take care to install all dependencies. OPT can be loaded through the command <use Sim::OPT> in Perl. For that purpose, the "Devel::REPL" module can be used. As an alternative, the batch file "opt" (which can be found packed in the "optw.tar.gz" file in "example" folder in this distribution) may be copied in a work directory and the command <opt> may be issued. That command will activate the OPT's functions, following the settings specified in a previously prepared configuration file. When launched, OPT will ask the path to that file. Its activity will start after receiving that information. 
+That file must contain a suitable description of the operations to be accomplished pointing to an existing ESP-r model.
 
-In this distribution there is a set of commented template files and an example of OPT configuration file. The example has been written for a previous version of OPT and will not work with the present one due to changes in the header variables. The complete set of files linked to that configuration file may be downloaded athttp://figshare.com/articles/Dataset_of_a_computational_research_on_block_coordinate_search_based_on_building_performance_simulations/1158993 .
+In "optw.tar.gz" there is an example of OPT configuration file. An example of configuration file for an earlier version of the program may be downloaded at http://figshare.com/authors/Gian_luca_Brunetti/624879 .
 
-To run OPT without making it act on model files, the setting <$exeonfiles = "n";> should be specified in the configuration file. (Note that this can only be aimed to inspect the command that OPTS will give to ESP-r through the shell: the search obtained will be very likely to be different from the one obtained from simulations. This is because if simulations are not launched, the optimal instance  at each subspace (block) search cannot be selected. In its place, the base case will be then kept by the program, just to bring the output to completion and examine the operations deriving from the search structure. A sequential block search (Gauss-Seidel method) cannot be run "dry". Only the first sweep of a parallell one (Jacobi method) could.) By setting the variable "$toshell" to the chosen path, the path for the text file that will receive the commands in place of the shell should be specified.
+To run OPT without making it launch ESP-r, the setting <$exeonfiles = "n";> should be specified in the configuration file. Note that this can only be aimed to inspect the command that OPTS will give to ESP-r through the shell. The search obtained will be very likely to be different from that driven by simulation results. If simulations are not launched, the optimal instance  at each subspace search cannot indeed be selected. In its place, the base case will be kept by the program, just to bring the process to completion. A sequential block search (Gauss-Seidel method) cannot indeed be run "dry". The variable "$toshell" specifies the path to a file that will receive the shell commands in place of the shell.
 
-OPT will give instruction to ESP-r via shell to make it modify the building model in different copies. Then, if asked, it will run simulations, retrieve the results, extract some information from them and order it as requested.
+If $exeonfiles is set to "y", OPT will give instruction to ESP-r via shell to make it modify the building base model in different copies. Then, if asked, it will run simulations, retrieve the results, extract some information from them and order it as requested.
 
-Besides an OPT configuration file, also configuration files for propagation of constraints may be created. This will give to the morphing operations much greater flexibility. Propagation of constraints can regard the geometry of a model, solar shadings, mass/flow network, and/or controls; and also, how those pieces of information affect each other and daylighting (calculated through the Radiance lighting simulation program). Example of configuration files for propagation of constraints are included in this distribution.
+Besides an OPT configuration file, configuration files for propagation of constraints may be created. This would give to the morphing operations greater flexibility. Propagation of constraints can regard the geometry of a model, solar shadings, mass/flow network, and/or controls; and also, how those pieces of information affect each other and daylighting. Example of configuration files for propagation of constraints are included in this distribution.
 
-The ESP-r model folders and the result files that will be created in a parametric search will be named as the root model, followed by a "_" character, followed by a variable number referred to the first morphing phase, followed by a "-" character, followed by an iteration number for the variable in question, and so on for all morphing phases. For example, the model instance produced in the first iteration for a root model named "model" in a search constituted by 3 morphing phases and 5 iteration steps each will be named "model_1-1_2-1_3-1"; and the last one "model_1-5_2-5_3-5".
+The ESP-r model folders and the result files that will be created in a parametric search will be named as the base building model, numbers and other characters to described an instance. For example, the instance produced in the first iteration for a root model named "model" in a search constituted by 3 morphing phases and 5 iteration steps each will be named "model_1-1_2-1_3-1"; and the last one "model_1-5_2-5_3-5". 
 
-1) To describe a block search, the first option is to describe the subspace searches via subarrays in an array with parameters numbered. The array variable is @sweeps. Two brute force searches, one having 1, 2 3 as parameters and the other having 1, 4, 5, 7 would have to be described with @sweeps = ( [ [1, 2, 3] ] , [ 1, 4, 5, 7 ] ] ). A block search with the first subspace having 1, 2, 3 as parameters and the second subspace having 3, 4, 5, 6 would have to be described with @sweeps = ( [ [ 1, 2, 3 ] , [ 3, 4, 5, 6 ] ] ).
+The structure of block searches is described through the variable "@sweeps" . Each case is listed inside square brackets. And each search subspace (block) in them is listed inside square brakets, nested in cases. For example: a sequence constituted by two brute force searches, one regarding parameters 1, 2 3 and the other regarding parameters 1, 4, 5, 7 would be described with: @sweeps = ( [ [ 1, 2, 3 ] ] , [ 1, 4, 5, 7 ] ] ). And a block search with the first subspace regarding parameters 1, 2, 3 and the second subspace regarding parameters 3, 4, 5, 6 would be described with: @sweeps = ( [ [ 1, 2, 3 ] , [ 3, 4, 5, 6 ] ] ). 
 
-The blocks are of different size (i.e. each composed by a different number of parameters). 
+The number of iterations to be taken into account for each parameter for each case is specified in the "@varinumbers" variable. To specifiy that the parameters of the last example are tried for three values (iterations) each, @varinumbers = ( { 1 => '3', 2 => '3', 3 => '3', 4 => '3', 5 => '3', 6 => '3' } ).
 
-OPT is a program I have written as a side project since 2008 with no funding. It was the first real program I attempted to write. From time to time I add some parts to it. The parts of it that have been written earlier or later are the ones that are coded in the strangest manner.
+OPT is a program I have begun to write as a side project in 2008 with no funding. It is still in alpha stage though. It is the first real program I attempted to write. From time to time I add some parts to it. The parts of it that have been written earlier or later are the ones that are coded in the strangest manner.
+
+Gian Luca Brunetti, Politecnico di Milano
+gianluca.brunetti@polimi.it
 
 =head2 EXPORT
 

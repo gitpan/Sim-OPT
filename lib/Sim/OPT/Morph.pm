@@ -40,41 +40,631 @@ get_obstructions write_temporary pin_obstructions apply_pin_obstructions vary_ne
 apply_component_changes constrain_net read_net_constraints propagate_constraints 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.1__'; # our $VERSION = '';
+$VERSION = '0.39.1_01'; # our $VERSION = '';
 
 
-#########################################################################################
+##############################################################################
 # HERE FOLLOWS THE CONTENT OF "Morph.pm", Sim::OPT::Morph.
 ##############################################################################
 
-sub getglobals
+sub morph
 {
-	$configfile = shift;
-	require $configfile;
-}
+	my $swap = shift;
+	my %dat = %$swap;
 
+	my @instances = @{ $dat{instances} };
+	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase); # IT WILL BE SHADOWED. CUT ZZZ
+	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock); # IT WILL BE SHADOWED. CUT ZZZ
+	
+	my %vals = %{ $dat{vals} }; #say "dump(\%vals): " . dump(%vals);
+	
+	my $configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
+		
+	my $mypath = $main::mypath;  #say "dumpINMORPH(\$mypath): " . dump($mypath);
+	my $exeonfiles = $main::exeonfiles; #say "dumpINMORPH(\$exeonfiles): " . dump($exeonfiles);
+	my $generatechance = $main::generatechance; 
+	my $file = $main::file;
+	my $preventsim = $main::preventsim;
+	my $fileconfig = $main::fileconfig;
+	my $outfile = $main::outfile;
+	my $toshell = $main::toshell;
+	my $report = $main::report;
+	my $simnetwork = $main::simnetwork;
+	my $reportloadsdata = $main::reportloadsdata;
 
+	my @themereports = @main::themereports; #say "dumpINMORPH(\@themereports): " . dump(@themereports);
+	my @simtitles = @main::simtitles; #say "dumpINMORPH(\@simtitles): " . dump(@simtitles);
+	my @reporttitles = @main::reporttitles;
+	my @simdata = @main::simdata;
+	my @retrievedata = @main::retrievedata;
+	my @keepcolumns = @main::keepcolumns;
+	my @weights = @main::weights;
+	my @weightsaim = @main::weightsaim;
+	my @varthemes_report = @main::varthemes_report;
+	my @varthemes_variations = @vmain::arthemes_variations;
+	my @varthemes_steps = @main::varthemes_steps;
+	my @rankdata = @main::rankdata;
+	my @rankcolumn = @main::rankcolumn;
+	my @reporttempsdata = @main::reporttempsdata;
+	my @reportcomfortdata = @main::reportcomfortdata;
+	my @reportradiationenteringdata = @main::reportradiationenteringdata;
+	my @reporttempsstats = @main::reporttempsstats;
+	my @files_to_filter = @main::files_to_filter;
+	my @filter_reports = @main::filter_reports;
+	my @base_columns = @main::base_columns;
+	my @maketabledata = @main::maketabledata;
+	my @filter_columns = @main::filter_columns;
+	
+	my $filenew = "$file"."_";
+	
+	my @simcases = @{ $dat{simcases} }; #say "dump(\@simcases): " . dump(@simcases);
+	my @simstruct = @{ $dat{simstruct} };
+	my @morphcases = @{ $dat{morphcase} };
+	my @morphstruct = @{ $dat{morphstruct} };
+	my @rescases = @{ $dat{rescases} };
+	my @resstruct = @{ $dat{resstruct} };
+	
+	my $morphlist = $dat{morphlist}; #say "dump(\$dat{morphlist}): " . dump($dat{morphlist});
+	my $morphblock = $dat{morphblock};
+	my $simlist = $dat{simlist}; #say "dump(\$simlist): " . dump($simlist);
+	my $simblock = $dat{simblock};
+	my $reslist = $dat{reslist};
+	my $resblock = $dat{resblock};
+	my $retlist = $dat{retlist};
+	my $retblock = $dat{retblock};
+	my $mergecase = $dat{mergecase};
+	my $mergeblock = $dat{mergeblock};
+	
+	#my $getpars = shift;
+	#eval( $getpars );
+	
+	
+	#if ( fileno (MORPHLIST) )
+	if (not (-e $morphlist ) )
+	{
+		if ( $countblock == 0 )
+		{
+			say "morphlist: $morphlist";
+			open (MORPHLIST, ">$morphlist") or die;
+		}
+		else
+		{
+			open (MORPHLIST, ">>$morphlist") or die;
+		}
+	}
+	
+	#if ( fileno (MORPHBLOCK) )
+	if (not (-e $morphblock ) )
+	{
+		if ( $countblock == 0 )
+		{
+			open (MORPHBLOCK, ">$morphblock");# or die;
+		}
+		else
+		{
+			open (MORPHBLOCK, ">>$morphblock");# or die;
+		}		
+	}	
+	
+	$countinstance = 1;
+	foreach my $instance (@instances)
+	{		
+		my %dat = %{$instance};
+		my @rootnames = @{ $dat{rootnames} }; #say \"dump(\@rootnames): " . dump(@rootnames);
+		my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
+		my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
+		my @sweeps = @{ $dat{sweeps} }; #say "dump(\@sweeps): " . dump(@sweeps);
+		my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
+		my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
+		my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
+		my $countvar = $dat{countvar}; #say "dump(\$countvar): " . dump($countvar);
+		my $countstep = $dat{countstep}; #say "dump(\$countstep): " . dump($countstep);
+		#eval($getparshere);
+		
+		my %instancecarrier = %{ $dat{instancecarrier} }; #say "dump(\%instancecarrier): " . dump(%instancecarrier);
+		my $to = $dat{to}; #say "dump(\$to): " . dump($to);
+		
+		my $rootname = Sim::OPT::getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
+		my @blockelts = Sim::OPT::getblockelts(\@sweeps, $countcase, $countblock); #say "dumpIN( \@blockelts) " . dump(@blockelts);
+		my @blocks = Sim::OPT::getblocks(\@sweeps, $countcase);  #say "dumpIN( \@blocks) " . dump(@blocks);
+		my $winneritem = Sim::OPT::getitem(\@winneritems, $countcase, $countblock); #say "dump(\$winneritem): " . dump($winneritem);
+		my $winnerline = Sim::OPT::getline($winneritem); #say "dump(\$winnerline): " . dump($winnerline);
+		my $from = $winnerline;
+		my @winnerlines = Sim::OPT::getlines( \@winneritems ); #say "dump(\@winnerlines): " . dump(@winnerlines);
+		my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
+		my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
+		#eval($getfly);
+		
+		my $stepsvar = Sim::OPT::getstepsvar($countvar, $countcase, \@varinumbers); #say "dumpININ---(\%mids): " . dump(%mids); 
+		my $varnumber = $countvar; #say "dumpININ---(\$varnumber): " . dump($varnumber);  # LEGACY VARIABLE
+		
+		my $countcaseplus1 = ( $countcase + 1);
+		my $countblockplus1 = ( $countblock + 1);
+		
+		#@totblockelts = (@totblockelts, @blockelts); # @blockelts
+		#@totblockelts = uniq(@totblockelts);
+		#@totblockelts = sort(@totblockelts);
+		#if ( $countvar == $#blockelts )
+		#{
+		#	$$general_variables[0] = "n";
+		#} # THIS TELLS THAT IF THE SEARCH IS ENDING (LAST SUBSEARCH CYCLE) GENERATION OF CASES HAS TO BE TURNED OFF	
+		####### OLD. $stepsvar = ${ "varnums{$countvar}" . "$varnumber" };
+		
+		
+		
+		my @applytype = @{ $vals{$countvar}{applytype} }; #say "dump(\@applytype): " . dump(@applytype);
+		my $general_variables = $vals{$countvar}{general_variables}; #say "dump(\$general_variables): " . dump($general_variables);
+		my @generic_change = @{$vals{$countvar}{generic_change} }; 
+		my $rotate = $vals{$countvar}{rotate}; 
+		my $rotatez = $vals{$countvar}{rotatez};
+		my $translate = $vals{$countvar}{translate}; #say "dump(\$translate): " . dump($translate); 
+		my $translate_surface_simple = $vals{$countvar}{translate_surface_simple};
+		my $translate_surface = $vals{$countvar}{translate_surface};
+		my $keep_obstructions = $vals{$countvar}{keep_obstructions};
+		my $shift_vertexes = $vals{$countvar}{shift_vertexes};
+		my $construction_reassignment = $vals{$countvar}{construction_reassignment};
+		my $thickness_change = $vals{$countvar}{thickness_change};
+		my $recalculateish = $vals{$countvar}{recalculateish};
+		my @recalculatenet = @{ $vals{$countvar}{recalculatenet} };
+		my $obs_modify = $vals{$countvar}{obs_modify};
+		my $netcomponentchange = $vals{$countvar}{netcomponentchange};
+		my $changecontrol = $vals{$countvar}{changecontrol};
+		my @apply_constraints = @{ $vals{$countvar}{apply_constraints} }; # NOW SUPERSEDED BY @constrain_geometry
+		my $rotate_surface = $vals{$countvar}{rotate_surface};
+		my @reshape_windows = @{ $vals{$countvar}{reshape_windows} };
+		my @apply_netconstraints = @{ $vals{$countvar}{apply_netconstraints} };
+		my @apply_windowconstraints = @{ $vals{$countvar}{apply_windowconstraints} };
+		my @translate_vertexes = @{ $vals{$countvar}{translate_vertexes} };
+		my $warp = $vals{$countvar}{warp};
+		my @daylightcalc = @{ $vals{$countvar}{daylightcalc} };
+		my @change_config = @{ $vals{$countvar}{change_config} };
+		my @constrain_geometry = @{ $vals{$countvar}{constrain_geometry} };
+		my @vary_controls = @{ $vals{$countvar}{vary_controls} };
+		my @constrain_controls =  @{ $vals{$countvar}{constrain_controls} };
+		my @constrain_geometry = @{ $vals{$countvar}{constrain_geometry} };
+		my @constrain_obstructions = @{ $vals{$countvar}{constrain_obstructions} };
+		my @get_obstructions = @{ $vals{$countvar}{get_obstructions} };
+		my @pin_obstructions = @{ $vals{$countvar}{pin_obstructions} };
+		my $checkfile = $vals{$countvar}{checkfile};
+		my @vary_net = @{ $vals{$countvar}{vary_net} };
+		my @constrain_net = @{ $vals{$countvar}{constrain_net} };
+		my @propagate_constraints = @{ $vals{$countvar}{propagate_constraints} };
+		my @change_climate = @{ $vals{$countvar}{change_climate} };
+		my $skip = $vals{$countvar}{skip};
+		my $constrain = $vals{$countvar}{constrain};
+		
+		my (@cases_to_sim, @files_to_convert);
+		my (@v, @obs, @node, @component, @loopcontrol, @flowcontrol); # THINGS globsAL AS REGARDS TO COUNTER ZONE CYCLES
+		my (@myv, @myobs, @mynode, @mycomponent, @myloopcontrol, @myflowcontrol); # THINGS LOCAL AS REGARDS TO COUNTER ZONE CYCLES
+		my (@tempv, @tempobs, @tempnode, @tempcomponent, @temploopcontrol, @tempflowcontrol); # THINGS LOCAL AS REGARDS TO COUNTER ZONE CYCLES
+		my (@dov, @doobs, @donode, @docomponent, @doloopcontrol, @doflowcontrol); # THINGS LOCAL AS REGARDS TO COUNTER ZONE CYCLES
+		
+		my $generate  = $$general_variables[0];
+		my $sequencer = $$general_variables[1];
+		my $dffile = "df-$file.txt";	
+		
+		my $toshellmorph = "$toshell" . "-1morph.txt";
+		my $outfilemorph = "$outfile" . "-1morph.txt";
+		
+		open ( TOSHELLMORPH, ">>$toshellmorph" );
+		open ( OUTFILEMORPH, ">>$outfilemorph" );
+		
+		if ( not ( $to ~~ @morphstruct ) )
+		{
+			push ( @{ $morphstruct[$countcase][$countblock] }, $to );
+			print MORPHBLOCK "$to\n";
+		}
+		
+		#say "TELL ME: " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
+		if ( ( $countblock == 0 ) and ( $countvar == 1 ) and ( $countstep == 1) )
+		{
+			$from = "$mypath/$file"; say "FROM: $from";
+		}
+		## ADDED IN NEW VERSION, ZZZ
+
+		if ( not ( $to ~~ @{ $morphcases[$countcase] } ) )
+		{
+			push ( @morphcases, $to );
+			print MORPHLIST "$to\n";
+
+			#my $from = "$case_to_sim";
+			#my $almost_to = $from;
+			#$almost_to =~ s/$varnumber-\d+/$varnumber-$countstep/ ;
+			#if (     ( $generate eq "n" )
+			#	 and ( ( $sequencer eq "y" ) or ( $sequencer eq "last" ) ) )
+			#{
+			#	if ( $almost_to =~ m/§$/ ) { $to = "$almost_to" ; }
+			#	else
+			#	{
+			#		#$to = "$case_to_sim$varnumber-$countstep§";
+			#		$to = "$almost_to" . "§";
+			#	}
+			#} 
+			#elsif ( ( $generate eq "y" ) and ( $sequencer eq "n" ) )
+			#{
+			#	if ( $almost_to =~ m/_$/ ) { $to = "$almost_to" ; }
+			#	else
+			#	{
+			#		$to = "$case_to_sim$varnumber-$countstep" . "_";
+			#		$to = "$almost_to" . "_";
+			#		if ( $countstep == $stepsvar )
+			#		{
+			#			if ($exeonfiles eq "y") { print `chmod -R 777 $from\n`; }
+			#			print TOSHELLMORPH "chmod -R 777 $from\n\n";
+			#		}
+			#	}
+			#} 
+			#elsif ( ( $generate eq "y" ) and ( $sequencer eq "y" ) )
+			#{
+			#	#$to = "$case_to_sim$varnumber-$countstep" . "£";
+			#	$to = "$almost_to" . "£";
+			#} 
+			#elsif ( ( $generate eq "y" ) and ( $sequencer eq "last" ) )
+			#{
+			#	if ( $almost_to =~ m/£$/ ) { $to = "$almost_to" ; }
+			#	else
+			#	{
+			#		#$to = "$case_to_sim$varnumber-$countstep" . "£";
+			#		$to = "$almost_to" . "£";
+			#		#if ( $countstep == $stepsvar )
+			#		#{
+			#		#	if ($exeonfiles eq "y") { print `chmod -R 777 $from\n`; }
+			#		#	print TOSHELLMORPH "chmod -R 777 $from\n\n";
+			#		#}
+			#	}
+			#} 
+			#elsif ( ( $generate eq "n" ) and ( $sequencer eq "n" ) )
+			#{
+			#	 $almost_to =~ s/[_|£]$// ;
+			#	#$to = "$case_to_sim$varnumber-$countstep";
+			#	$to = "$almost_to";
+			#}
+			
+			if ( eval $skip) { $skipask = "yes"; }
+						
+			if (     ( $generate eq "y" )
+				 and ( $countstep == $stepsvar )
+				 and ( ( $sequencer eq "n" ) or ( $sequencer eq "last" ) ) 
+				 and ( ($skip ne "")  and ($skipask ne "yes") )
+			   )
+			{
+				unless (-e $to)
+				{
+					if ($exeonfiles eq "y") { `cp -R $from $to\n`; }
+					print TOSHELLMORPH "cp -R $from $to\n\n";
+				}
+			} 
+			else
+			{
+				unless (-e $to)
+				{
+					
+					if ($exeonfiles eq "y") { `cp -R $from $to\n`; }
+					print TOSHELLMORPH "cp -R $from $to\n\n";
+				}
+			}
+			push(@morphed, $to);
+
+			$countzone = 0;
+			foreach my $zone (@applytype)
+			{
+				my $modification_type = $applytype[$countzone][0];
+				if ( ( $applytype[$countzone][1] ne $applytype[$countzone][2] )
+					 and ( $modification_type ne "changeconfig" ) )
+				{
+					if ($exeonfiles eq "y") 
+					{  
+						`cp -f $to/zones/$applytype[$countzone][1] $to/zones/$applytype[$countzone][2]\n`; 
+					}
+					print TOSHELLMORPH "cp -f $to/zones/$applytype[$countzone][1] $to/zones/$applytype[$countzone][2]\n\n";
+					if ($exeonfiles eq "y") 
+					{  
+						`cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n`; 
+					}    # ORDINARILY, THIS PART CAN BE REMOVED
+					print TOSHELLMORPH "cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n\n";
+				}# ORDINARILY, THIS PART CAN BE REMOVED
+				if (
+					 (
+					   $applytype[$countzone][1] ne $applytype[$countzone][2]
+					 )
+					 and ( $modification_type eq "changeconfig" )
+				  )
+				{
+					if ($exeonfiles eq "y") 
+					{ 
+						`cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n`; 
+					}
+					print TOSHELLMORPH "cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n\n"; 
+				} # ORDINARILY, THIS PART CAN BE REMOVED
+
+				#########################################################################################
+				# Sim::OPT::Morph
+				#########################################################################################
+		
+				my $yes_or_no_rotate_obstructions = "$$rotate[$countzone][1]" ; 
+				# WHY $BRING_CONSTRUCTION_BACK DOES NOT WORK IF THESE TWO VARIABLES ARE PRIVATE?
+				my $yes_or_no_keep_some_obstructions = "$$keep_obstructions[$countzone][0]";
+				
+				print `cd $to`;
+				print TOSHELLMORPH "cd $to\n\n";
+				my $countcycles_transl_surfs = 0;				
+
+				if ( $stepsvar > 1)
+				{	
+					sub dothings
+					{	# THIS CONTAINS FUNCTIONS THAT APPLY CONSTRAINTS AND UPDATE CALCULATIONS.							
+						#if ( $get_obstructions[$countzone][0] eq "y" )
+						#{ 
+						#	get_obstructions # THIS IS TO MEMORIZE OBSTRUCTIONS.
+						#	# THEY WILL BE SAVED IN A TEMPORARY FILE.
+						#	($to, $fileconfig, $stepsvar, $countzone, 
+						#	$countstep, $exeonfiles, \@applytype, \@get_obstructions, $configfile, $countvar); 
+						#}
+						if ($propagate_constraints[$countzone][0] eq "y") 
+						{ 
+							&propagate_constraints
+							($to, $stepsvar, $countzone, 
+							$countstep, \@applytype, \@propagate_constraints, $countvar); 
+						}
+						if ($apply_constraints[$countzone][0] eq "y") 
+						{ 
+							&apply_constraints
+							($to, $stepsvar, $countzone, 
+							$countstep, \@applytype, \@constrain_geometry, $countvar); 
+						}
+						if ($constrain_geometry[$countzone][0] eq "y") 
+						{ 
+							&constrain_geometry
+							($to, $stepsvar, $countzone, 
+							$countstep, \@applytype, \@constrain_geometry, $countvar); 
+						}
+						if ($constrain_controls[$countzone][0] eq "y") 
+						{ 
+							&constrain_controls
+							($to, $stepsvar, $countzone, 
+							$countstep, \@applytype, \@constrain_controls, $countvar); 
+						}
+						if ($$keep_obstructions[$countzone][0] eq "y") # TO BE SUPERSEDED BY get_obstructions AND pin_obstructions
+						{ 
+							&bring_obstructions_back($to, $stepsvar, $countzone, 
+							$countstep, \@applytype, $keep_obstructions, $countvar); 
+						}
+						if ($constrain_net[$countzone][0] eq "y")
+						{ 
+							&constrain_net($to, $stepsvar, $countzone, 
+							$countstep, \@applytype, \@constrain_net, $to_do, $countvar); 
+						}
+						if ($recalculatenet[0] eq "y") 
+						{ 
+							&recalculatenet
+							($to, $stepsvar, $countzone, 
+							$countstep, \@applytype, \@recalculatenet, $countvar); 
+						}
+						if ($constrain_obstructions[$countzone][0] eq "y") 
+						{ 
+							&constrain_obstructions
+							($to, $stepsvar, $countzone, 
+							$countstep, \@applytype, \@constrain_obstructions, $to_do, $countvar); 
+						}
+						#if ( $pin_obstructions[$countzone][0] eq "y" ) 
+						#{ 
+						#	pin_obstructions ($to, $stepsvar, $countzone, 
+						#	$countstep, \@applytype, $zone_letter, \@pin_obstructions, $countvar); 
+						#}
+						if ($recalculateish eq "y") 
+						{ 
+							&recalculateish
+							($to, $stepsvar, $countzone, 
+							$countstep, \@applytype, \@recalculateish, $countvar); 
+						}
+						if ($daylightcalc[0] eq "y") 
+						{ 
+							&daylightcalc
+							($to, $stepsvar, $countzone,  
+							$countstep, \@applytype, $filedf, \@daylightcalc, $countvar); 
+						}
+					} # END SUB DOTHINGS
+
+					if ( $modification_type eq "generic_change" )#
+					{
+						&make_generic_change
+						($to, $stepsvar, $countzone, $countstep,
+						\@applytype, $generic_change, $countvar);
+						&dothings;
+					} #
+					elsif ( $modification_type eq "surface_translation_simple" )
+					{
+						&translate_surfaces_simple
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $translate_surface_simple, $countvar);
+						&dothings;
+					} 
+					elsif ( $modification_type eq "surface_translation" )
+					{
+						&translate_surfaces 
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $translate_surface, $countvar);
+						&dothings;
+					} 
+					elsif ( $modification_type eq "surface_rotation" )              #
+					{
+						&rotate_surface
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $rotate_surface, $countvar);
+						&dothings;
+					} 
+					elsif ( $modification_type eq "vertexes_shift" )
+					{
+						&shift_vertexes
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $shift_vertexes, $countvar);
+						&dothings;
+					}
+					elsif ( $modification_type eq "vertex_translation" )
+					{
+						&translate_vertexes
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, \@translate_vertexes, $countvar);                         
+						&dothings;
+					}  
+					elsif ( $modification_type eq "construction_reassignment" )
+					{
+						&reassign_construction
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $construction_reassignment, $countvar);
+						&dothings;
+					} 
+					elsif ( $modification_type eq "rotation" )
+					{
+						&rotate
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $rotate, $countvar);
+						&dothings;
+					} 
+					elsif ( $modification_type eq "translation" )
+					{
+						&translate
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $translate, $countvar);
+						&dothings;
+					} 
+					elsif ( $modification_type eq "thickness_change" )
+					{
+						&change_thickness
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $thickness_change, $countvar);
+						&dothings;
+					} 
+					elsif ( $modification_type eq "rotationz" )
+					{
+						&rotatez
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $rotatez, $countvar );
+						&dothings;
+					} 
+					elsif ( $modification_type eq "change_config" )
+					{
+						&change_config
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, \@change_config, $countvar);
+						&dothings;
+					}
+					elsif ( $modification_type eq "window_reshapement" ) 
+					{
+						&reshape_windows
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, \@reshape_windows, $countvar);					
+						&dothings;
+					}
+					elsif ( $modification_type eq "obs_modification" )  # REWRITE FOR NEW GEO FILE?
+					{
+						&obs_modify
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $obs_modify, $countvar);
+						&dothings;
+					}
+					elsif ( $modification_type eq "warping" )
+					{
+						&warp
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, $warp, $countvar);
+						&dothings;
+					}
+					elsif ( $modification_type eq "vary_controls" )
+					{
+						&vary_controls
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, \@vary_controls, $countvar);
+						&dothings;
+					}
+					elsif ( $modification_type eq "vary_net" )
+					{
+						&vary_net
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, \@vary_net, $countvar);
+						&dothings;
+					}
+					elsif ( $modification_type eq "change_climate" )
+					{
+						&change_climate
+						($to, $stepsvar, $countzone, $countstep, 
+						\@applytype, \@change_climate, $countvar);
+						&dothings;
+					} 
+					elsif ( $modification_type eq "constrain_controls" )
+					{
+						&dothings;
+					}
+					#elsif ( $modification_type eq "get_obstructions" )
+					#{
+					#	dothings;
+					#}
+					#elsif ( $modification_type eq "pin_obstructions" )
+					#{
+					#	dothings;
+					#}
+					elsif ( $modification_type eq "constrain_geometry" )
+					{
+						&dothings;
+					}
+					elsif ( $modification_type eq "apply_constraints" )
+					{
+						&dothings;
+					}
+					elsif ( $modification_type eq "constrain_net" )
+					{
+						&dothings;
+					}
+					elsif ( $modification_type eq "propagate_net" )
+					{
+						&dothings;
+					}
+					elsif ( $modification_type eq "recalculatenet" )
+					{
+						&dothings;
+					}
+					elsif ( $modification_type eq "constrain_obstructions" )
+					{
+						&dothings;
+					}
+					elsif ( $modification_type eq "propagate_constraints" )
+					{
+						&dothings;
+					}
+				}
+				$countzone++;
+				print `cd $mypath`;
+				print TOSHELLMORPH "cd $mypath\n\n";
+			}
+		}
+		close MORPHLIST;
+		close MORPHBLOCK;
+		$countinstance++;
+	}
+	close TOSHELLMORPH;
+	close OUTFILEMORPH;
+}    # END SUB morph
 
 sub translate
 {
-	say "TRANSLATING";
 	my $to = shift;
-	my $varnref = shift; 
-	my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $translate = shift;
 	my $countvar = shift;
+	
+	say "Translating zones for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	if ( $stepsvar > 1 )
 	{
-		my $yes_or_no_translation = "$$translate[$counterzone][0]";
-		my $yes_or_no_translate_obstructions = "$$translate[$counterzone][1]";
-		my $yes_or_no_update_radiation =  $$translate[$counterzone][3];
-		my $configfile =  $$translate[$counterzone][4];
+		my $yes_or_no_translation = "$$translate[$countzone][0]";
+		my $yes_or_no_translate_obstructions = "$$translate[$countzone][1]";
+		my $yes_or_no_update_radiation =  $$translate[$countzone][3];
+		my $configfile =  $$translate[$countzone][4];
 		if ( $yes_or_no_update_radiation eq "y" )
 		{
 			$yes_or_no_update_radiation = "a";
@@ -84,7 +674,7 @@ sub translate
 		}
 		if ( $yes_or_no_translation eq "y" )
 		{
-			my @coordinates_for_movement = @{ $$translate[$counterzone][2] };
+			my @coordinates_for_movement = @{ $$translate[$countzone][2] };
 			my $x_end = $coordinates_for_movement[0];
 			my $y_end = $coordinates_for_movement[1];
 			my $z_end = $coordinates_for_movement[2];
@@ -98,7 +688,36 @@ sub translate
 			my $z_pace = ( $z_swingtranslate / ( $stepsvar - 1 ) );
 			my $z_movement = (- ( $z_end - ( $z_pace * ( $countstep - 1 ) ) ));
 
-			my $printthis =
+			if ($exeonfiles eq "y") 
+			{
+				print 
+`prj -file $to/cfg/$fileconfig -mode script<<YYY
+
+m
+c
+a
+$zone_letter
+i
+e
+$x_movement $y_movement $z_movement
+y
+$yes_or_no_translate_obstructions
+-
+y
+c
+-
+-
+-
+-
+-
+-
+-
+-
+-
+YYY
+`;
+			}
+			print TOSHELLMORPH 
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
 
 m
@@ -124,18 +743,12 @@ c
 -
 YYY
 ";
-
-			if ($exeonfiles eq "y") 
-			{
-				print `$printthis`;
-			}
-			print TOSHELL $printthis;
 		}
 	}
 }    # end sub translate
 
 
-my $countercycles_transl_surfs = 0;					
+my $countcycles_transl_surfs = 0;					
 #############################################################################
 
 
@@ -143,31 +756,32 @@ my $countercycles_transl_surfs = 0;
 sub translate_surfaces_simple # THIS IS VERSION 1, THE OLD ONE. DISMISSED? IN DOUBT, DO NOT USE IT. 
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $translate_surface_simple = shift;
 	my $countvar = shift;
+	say "Translating surfaces for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my $yes_or_no_transl_surfs =
-	  $$translate_surface_simple[$counterzone][0];
+	  $$translate_surface_simple[$countzone][0];
 	my @surfs_to_transl =
-	  @{ $translate_surface_simple->[$counterzone][1] };
+	  @{ $translate_surface_simple->[$countzone][1] };
 	my @ends_movs =
-	  @{ $translate_surface_simple->[$counterzone][2]
+	  @{ $translate_surface_simple->[$countzone][2]
 	  };    # end points of the movements.
 	my $yes_or_no_update_radiation =
-	  $$translate_surface_simple[$counterzone][3];
-	my $firstedge_constrainedarea = $$translate_surface_simple[$counterzone][4][0];
-	my $secondedge_constrainedarea = $$translate_surface_simple[$counterzone][4][1];
+	  $$translate_surface_simple[$countzone][3];
+	my $firstedge_constrainedarea = $$translate_surface_simple[$countzone][4][0];
+	my $secondedge_constrainedarea = $$translate_surface_simple[$countzone][4][1];
 	my $constrainedarea = ($firstedge_constrainedarea * $secondedge_constrainedarea);
 	my @swings_surfs = map { $_ * 2 } @ends_movs;
 	my @surfs_to_transl_constrainedarea =
-	  @{ $translate_surface_simple->[$counterzone][5] };
-	my $countersurface = 0;
+	  @{ $translate_surface_simple->[$countzone][5] };
+	my $countsurface = 0;
 	my $end_mov;
 	my $mov_surf;
 	my $pace;
@@ -181,13 +795,13 @@ sub translate_surfaces_simple # THIS IS VERSION 1, THE OLD ONE. DISMISSED? IN DO
 		{
 			if ( $stepsvar > 1 )
 			{
-				$end_mov = $ends_movs[$countersurface];
+				$end_mov = $ends_movs[$countsurface];
 				$swing_surf = $end_mov * 2;
 				$pace = ( $swing_surf / ( $stepsvar - 1 ) );
 				$movement =
 				  ( - ( ($end_mov) -
 					( $pace * ( $countstep - 1 ) ) ) );
-				$surface_letter_constrainedarea = $surfs_to_transl_constrainedarea[$countersurface];
+				$surface_letter_constrainedarea = $surfs_to_transl_constrainedarea[$countsurface];
 				$movement_constrainedarea = 
 				( ( ( $constrainedarea / ( $firstedge_constrainedarea + ( 2 * $movement ) ) ) - $secondedge_constrainedarea) /2);
 
@@ -221,7 +835,7 @@ YYY\n\n";
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 
 				my $printthis = 
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
@@ -255,10 +869,10 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 
-				$countersurface++;
-				$countercycles_transl_surfs++;
+				$countsurface++;
+				$countcycles_transl_surfs++;
 			}
 		}
 	}
@@ -269,23 +883,25 @@ YYY
 ######################################################################
 sub translate_surfaces
 {
-	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
-	my $countstep = shift;
-	my $swap = shift;
-	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
-	my $translate_surface = shift;
-	my $countvar = shift;
+	my $to = shift; #say "got \$to : " . dump($to);
+	my $stepsvar = shift;  #say "got \$stepsvar : " . dump($stepsvar);
+	my $countzone = shift; #say "got \$countzone : " . dump($countzone);
+	my $countstep = shift; #say "got \$countstep : " . dump($countstep);
+	my $swap = shift; #say "got \$swap : " . dump($swap);
+	my @applytype = @$swap; #say "got \@applytype : " . dump(@applytype);
+	my $zone_letter = $applytype[$countzone][3]; #say "got \$zone_letter : " . dump($zone_letter);
+	my $translate_surface = shift; #say "got \$translate_surface : " . dump($translate_surface);
+	my $countvar = shift; #say "got \$countvar : " . dump($countvar);
+	
+	say "Translating surfaces for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
-	my $yes_or_no_transl_surfs = $$translate_surface[$counterzone][0];
-	my $transform_type = $$translate_surface[$counterzone][1];
-	my @surfs_to_transl = @{ $translate_surface->[$counterzone][2] };
-	my @ends_movs = @{ $translate_surface->[$counterzone][3] };    # end points of the movements.
-	my $yes_or_no_update_radiation = $$translate_surface[$counterzone][4];
-	my @transform_coordinates = @{ $translate_surface->[$counterzone][5] };
-	my $countersurface = 0;
+	my $yes_or_no_transl_surfs = $$translate_surface[$countzone][0];
+	my $transform_type = $$translate_surface[$countzone][1];
+	my @surfs_to_transl = @{ $translate_surface->[$countzone][2] };
+	my @ends_movs = @{ $translate_surface->[$countzone][3] };    # end points of the movements.
+	my $yes_or_no_update_radiation = $$translate_surface[$countzone][4];
+	my @transform_coordinates = @{ $translate_surface->[$countzone][5] };
+	my $countsurface = 0;
 	my $end_mov;
 	my $mov_surf;
 	my $pace;
@@ -301,7 +917,7 @@ sub translate_surfaces
 				{
 					if ($transform_type eq "a")
 					{
-						$end_mov = $ends_movs[$countersurface];
+						$end_mov = $ends_movs[$countsurface];
 						$swing_surf = $end_mov * 2;
 						$pace = ( $swing_surf / ( $stepsvar - 1 ) );
 						$movement = ( - ( ($end_mov) -( $pace * ( $countstep - 1 ) ) ) );
@@ -339,13 +955,13 @@ YYY
 					}
 					print T $printthis;
 
-					$countersurface++;
-					$countercycles_transl_surfs++;
+					$countsurface++;
+					$countcycles_transl_surfs++;
 				}
 				elsif ($transform_type eq "b")
 				{
 					my @coordinates_for_movement = 
-					@{ $transform_coordinates[$countersurface] };
+					@{ $transform_coordinates[$countsurface] };
 					my $x_end = $coordinates_for_movement[0];
 					my $y_end = $coordinates_for_movement[1];
 					my $z_end = $coordinates_for_movement[2];
@@ -392,10 +1008,10 @@ YYY
 						print `$printthis`;
 					}
 
-					print TOSHELL $printthis;
+					print TOSHELLMORPH $printthis;
 
-					$countersurface++;
-					$countercycles_transl_surfs++;
+					$countsurface++;
+					$countcycles_transl_surfs++;
 				}
 			}
 		}
@@ -408,33 +1024,35 @@ YYY
 sub rotate_surface
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $rotate_surface = shift;
 	my $countvar = shift;
-
-	my $yes_or_no_rotate_surfs =  $$rotate_surface[$counterzone][0];
-	my @surfs_to_rotate =  @{ $rotate_surface->[$counterzone][1] };
-	my @vertexes_numbers =  @{ $rotate_surface->[$counterzone][2] };   
-	my @swingrotations = @{ $rotate_surface->[$counterzone][3] };
-	my @yes_or_no_apply_to_others = @{ $rotate_surface->[$counterzone][4] };
-	my $configfile = $$rotate_surface[$counterzone][5];
+	
+	say "Rotating surfaces for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
+	
+	my $yes_or_no_rotate_surfs =  $$rotate_surface[$countzone][0];
+	my @surfs_to_rotate =  @{ $rotate_surface->[$countzone][1] };
+	my @vertexes_numbers =  @{ $rotate_surface->[$countzone][2] };   
+	my @swingrotations = @{ $rotate_surface->[$countzone][3] };
+	my @yes_or_no_apply_to_others = @{ $rotate_surface->[$countzone][4] };
+	my $configfile = $$rotate_surface[$countzone][5];
 
 	if ( $yes_or_no_rotate_surfs eq "y" )
 	{
-		my $counterrotate = 0;
+		my $countrotate = 0;
 		foreach my $surface_letter (@surfs_to_rotate)
 		{
-			$swingrotate = $swingrotations[$counterrotate];
+			$swingrotate = $swingrotations[$countrotate];
 			$pacerotate = ( $swingrotate / ( $stepsvar - 1 ) );
 			$rotation_degrees = 
 			( ( $swingrotate / 2 ) - ( $pacerotate * ( $countstep - 1 ) )) ;
-			$vertex_number = $vertexes_numbers[$counterrotate];
-			$yes_or_no_apply = $yes_or_no_apply_to_others[$counterrotate];
+			$vertex_number = $vertexes_numbers[$countrotate];
+			$yes_or_no_apply = $yes_or_no_apply_to_others[$countrotate];
 			if (  ( $swingrotate != 0 ) and ( $stepsvar > 1 )  and ( $yes_or_no_rotate_surfs eq "y" ) )
 			{
 				my $printthis =
@@ -472,7 +1090,7 @@ YYY
 
 				print  $_toshell_ $printthis;
 			}
-			$counterrotate++;
+			$countrotate++;
 		}
 	}
 }    # END SUB rotate_surface
@@ -484,29 +1102,32 @@ YYY
 sub translate_vertexes #STILL UNFINISHED, NOT WORKING. PROBABLY ALMOST FINISHED. The reference to @base_coordinates is not working.
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap2 = shift;
 	my @translate_vertexes = @$swap2;
 	my $countvar = shift;
 	
+	say "Translating vertexes for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
+	
 	my @v;
-	my @verts_to_transl = @{ $translate_vertexes[$counterzone][0] };
-	my @transform_coordinates = @{ $translate_vertexes[$counterzone][1] };
-	my @sourcefiles = @{ $translate_vertexes[$counterzone][2] };
-	my @targetfiles = @{ $translate_vertexes[$counterzone][3] };
-	my @configfiles = @{ $translate_vertexes[$counterzone][4] };
-	my @longmenus = @{ $translate_vertexes[$counterzone][5] };
-	$counteroperations = 0;
+	my @verts_to_transl = @{ $translate_vertexes[$countzone][0] };
+	my @transform_coordinates = @{ $translate_vertexes[$countzone][1] };
+	my @sourcefiles = @{ $translate_vertexes[$countzone][2] };
+	my @targetfiles = @{ $translate_vertexes[$countzone][3] };
+	my @configfiles = @{ $translate_vertexes[$countzone][4] };
+	my @longmenus = @{ $translate_vertexes[$countzone][5] };
+	
+	$countoperations = 0;
 	foreach my $sourcefile ( @sourcefiles)
 	{
-		my $targetfile = $targetfiles[ $counteroperations ];
-		my $configfile = $configfiles[ $counteroperations ];
-		my $longmenu = $longmenus[ $counteroperations ];
+		my $targetfile = $targetfiles[ $countoperations ];
+		my $configfile = $configfiles[ $countoperations ];
+		my $longmenu = $longmenus[ $countoperations ];
 		my $sourceaddress = "$mypath/$file$sourcefile";
 		my $targetaddress = "$mypath/$file$targetfile";
 		my $configaddress = "$to/opts/$configfile";
@@ -516,8 +1137,8 @@ sub translate_vertexes #STILL UNFINISHED, NOT WORKING. PROBABLY ALMOST FINISHED.
 		my @lines = <SOURCEFILE>;
 		close SOURCEFILE;
 			
-		my $counterlines = 0;
-		my $countervert = 0;
+		my $countlines = 0;
+		my $countvert = 0;
 
 		my @vertex_letters;
 			if ($longmenu eq "y")
@@ -545,19 +1166,19 @@ sub translate_vertexes #STILL UNFINISHED, NOT WORKING. PROBABLY ALMOST FINISHED.
 				my @rowelements = split(/\s+|,/, $line);
 				if   ($rowelements[0] eq "*vertex" ) 
 				{
-					if ($countervert == 0) 
+					if ($countvert == 0) 
 					{
 						push (@v, [ "vertexes of  $sourceaddress" ]);
-						push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ], $vertexletters[$countervert] );
+						push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ], $vertexletters[$countvert] );
 					}
 
-					if ($countervert > 0) 
+					if ($countvert > 0) 
 					{
-						push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3], $vertexletters[$countervert] ] );
+						push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3], $vertexletters[$countvert] ] );
 					}
-					$countervert++;
+					$countvert++;
 				}
-				$counterlines++;
+				$countlines++;
 			}
 
 			if (-e $configaddress) 
@@ -565,15 +1186,15 @@ sub translate_vertexes #STILL UNFINISHED, NOT WORKING. PROBABLY ALMOST FINISHED.
 				eval `cat $configaddress`; # HERE AN EXTERNAL FILE FOR PROPAGATION OF CONSTRAINTS 
 				# IS EVALUATED, AND HERE BELOW CONSTRAINTS ARE PROPAGATED.
 
-			my $countervertex = 0;
+			my $countvertex = 0;
 							
 			foreach my $vertex_letter (@vertex_letters)
 			{
-				if ($countervertex > 0)
+				if ($countvertex > 0)
 				{
-					if ($vertex_letter eq $v[$countervertex][3])
+					if ($vertex_letter eq $v[$countvertex][3])
 					{
-						my @base_coordinates = @{ $transform_coordinates[$countervertex] };
+						my @base_coordinates = @{ $transform_coordinates[$countvertex] };
 						my $x_end = $base_coordinates[0];
 						my $y_end = $base_coordinates[1];
 						my $z_end = $base_coordinates[2];
@@ -617,13 +1238,13 @@ YYY
 							print `$printthis`;
 						}
 
-						print TOSHELL $printthis;
+						print TOSHELLMORPH $printthis;
 					}
 				}
-				$countervertex++;
+				$countvertex++;
 			}
 		}
-		$counteroperations++;
+		$countoperations++;
 	}
 } # END SUB translate_vertexes
 
@@ -632,30 +1253,34 @@ YYY
 sub shift_vertexes
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $shift_vertexes = shift;
 	my $countvar = shift;
+	
+	say "Shifting vertexes for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my $pace;
 	my $movement;
-	my $yes_or_no_shift_vertexes = $$shift_vertexes[$counterzone][0];
-	my $movementtype = $$shift_vertexes[$counterzone][1];
-	my @pairs_of_vertexes = @{ $$shift_vertexes[$counterzone][2] };
-	my @shift_swings = @{ $$shift_vertexes[$counterzone][3] };
-	my $yes_or_no_radiation_update = $$shift_vertexes[$counterzone][4];
-	my $configfile = $$shift_vertexes[$counterzone][5];
+	my $yes_or_no_shift_vertexes = $$shift_vertexes[$countzone][0];
+	my $movementtype = $$shift_vertexes[$countzone][1];
+	my @pairs_of_vertexes = @{ $$shift_vertexes[$countzone][2] };
+	my @shift_swings = @{ $$shift_vertexes[$countzone][3] };
+	my $yes_or_no_radiation_update = $$shift_vertexes[$countzone][4];
+	my $configfile = $$shift_vertexes[$countzone][5];
+	
+	say "Shifting vertexes for problem $countcaseplus1, block $countblockplus1, parameter $countvar at iteration $countstep.";
 
 	if ( $stepsvar > 1 )
 	{
 		if ( $yes_or_no_shift_vertexes eq "y" )
 		{
 
-			my $counterthis = 0;
+			my $countthis = 0;
 			if ($movementtype eq "j")
 			{
 			foreach my $shift_swing (@shift_swings)
@@ -663,8 +1288,8 @@ sub shift_vertexes
 					$pace = ( $shift_swing / ( $stepsvar - 1 ) );
 					$movement_or_vertex = 
 					( ( ($shift_swing) / 2 ) - ( $pace * ( $countstep - 1 ) ) );
-					$vertex1 = $pairs_of_vertexes[ 0 + ( 2 * $counterthis ) ];
-					$vertex2 = $pairs_of_vertexes[ 1 + ( 2 * $counterthis ) ];
+					$vertex1 = $pairs_of_vertexes[ 0 + ( 2 * $countthis ) ];
+					$vertex2 = $pairs_of_vertexes[ 1 + ( 2 * $countthis ) ];
 					
 					my $printthis =
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
@@ -699,9 +1324,9 @@ YYY
 					{ 
 						print `$printthis`;
 					}
-					print TOSHELL $printthis;
+					print TOSHELLMORPH $printthis;
 
-					$counterthis++;
+					$countthis++;
 				}
 			}
 			elsif ($movementtype eq "h")
@@ -745,7 +1370,7 @@ YYY
 					{ 
 						print `$printthis`;
 					}
-					print TOSHELL $printthis;
+					print TOSHELLMORPH $printthis;
 				}
 			}
 		}
@@ -756,26 +1381,28 @@ YYY
 sub rotate    # generic zone rotation
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $rotate = shift; 
 	my $countvar = shift;
+	
+	say "Rotating zones for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my $rotation_degrees; 
-	my $yes_or_no_rotation = "$$rotate[$counterzone][0]";
+	my $yes_or_no_rotation = "$$rotate[$countzone][0]";
 	my $yes_or_no_rotate_obstructions =
-	  "$$rotate[$counterzone][1]";
-	my $swingrotate = $$rotate[$counterzone][2];
+	  "$$rotate[$countzone][1]";
+	my $swingrotate = $$rotate[$countzone][2];
 	my $yes_or_no_update_radiation =
-	  $$rotate[$counterzone][3];
-	my $base_vertex = $$rotate[$counterzone][4];
-	my $configfile = $$rotate[$counterzone][5];						  
+	  $$rotate[$countzone][3];
+	my $base_vertex = $$rotate[$countzone][4];
+	my $configfile = $$rotate[$countzone][5];						  
 	my $pacerotate; 
-	my $counter_rotate = 0;
+	my $count_rotate = 0;
 	if (     ( $swingrotate != 0 )
 		 and ( $stepsvar > 1 )
 		 and ( $yes_or_no_rotation eq "y" ) )
@@ -785,7 +1412,39 @@ sub rotate    # generic zone rotation
 		  ( ( $swingrotate / 2 ) -
 			 ( $pacerotate * ( $countstep - 1 ) ) );
 
-		my $printthis =
+		if ($exeonfiles eq "y") 
+		{ 
+			print 
+`prj -file $to/cfg/$fileconfig -mode script<<YYY
+
+
+m
+c
+a
+$zone_letter
+i
+b
+$rotation_degrees
+$base_vertex
+-
+$yes_or_no_rotate_obstructions
+-
+y
+c
+-
+y
+-
+-
+-
+-
+-
+-
+-
+-
+YYY
+`;
+		}
+		print TOSHELLMORPH 
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
 
 
@@ -814,11 +1473,6 @@ y
 -
 YYY
 ";
-		if ($exeonfiles eq "y") 
-		{ 
-			print `$printthis`;
-		}
-		print TOSHELL $printthis;
 	}
 }    # END SUB rotate
 ##############################################################################
@@ -828,15 +1482,17 @@ YYY
 sub rotatez # PUT THE ROTATION POINT AT POINT 0, 0, 0. I HAVE NOT YET MADE THE FUNCTION GENERIC ENOUGH.
 {	
 	my $to = shift;
-	my $varnref = shift; 
-	my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $rotatez = shift;
 	my $countvar = shift;
+	
+	say "Rotating zones on the horizontal plane for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my $yes_or_no_rotation = "$$rotatez[0]";
 	my @centerpoints = @{$$rotatez[1]};
@@ -844,23 +1500,23 @@ sub rotatez # PUT THE ROTATION POINT AT POINT 0, 0, 0. I HAVE NOT YET MADE THE F
 	my $centerpointsy = $centerpoints[1];
 	my $centerpointsz = $centerpoints[2];
 	my $plane_of_rotation = "$$rotatez[2]";
- 	my $infile = "$to/zones/$applytype[$counterzone][2]";
-	my $infile2 = "$to/cfg/$applytype[$counterzone][2]";
-	my $outfile = "erase";
-	my $outfile2 = "$to/zones/$applytype[$counterzone][2]eraseobtained";
+ 	my $infile = "$to/zones/$applytype[$countzone][2]";
+	my $infile2 = "$to/cfg/$applytype[$countzone][2]";
+	my $outfilemorph = "erase";
+	my $outfile2 = "$to/zones/$applytype[$countzone][2]eraseobtained";
 	open(INFILE,  "$infile")   or die "Can't open infile $infile: $!\n";
 	open($_outfile_2, ">>$outfile2") or die "Can't open outfile2 $outfile2: $!\n";
 	my @lines = <INFILE>;
 	close(INFILE);
-	my $counterline = 0;
-	my $countercases=0;
+	my $countline = 0;
+	my $countcases=0;
 	my @vertexes;
 	my $swingrotate = $$rotatez[3];
 	my $alreadyrotation = $$rotatez[4];
 	my $rotatexy = $$rotatez[5];
 	my $swingrotatexy = $$rotatez[6];
 	my $pacerotate;
-	my $counter_rotate = 0;
+	my $count_rotate = 0;
 	my $linenew;
 	my $linenew2;
 	my @rowprovv;
@@ -880,7 +1536,7 @@ sub rotatez # PUT THE ROTATION POINT AT POINT 0, 0, 0. I HAVE NOT YET MADE THE F
 				if ($row[0] eq "*vertex") 
 				{ push (@vertexes, [$row[1], $row[2], $row[3]] ) }
 			}
-			$counterline = $counterline +1;
+			$countline = $countline +1;
 		}
 
 		foreach $vertex (@vertexes)
@@ -939,8 +1595,8 @@ sub rotatez # PUT THE ROTATION POINT AT POINT 0, 0, 0. I HAVE NOT YET MADE THE F
 			print $_outfile_ "after final substraction ${$vertex}[0], ${$vertex}[1], ${$vertex}[2]\n";
 		}
 
-		my $counterwrite = -1;
-		my $counterwriteand1;
+		my $countwrite = -1;
+		my $countwriteand1;
 		foreach $line (@lines) 
 		{#	
 
@@ -949,34 +1605,34 @@ sub rotatez # PUT THE ROTATION POINT AT POINT 0, 0, 0. I HAVE NOT YET MADE THE F
 				my @rowprovv2 = split(/\s+/, $linenew2);
 				$rowprovv2[0] =~ s/\:\,/\:/g ;
 				@row2 = split(/\,/, $rowprovv2[0]);
-				$counterwriteright = ($counterwrite - 5);
-				$counterwriteand1 = ($counterwrite + 1);			
+				$countwriteright = ($countwrite - 5);
+				$countwriteand1 = ($countwrite + 1);			
 				if ($row2[0] eq "*vertex")		
 				{
-					if ( $counterwrite == - 1) { $counterwrite = 0 }	
+					if ( $countwrite == - 1) { $countwrite = 0 }	
 					print $_outfile_2 
-					"*vertex"."\,"."${$vertexes[$counterwrite]}[0]"."\,"."${$vertexes[$counterwrite]}[1]"."\,"."${$vertexes[$counterwrite]}[2]"."  #   "."$counterwriteand1\n";
+					"*vertex"."\,"."${$vertexes[$countwrite]}[0]"."\,"."${$vertexes[$countwrite]}[1]"."\,"."${$vertexes[$countwrite]}[2]"."  #   "."$countwriteand1\n";
 				}
 				else 
 				{
 					print $_outfile_2 "$line";
 				}
-				if ( $counterwrite > ( - 1 ) ) { $counterwrite++; }
+				if ( $countwrite > ( - 1 ) ) { $countwrite++; }
 		}
 
 		close($_outfile_);
 		if ($exeonfiles eq "y") { print `chmod 777 $infile`; }
-		print TOSHELL "chmod -R 777 $infile\n";
+		print TOSHELLMORPH "chmod -R 777 $infile\n";
 		if ($exeonfiles eq "y") { print `chmod 777 $infile2`; }
-		print TOSHELL "chmod -R 777 $infile2\n";
+		print TOSHELLMORPH "chmod -R 777 $infile2\n";
 		if ($exeonfiles eq "y") { print `rm $infile`; }
-		print TOSHELL "rm $infile\n";
+		print TOSHELLMORPH "rm $infile\n";
 		if ($exeonfiles eq "y") { print `chmod 777 $outfile2`; }
-		print TOSHELL "chmod 777 $outfile2\n";
+		print TOSHELLMORPH "chmod 777 $outfile2\n";
 		if ($exeonfiles eq "y") { print `cp $outfile2 $infile`; }
-		print TOSHELL "cp $outfile2 $infile\n";
+		print TOSHELLMORPH "cp $outfile2 $infile\n";
 		if ($exeonfiles eq "y") { print `cp $outfile2 $infile2`; }
-		print TOSHELL "cp $outfile2 $infile2\n";
+		print TOSHELLMORPH "cp $outfile2 $infile2\n";
 	}
 } # END SUB rotatez
 ##############################################################################
@@ -986,35 +1642,37 @@ sub rotatez # PUT THE ROTATION POINT AT POINT 0, 0, 0. I HAVE NOT YET MADE THE F
 sub make_generic_change # WITH THIS FUNCTION YOU TARGET PORTIONS OF A FILE AND YOU CHANGE THEM.
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap2 = shift;
 	my @generic_change = @$swap2;
 	my $countvar = shift;
+	
+	say "Manipulating geometry database for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
-	my $infile = "$to/zones/$applytype[$counterzone][2]";
-	my $outfile = "$to/zones/$applytype[$counterzone][2]provv";
+	my $infile = "$to/zones/$applytype[$countzone][2]";
+	my $outfilemorph = "$to/zones/$applytype[$countzone][2]provv";
 	open( INFILE, "$infile" ) or die "Can't open $infile 2: $!\n";
-	open( $_outfile_, ">$outfile" ) or die "Can't open $outfile: $!\n";
+	open( $_outfile_, ">$outfilemorph" ) or die "Can't open $outfilemorph: $!\n";
 	my @lines = <INFILE>;
 	close(INFILE);
-	my $counterline  = 0;
-	my $countercases = 0;
+	my $countline  = 0;
+	my $countcases = 0;
 
 	foreach $line (@lines)
 	{    #
-		$linetochange = ( $generic_change[$counterzone][$countercases][1] );
-		if ( $counterline == ( $linetochange - 1 ) )
+		$linetochange = ( $generic_change[$countzone][$countcases][1] );
+		if ( $countline == ( $linetochange - 1 ) )
 		{    #
-			$linetochange = ( $generic_change[$counterzone][$counter_conditions][$countercases][1] );
-			$cases = $#{ generic_change->[$counterzone][$counter_conditions] };
-			$swing1 = $generic_change[$counterzone][$countercases][2][2];
-			$swing2 = $generic_change[$counterzone][$countercases][3][2];
-			$swing3 = $generic_change[$counterzone][$countercases][4][2];
+			$linetochange = ( $generic_change[$countzone][$count_conditions][$countcases][1] );
+			$cases = $#{ generic_change->[$countzone][$count_conditions] };
+			$swing1 = $generic_change[$countzone][$countcases][2][2];
+			$swing2 = $generic_change[$countzone][$countcases][3][2];
+			$swing3 = $generic_change[$countzone][$countcases][4][2];
 			if (     ( $stepsvar > 1 )
 				 and ( $tiepacestofirst eq "n" ) )
 			{
@@ -1033,15 +1691,15 @@ sub make_generic_change # WITH THIS FUNCTION YOU TARGET PORTIONS OF A FILE AND Y
 				$pace2 = 0;
 				$pace3 = 0;
 			}
-			$digits1 = $generic_change[$counterzone][$countercases][2][3];
-			$digits2 = $generic_change[$counterzone][$countercases][3][3];
-			$digits3 = $generic_change[$counterzone][$countercases][4][3];
-			$begin_read_column1 = $generic_change[$counterzone][$countercases][2][0] - 1;
-			$begin_read_column2 = $generic_change[$counterzone][$countercases][3][0] - 1;
-			$begin_read_column3 = $generic_change[$counterzone][$countercases][4][0] - 1;
-			$length_read_string1 = $generic_change[$counterzone][$countercases][2][1] + 1;
-			$length_read_string2 = $generic_change[$counterzone][$countercases][3][1] + 1;
-			$length_read_string3 = $generic_change[$counterzone][$countercases][4][1] + 1;
+			$digits1 = $generic_change[$countzone][$countcases][2][3];
+			$digits2 = $generic_change[$countzone][$countcases][3][3];
+			$digits3 = $generic_change[$countzone][$countcases][4][3];
+			$begin_read_column1 = $generic_change[$countzone][$countcases][2][0] - 1;
+			$begin_read_column2 = $generic_change[$countzone][$countcases][3][0] - 1;
+			$begin_read_column3 = $generic_change[$countzone][$countcases][4][0] - 1;
+			$length_read_string1 = $generic_change[$countzone][$countcases][2][1] + 1;
+			$length_read_string2 = $generic_change[$countzone][$countcases][3][1] + 1;
+			$length_read_string3 = $generic_change[$countzone][$countcases][4][1] + 1;
 			########## COMPLETE HERE ->
 			$numbertype = "f";    #floating
 			$to_substitute1 =
@@ -1057,51 +1715,51 @@ sub make_generic_change # WITH THIS FUNCTION YOU TARGET PORTIONS OF A FILE AND Y
 
 			if ( $substitute1 >= 0 )
 			{
-				$begin_write_column1 = $generic_change[$counterzone][$countercases][2][0];
-				$length_write_string1 = $generic_change[$counterzone][$countercases][2][1];
+				$begin_write_column1 = $generic_change[$countzone][$countcases][2][0];
+				$length_write_string1 = $generic_change[$countzone][$countcases][2][1];
 			} else
 			{
-				$begin_write_column1 = $generic_change[$counterzone][$countercases][2][0] - 1;
-				$length_write_string1 = $generic_change[$counterzone][$countercases][2][1] + 1;
+				$begin_write_column1 = $generic_change[$countzone][$countcases][2][0] - 1;
+				$length_write_string1 = $generic_change[$countzone][$countcases][2][1] + 1;
 			}
 			if ( $substitute2 >= 0 )
 			{
-				$begin_write_column2 = $generic_change[$counterzone][$countercases][3][0];
-				$length_write_string2 = $generic_change[$counterzone][$countercases][3][1];
+				$begin_write_column2 = $generic_change[$countzone][$countcases][3][0];
+				$length_write_string2 = $generic_change[$countzone][$countcases][3][1];
 			} else
 			{
-				$begin_write_column2 =$generic_change[$counterzone][$countercases][3][0] - 1;
-				$length_write_string2 = $generic_change[$counterzone][$countercases][3][1] + 1;
+				$begin_write_column2 =$generic_change[$countzone][$countcases][3][0] - 1;
+				$length_write_string2 = $generic_change[$countzone][$countcases][3][1] + 1;
 			}
 			if ( $substitute3 >= 0 )
 			{
-				$begin_write_column3 = $generic_change[$counterzone][$countercases][4][0];
-				$length_write_string3 = $generic_change[$counterzone][$countercases][4][1];
+				$begin_write_column3 = $generic_change[$countzone][$countcases][4][0];
+				$length_write_string3 = $generic_change[$countzone][$countcases][4][1];
 			} else
 			{
-				$begin_write_column3 = $generic_change[$counterzone][$countercases][4][0] - 1;
-				$length_write_string3 = $generic_change[$counterzone][$countercases][4][1] + 1;
+				$begin_write_column3 = $generic_change[$countzone][$countcases][4][0] - 1;
+				$length_write_string3 = $generic_change[$countzone][$countcases][4][1] + 1;
 			}
 			substr( $line, $begin_write_column1, $length_write_string1, $substitute1 );
 			substr( $line, $begin_write_column2, $length_write_string2, $substitute2 );
 			substr( $line, $begin_write_column3, $length_write_string3, $substitute3 );
 			print $_outfile_ "$line";
-			$countercases = $countercases + 1;
+			$countcases = $countcases + 1;
 		} else
 		{
 			print $_outfile_ "$line";
 		}
-		$counterline = $counterline + 1;
+		$countline = $countline + 1;
 	}
 	close($_outfile_);
 	if ($exeonfiles eq "y") { print `chmod -R 755 $infile`; }
-	print TOSHELL "chmod -R 755 $infile\n";
-	if ($exeonfiles eq "y") { print `chmod -R 755 $outfile`; }
-	print TOSHELL
-	  "chmod -R 755 $outfile\n";
-	if ($exeonfiles eq "y") { print `cp -f $outfile $infile`; }
-	print TOSHELL
-	  "cp -f $outfile $infile\n";
+	print TOSHELLMORPH "chmod -R 755 $infile\n";
+	if ($exeonfiles eq "y") { print `chmod -R 755 $outfilemorph`; }
+	print TOSHELLMORPH
+	  "chmod -R 755 $outfilemorph\n";
+	if ($exeonfiles eq "y") { print `cp -f $outfilemorph $infile`; }
+	print TOSHELLMORPH
+	  "cp -f $outfilemorph $infile\n";
 }    # END SUB generic_change
 ##############################################################################
 
@@ -1110,31 +1768,33 @@ sub make_generic_change # WITH THIS FUNCTION YOU TARGET PORTIONS OF A FILE AND Y
 sub reassign_construction
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $construction_reassignment = shift;
 	my $countvar = shift;
+	
+	say "Reassign construction solutions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
-	my $yes_or_no_reassign_construction = $$construction_reassignment[$counterzone][0];
+	my $yes_or_no_reassign_construction = $$construction_reassignment[$countzone][0];
 	if ( $yes_or_no_reassign_construction eq "y" )
 	{
 		my @surfaces_to_reassign =
-		  @{ $construction_reassignment->[$counterzone][1]
+		  @{ $construction_reassignment->[$countzone][1]
 		  };
 		my @constructions_to_choose =
-		  @{ $construction_reassignment->[$counterzone][2] };
-		my $configfile = $$construction_reassignment[$counterzone][3];
+		  @{ $construction_reassignment->[$countzone][2] };
+		my $configfile = $$construction_reassignment[$countzone][3];
 		my $surface_letter;
-		my $counter = 0;
+		my $count = 0;
 		my @reassign_constructions;
 
 		foreach $surface_to_reassign (@surfaces_to_reassign)
 		{
-			$construction_to_choose =  $constructions_to_choose[$counter][$countstep];
+			$construction_to_choose =  $constructions_to_choose[$count][$countstep];
 			
 			my $printthis =
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
@@ -1170,8 +1830,8 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELL $printthis;
-			$counter++;
+			print TOSHELLMORPH $printthis;
+			$count++;
 		}
 	}
 }    # END SUB reassign_construction
@@ -1182,23 +1842,25 @@ YYY
 sub change_thickness
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $thickness_change = shift;
 	my $countvar = shift;
+	
+	say "Changing thicknesses in construction layer for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
-	my $yes_or_no_change_thickness = $$thickness_change[$counterzone][0];
-	my @entries_to_change = @{ $$thickness_change[$counterzone][1] };
-	my @groups_of_strata_to_change = @{ $$thickness_change[$counterzone][2] };
-	my @groups_of_couples_of_min_max_values = @{ $$thickness_change[$counterzone][3] };
-	my $configfile = $$thickness_change[$counterzone][4];
-	my $thiscounter = 0;
+	my $yes_or_no_change_thickness = $$thickness_change[$countzone][0];
+	my @entries_to_change = @{ $$thickness_change[$countzone][1] };
+	my @groups_of_strata_to_change = @{ $$thickness_change[$countzone][2] };
+	my @groups_of_couples_of_min_max_values = @{ $$thickness_change[$countzone][3] };
+	my $configfile = $$thickness_change[$countzone][4];
+	my $thiscount = 0;
 	my $entry_to_change;
-	my $counterstrata;
+	my $countstrata;
 	my @strata_to_change;
 	my $stratum_to_change;
 	my @min_max_values;
@@ -1218,13 +1880,13 @@ sub change_thickness
 		foreach $entry_to_change (@entries_to_change)
 		{
 			@strata_to_change =
-			  @{ $groups_of_strata_to_change[$thiscounter]
+			  @{ $groups_of_strata_to_change[$thiscount]
 			  };
-			$counterstrata = 0;
+			$countstrata = 0;
 			foreach $stratum_to_change (@strata_to_change)
 			{
 				@min_max_values =
-				  @{ $groups_of_couples_of_min_max_values[$thiscounter][$counterstrata] };
+				  @{ $groups_of_couples_of_min_max_values[$thiscount][$countstrata] };
 				$min   = $min_max_values[0];
 				$max   = $min_max_values[1];
 				$swing = $max - $min;
@@ -1258,14 +1920,14 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
-				$counterstrata++;
+				print TOSHELLMORPH $printthis;
+				$countstrata++;
 			}
-			$thiscounter++;
+			$thiscount++;
 		}
 		$" = " ";
 		if ($exeonfiles eq "y") { print `$enter_esp$go_to_construction_database@change_entries_with_thicknesses$exit_construction_database_and_esp`; }
-		print TOSHELL "$enter_esp$go_to_construction_database@change_entries_with_thicknesses$exit_construction_database_and_esp\n";
+		print TOSHELLMORPH "$enter_esp$go_to_construction_database@change_entries_with_thicknesses$exit_construction_database_and_esp\n";
 	}
 } # END sub change_thickness
 ##############################################################################		
@@ -1277,21 +1939,23 @@ sub obs_modify
 	if ( $stepsvar > 1 )
 	{
 		my $to = shift;
-		my $varnref = shift; my %varnums = %{ $varnref };
-		my $counterzone = shift;
+		my $stepsvar = shift; 
+		my $countzone = shift;
 		my $countstep = shift;
 		my $swap = shift;
 		my @applytype = @$swap;
-		my $zone_letter = $applytype[$counterzone][3];
+		my $zone_letter = $applytype[$countzone][3];
 		my $obs_modify = shift;
 		my $countvar = shift;
+		
+		say "Modifying obstructions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";		
 
-		my @obs_letters = @{ $$obs_modify[$counterzone][0] };
-		my $modification_type = $$obs_modify[$counterzone][1];
-		my @values = @{ $$obs_modify[$counterzone][2] };
-		my @base = @{ $$obs_modify[$counterzone][3] };
-		my $configfile = $$obs_modify[$counterzone][4];
-		my $xz_resolution = $$obs_modify[$counterzone][5];
+		my @obs_letters = @{ $$obs_modify[$countzone][0] };
+		my $modification_type = $$obs_modify[$countzone][1];
+		my @values = @{ $$obs_modify[$countzone][2] };
+		my @base = @{ $$obs_modify[$countzone][3] };
+		my $configfile = $$obs_modify[$countzone][4];
+		my $xz_resolution = $$obs_modify[$countzone][5];
 		my $countobs = 0;							  
 		my $x_end;
 		my $y_end;
@@ -1362,7 +2026,7 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 				$countobs++;
 				}
 			}
@@ -1408,7 +2072,7 @@ YYY
 					{ 
 						print `$printthis`;
 					}
-					print TOSHELL $printthis;
+					print TOSHELLMORPH $printthis;
 					$countobs++;
 				}
 			}
@@ -1454,7 +2118,7 @@ YYY
 							{ 
 								print `$printthis`;
 							}
-							print TOSHELL $printthis;
+							print TOSHELLMORPH $printthis;
 						$countobs++;
 						$count++;
 					}
@@ -1504,7 +2168,7 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 				$countobs++;
 			}
 		}
@@ -1560,7 +2224,7 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 				$countobs++;
 				}
 			}
@@ -1595,7 +2259,7 @@ YYY
 			{ 
 				print `$printthis`;
 			}
-			print TOSHELL $printthis;
+			print TOSHELLMORPH $printthis;
 	}
 }    # END SUB obs_modify. FIX THE INDENTATION.
 ##############################################################################
@@ -1605,20 +2269,22 @@ YYY
 sub bring_obstructions_back # TO BE REWRITTEN BETTER
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $keep_obstructions = shift;
 	my $countvar = shift;
-
-	my $yes_or_no_keep_some_obstructions = $$keep_obstructions[$counterzone][0];
-	my $yes_or_no_update_radiation_provv = $$keep_obstructions[$counterzone][2];
+	
+	say "Keeping some obstructions in positions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
+	
+	my $yes_or_no_keep_some_obstructions = $$keep_obstructions[$countzone][0];
+	my $yes_or_no_update_radiation_provv = $$keep_obstructions[$countzone][2];
 	my $yes_or_no_update_radiation;
-	my $configfile = $$keep_obstructions[$counterzone][3];
-	my $xz_resolution = $$keep_obstructions[$counterzone][4];
+	my $configfile = $$keep_obstructions[$countzone][3];
+	my $xz_resolution = $$keep_obstructions[$countzone][4];
 	if ( $yes_or_no_update_radiation_provv eq "y" )
 	{
 		$yes_or_no_update_radiation = "a";
@@ -1628,13 +2294,13 @@ sub bring_obstructions_back # TO BE REWRITTEN BETTER
 	}
 	if ( $yes_or_no_keep_some_obstructions eq "y" )
 	{
-		my @group_of_obstructions_to_keep = @{ $$keep_obstructions[$counterzone][1] };
-		my $keep_obs_counter = 0;
+		my @group_of_obstructions_to_keep = @{ $$keep_obstructions[$countzone][1] };
+		my $keep_obs_count = 0;
 		my @obstruction_to_keep;
 		foreach (@group_of_obstructions_to_keep)
 		{
 			@obstruction_to_keep =
-			  @{ $group_of_obstructions_to_keep[$keep_obs_counter] };
+			  @{ $group_of_obstructions_to_keep[$keep_obs_count] };
 			my $obstruction_letter =
 			  "$obstruction_to_keep[0]";
 			my $rotation_z = "$obstruction_to_keep[1]";
@@ -1679,8 +2345,8 @@ YYY
 			{ 
 				print `$printthis`;
 			}
-			print TOSHELL $printthis;
-			$keep_obs_counter++;
+			print TOSHELLMORPH $printthis;
+			$keep_obs_count++;
 		}
 
 		# NOW THE XZ GRID RESOLUTION WILL BE PUT TO THE SPECIFIED VALUE	
@@ -1691,7 +2357,7 @@ YYY
 		{ 
 			print `$printthis`;
 		}
-		print TOSHELL $printthis;
+		print TOSHELLMORPH $printthis;
 	}
 }    # END SUB bring_obstructions_back
 ##################################################################					
@@ -1701,14 +2367,16 @@ YYY
 sub recalculateish
 { 
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
 	my $countvar = shift;
+	
+	say "Updating the insolation calculations for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 
 	my $printthis =
 "
@@ -1718,7 +2386,7 @@ sub recalculateish
 		print `$printthis`;
 	}
 
-	print TOSHELL $printthis;
+	print TOSHELLMORPH $printthis;
 } #END SUB RECALCULATEISH
 ##############################################################################				
 
@@ -1728,16 +2396,18 @@ sub recalculateish
 sub daylightcalc # IT WORKS ONLY IF THE RAD DIRECTORY IS EMPTY
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $filedf = shift;
 	my $swap = shift;
 	my @daylightcalc = @$swap;
 	my $countvar = shift;
+	
+	say "Performing daylight calculations through Radiance for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my $yes_or_no_daylightcalc = $daylightcalc[0];
 	my $zone = $daylightcalc[1];
@@ -1784,7 +2454,7 @@ cd $mypath
 		print `$printthis`;
 	}
 
-	print TOSHELL $printthis;
+	print TOSHELLMORPH $printthis;
 
 	open( RADFILE, $pathdf) or die "Can't open $pathdf: $!\n";
 	my @linesrad = <RADFILE>;
@@ -1816,16 +2486,18 @@ cd $mypath
 sub daylightcalc_other # NOT USED. THE DIFFERENCE WITH THE ABOVE IS THAT IS WORKS IF THE RAD DIRECTORY IS NOT EMPTY. 
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $filedf = shift;
 	my $swap = shift;
 	my @daylightcalc = @$swap;
 	my $countvar = shift;
+	
+	say "Performing daylight calculations through Radiance for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my $yes_or_no_daylightcalc = $daylightcalc[0];
 	my $zone = $daylightcalc[1];
@@ -1882,7 +2554,7 @@ cd $mypath
 		print `$printthis`;
 	}
 
-	print TOSHELL $printthis;
+	print TOSHELLMORPH $printthis;
 
 	open( RADFILE, $pathdf) or die "Can't open $pathdf: $!\n";
 	my @linesrad = <RADFILE>;
@@ -1913,28 +2585,30 @@ cd $mypath
 sub change_config
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap2 = shift;
 	my @change_config = @$swap2;
 	my $countvar = shift;
+	
+	say "Substituting a configuration file for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my @change_conf = @{$change_config[$countezone]};
 	my @original_configfiles = @{$change_conf[0]};
 	my @new_configfiles = @{$change_conf[1]};
-	my $counterconfig = 0;
+	my $countconfig = 0;
 	my $original_configfile = $original_configfiles[$countstep-1];
 	my $new_configfile = $new_configfiles[$countstep-1];
 	if (  $new_configfile ne $original_configfile )
 	{
 		if ($exeonfiles eq "y") { `cp -f $to/$new_configfile $to/$original_configfile\n`; }
-		print TOSHELL "cp -f $to/$new_configfile $to/$original_configfile\n";
+		print TOSHELLMORPH "cp -f $to/$new_configfile $to/$original_configfile\n";
 	}
-$counterconfig++;
+$countconfig++;
 } # END SUB copy_config
 
 
@@ -1955,7 +2629,7 @@ sub checkfile # THIS FUNCTION DOES WHAT IS DONE BY THE PREVIOUS ONE, BUT BETTER.
 				print 
 				`cp -f $sourceaddress $targetaddress\n`; 
 			}
-			print TOSHELL 
+			print TOSHELLMORPH 
 			"cp -f $sourceaddress $targetaddress\n\n";
 		}
 	}
@@ -1965,17 +2639,19 @@ sub checkfile # THIS FUNCTION DOES WHAT IS DONE BY THE PREVIOUS ONE, BUT BETTER.
 sub change_climate ### THIS SIMPLE SCRIPT HAS TO BE DEBUGGED. WHY DOES IT BLOCK ITSELF IF PRINTED TO THE SHELL?
 {	# THIS FUNCTION CHANGES THE CLIMATE FILES. 
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap = shift;
 	my @change_climate = @$swap;
 	my $countvar = shift;
+	
+	say "Substituting climate database for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
-	my @climates = @{$change_climate[$counterzone]};
+	my @climates = @{$change_climate[$countzone]};
 	my $climate = $climates[$countstep-1];
 
 	my $printthis =
@@ -1999,7 +2675,7 @@ ZZZ
 	{
 		print `$printthis`;
 	}
-	print TOSHELL $printthis;
+	print TOSHELLMORPH $printthis;
 }	
 
 
@@ -2008,15 +2684,17 @@ ZZZ
 sub recalculatenet
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap2 = shift;
 	my @recalculatenet = @$swap2;
 	my $countvar = shift;
+	
+	say "Adequating the ventilation network for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 	
 	my $filenet = $recalculatenet[1];
 	my $infilenet = "$mypath/$file/nets/$filenet";
@@ -2029,8 +2707,8 @@ sub recalculatenet
 	my @crackwidths = @{$recalculatenet[9]};
 
 	my @obstaclesdata;
-	my $counterlines = 0;
-	my $counternode = 0;
+	my $countlines = 0;
+	my $countnode = 0;
 	my @differences;
 	my @ratios;
 	my $sourceaddress = "$to$geosourcefile";
@@ -2038,8 +2716,8 @@ sub recalculatenet
 	open( SOURCEFILE, $sourceaddress ) or die "Can't open $geosourcefile 2: $!\n";
 	my @linesgeo = <SOURCEFILE>;
 	close SOURCEFILE;
-	my $countervert = 0;
-	my $counterobs = 0;
+	my $countvert = 0;
+	my $countobs = 0;
 	my $zone;
 	my @rowelements;
 	my $line;
@@ -2061,25 +2739,25 @@ sub recalculatenet
 		my @rowelements = split(/\s+|,/, $line);
 		if   ($rowelements[0] eq "*vertex" ) 
 		{
-			if ($countervert == 0) 
+			if ($countvert == 0) 
 			{
 				push (@v, [ "vertexes of  $sourceaddress" ]);
 				push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ] );
 			}
 
-			if ($countervert > 0) 
+			if ($countvert > 0) 
 			{
 				push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ] );
 			}
-			$countervert++;
+			$countvert++;
 		}
 		elsif   ($rowelements[0] eq "*obs" ) 
 		{
 			push (@obs, [ $rowelements[1], $rowelements[2], $rowelements[3], $rowelements[4], 
 			$rowelements[5], $rowelements[6], $rowelements[7], $rowelements[8], $rowelements[9], $rowelements[10] ] );
-			$counterobs++;
+			$countobs++;
 		}
-		$counterlines++;
+		$countlines++;
 	}
 
 	if ( $y_or_n_detect_obs eq "y") ### THIS HAS YET TO BE DONE AND WORK.
@@ -2115,7 +2793,7 @@ sub recalculatenet
 	my $windimxwest; 
 	my $windimywest;
 
-	if (-e $constrain) { eval "$constrain"; } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
+	if ($constrain) { eval ($constrain); } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
 	# FOR PROPAGATION OF CONSTRAINTS
 
 	if ($y_or_n_reassign_cp == "y")
@@ -2132,17 +2810,17 @@ sub recalculatenet
 
 	my @letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", 
 	"t", "u", "v", "w", "x", "y", "z");
-	my $counternode = 0;
+	my $countnode = 0;
 	my $interfaceletter;
 	my $calcpressurecoefficient;
 	my $nodetype;
 	my $nodeletter;
 	my $mode;
-	my $counterlines = 0;
-	my $counteropening = 0;
-	my $countercrack = 0;
-	my $counterthing = 0;
-	my $counterjoint = 0;
+	my $countlines = 0;
+	my $countopening = 0;
+	my $countcrack = 0;
+	my $countthing = 0;
+	my $countjoint = 0;
 	foreach my $line (@linesnet)
 	{
 		$line =~ s/^\s+//;
@@ -2150,14 +2828,14 @@ sub recalculatenet
 
 		if ($rowelements[0] eq "Node") { $mode = "nodemode"; }
 		if ($rowelements[0] eq "Component") { $mode = "componentmode"; }
-		if ( ( $mode eq "nodemode" ) and ($counterlines > 1) and ($counterlines < (2 + scalar(@nodesdata) ) ) )
+		if ( ( $mode eq "nodemode" ) and ($countlines > 1) and ($countlines < (2 + scalar(@nodesdata) ) ) )
 		{
-			$counternode = ($counterlines - 2); 
-			$zone = $nodesdata[$counternode][0];
-			$interfaceletter = $nodesdata[$counternode][1];
-			$calcpressurecoefficient = $nodesdata[$counternode][2];
+			$countnode = ($countlines - 2); 
+			$zone = $nodesdata[$countnode][0];
+			$interfaceletter = $nodesdata[$countnode][1];
+			$calcpressurecoefficient = $nodesdata[$countnode][2];
 			$nodetype = $rowelements[2];
-			$nodeletter = $letters[$counternode];
+			$nodeletter = $letters[$countnode];
 
 			if ( $nodetype eq "0")
 			{
@@ -2201,8 +2879,8 @@ YYY
 					print `$printthis`;
 				}
 
-				print TOSHELL $printthis;
-				$counternode++;
+				print TOSHELLMORPH $printthis;
+				$countnode++;
 			}
 			elsif ( $nodetype eq "3")							
 			{	
@@ -2248,8 +2926,8 @@ YYY
 						print `printthis`;
 					}
 
-					print TOSHELL $printthis;
-					$counternode++;
+					print TOSHELLMORPH $printthis;
+					$countnode++;
 				}
 			}
 		}
@@ -2268,11 +2946,11 @@ c
 
 n
 d
-$node_letters[$counterthing]
+$node_letters[$countthing]
 
 k
 -
-$windareas[$counteropening]
+$windareas[$countopening]
 -
 -
 y
@@ -2292,10 +2970,10 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELL $printthis;
+			print TOSHELLMORPH $printthis;
 
-			$counteropening++;
-			$counterthing++;
+			$countopening++;
+			$countthing++;
 		}
 		elsif ( ($mode eq "componentmode") and ( $line =~ "crack "))
 		{
@@ -2309,11 +2987,11 @@ c
 
 n
 d
-$node_letters[$counterthing]
+$node_letters[$countthing]
 
 l
 -
-$crackwidths[$counterjoint] $jointlenghts[$counterjoint]
+$crackwidths[$countjoint] $jointlenghts[$countjoint]
 -
 -
 y
@@ -2333,13 +3011,13 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELL $printthis;
+			print TOSHELLMORPH $printthis;
 
-			$countercrack++;
-			$counterthing++;
-			$counterjoint++;
+			$countcrack++;
+			$countthing++;
+			$countjoint++;
 		}
-		$counterlines++;
+		$countlines++;
 	}
 } # END SUB recalculatenet
 ##############################################################################
@@ -2349,12 +3027,12 @@ YYY
 sub apply_constraints
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap2 = shift;
 	my @apply_constraints = @$swap2;
 	my $countvar = shift;
@@ -2363,6 +3041,9 @@ sub apply_constraints
 	my $ybasewall; 
 	my $ybasewindow;
 	my @v;
+	
+	say "Propagating geometry constraints for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
+
 
 	foreach my $group_operations ( @apply_constraints )
 	{
@@ -2401,27 +3082,27 @@ sub apply_constraints
 			open( SOURCEFILE, $sourceaddress ) or die "Can't open $sourcefile 2: $!\n";
 			my @lines = <SOURCEFILE>;
 			close SOURCEFILE;
-			my $counterlines = 0;
-			my $countervert = 0;
+			my $countlines = 0;
+			my $countvert = 0;
 			foreach my $line (@lines)
 			{
 				$line =~ s/^\s+//; 
 				my @rowelements = split(/\s+|,/, $line);
 				if   ($rowelements[0] eq "*vertex" ) 
 				{
-					if ($countervert == 0) 
+					if ($countvert == 0) 
 					{
 						push (@v, [ "vertexes of  $sourceaddress" ]);
 						push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ] );
 					}
 
-					if ($countervert > 0) 
+					if ($countvert > 0) 
 					{
 						push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ] );
 					}
-					$countervert++;
+					$countvert++;
 				}
-				$counterlines++;
+				$countlines++;
 			}
 
 			my @vertexletters;
@@ -2443,7 +3124,7 @@ sub apply_constraints
 				"0\n0\np","0\n0\nq","0\n0\nr","0\n0\ns","0\n0\nt");
 			}
 
-			if (-e $constrain) { eval "$constrain"; } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
+			if ($constrain) { eval ($constrain); } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
 			# FOR PROPAGATION OF CONSTRAINTS
 
 			if (-e $configaddress) 
@@ -2451,16 +3132,16 @@ sub apply_constraints
 				eval `cat $configaddress`; # HERE AN EXTERNAL FILE FOR PROPAGATION OF CONSTRAINTS 
 				# IS EVALUATED, AND HERE BELOW CONSTRAINTS ARE PROPAGATED.
 
-				if (-e $constrain) { eval "$constrain"; } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
+				if ($constrain) { eval ($constrain); } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
 				# FOR PROPAGATION OF CONSTRAINTS
 
 
-				my $countervertex = 0;
+				my $countvertex = 0;
 				foreach (@v)
 				{
-					if ($countervertex > 0)
+					if ($countvertex > 0)
 					{			
-						my $vertexletter = $vertexletters[$countervertex-1];
+						my $vertexletter = $vertexletters[$countvertex-1];
 						if ($vertexletter ~~ @work_values)
 						{
 							my $printthis = 
@@ -2472,7 +3153,7 @@ a
 $zone_letter
 d
 $vertexletter
-$v[$countervertex][0] $v[$countervertex][1] $v[$countervertex][2]
+$v[$countvertex][0] $v[$countvertex][1] $v[$countvertex][2]
 -
 y
 -
@@ -2494,10 +3175,10 @@ YYY
 								print `$printthis`;
 							}
 
-							print TOSHELL $printthis;
+							print TOSHELLMORPH $printthis;
 						}
 					}
-					$countervertex++;
+					$countvertex++;
 				}
 			}
 			$countoperations++;
@@ -2511,21 +3192,22 @@ YYY
 sub reshape_windows # IT APPLIES CONSTRAINTS
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap2 = shift;
 	my @reshape_windows = @$swap2;
 	my $countvar = shift;
-
+	
+	say "Reshaping windows for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my @work_letters ;
 	my @v;						
 
-	foreach my $group_operations ( @{$reshape_windows[$counterzone]} )
+	foreach my $group_operations ( @{$reshape_windows[$countzone]} )
 	{
 		my @group = @{$group_operations};
 		my @sourcefiles = @{$group[0]};
@@ -2556,8 +3238,8 @@ sub reshape_windows # IT APPLIES CONSTRAINTS
 			my @lines = <SOURCEFILE>;
 			close SOURCEFILE;
 
-			my $counterlines = 0;
-			my $countervert = 0;
+			my $countlines = 0;
+			my $countvert = 0;
 			foreach my $line (@lines)
 			{
 				$line =~ s/^\s+//; 
@@ -2565,20 +3247,20 @@ sub reshape_windows # IT APPLIES CONSTRAINTS
 				my @rowelements = split(/\s+|,/, $line);
 				if   ($rowelements[0] eq "*vertex" ) 
 				{
-					if ($countervert == 0) 
+					if ($countvert == 0) 
 					{
 						push (@v, [ "vertexes of  $sourceaddress", [], [] ]);
 						push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ] );
 					}
 
-					if ($countervert > 0) 
+					if ($countvert > 0) 
 					{
 						push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ] );
 					}
 
-					$countervert++;
+					$countvert++;
 				}
-				$counterlines++;
+				$countlines++;
 			}
 
 			my @vertexletters;
@@ -2609,16 +3291,16 @@ sub reshape_windows # IT APPLIES CONSTRAINTS
 				eval `cat $configaddress`;	# HERE AN EXTERNAL FILE FOR PROPAGATION OF CONSTRAINTS 
 				# IS EVALUATED, AND HERE BELOW CONSTRAINTS ARE PROPAGATED.
 
-				if (-e $constrain) { eval "$constrain"; } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
+				if (-e $constrain) { eval ($constrain); } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
 				# FOR PROPAGATION OF CONSTRAINTS					
 
-				my $countervertex = 0;
+				my $countvertex = 0;
 
 				foreach (@v)
 				{
-					if ($countervertex > 0)
+					if ($countvertex > 0)
 					{
-						my $vertexletter = $vertexletters[$countervertex];
+						my $vertexletter = $vertexletters[$countvertex];
 						if ($vertexletter  ~~ @work_letters)
 						{
 							my $printthis =
@@ -2630,7 +3312,7 @@ a
 $zone_letter
 d
 $vertexletter
-$v[$countervertex+1][0] $v[$countervertex+1][1] $v[$countervertex+1][2]
+$v[$countvertex+1][0] $v[$countvertex+1][1] $v[$countvertex+1][2]
 -
 y
 -
@@ -2652,10 +3334,10 @@ YYY
 								print `$printthis`;
 							}
 
-							print TOSHELL $printthis;
+							print TOSHELLMORPH $printthis;
 						}
 					}
-					$countervertex++;
+					$countvertex++;
 				}
 			}
 			$countoperations++;
@@ -2669,37 +3351,39 @@ YYY
 sub warp #
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $warp = shift;
 	my $countvar = shift;
+	
+	say "Warping zones for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
-	my $yes_or_no_warp =  $$warp[$counterzone][0];
-	my @surfs_to_warp =  @{ $warp->[$counterzone][1] };
-	my @vertexes_numbers =  @{ $warp->[$counterzone][2] };   
-	my @swingrotations = @{ $warp->[$counterzone][3] };
-	my @yes_or_no_apply_to_others = @{ $warp->[$counterzone][4] };
-	my $configfilename = $$warp[$counterzone][5];
+	my $yes_or_no_warp =  $$warp[$countzone][0];
+	my @surfs_to_warp =  @{ $warp->[$countzone][1] };
+	my @vertexes_numbers =  @{ $warp->[$countzone][2] };   
+	my @swingrotations = @{ $warp->[$countzone][3] };
+	my @yes_or_no_apply_to_others = @{ $warp->[$countzone][4] };
+	my $configfilename = $$warp[$countzone][5];
 	my $configfile = $to."/opts/".$configfilename;
-	my @pairs_of_vertexes = @{ $warp->[$counterzone][6] }; # @pairs_of_vertexes defining axes
-	my @windows_to_reallign = @{ $warp->[$counterzone][7] };
-	my $sourcefilename = $$warp[$counterzone][8];
+	my @pairs_of_vertexes = @{ $warp->[$countzone][6] }; # @pairs_of_vertexes defining axes
+	my @windows_to_reallign = @{ $warp->[$countzone][7] };
+	my $sourcefilename = $$warp[$countzone][8];
 	my $sourcefile = $to.$sourcefilename;
-	my $longmenu = $$warp[$counterzone][9];
+	my $longmenu = $$warp[$countzone][9];
 	if ( $yes_or_no_warp eq "y" )
 	{
-		my $counterrotate = 0;
+		my $countrotate = 0;
 		foreach my $surface_letter (@surfs_to_warp)
 		{
-			$swingrotate = $swingrotations[$counterrotate];
+			$swingrotate = $swingrotations[$countrotate];
 			$pacerotate = ( $swingrotate / ( $stepsvar - 1 ) );
 			$rotation_degrees = ( ( $swingrotate / 2 ) - ( $pacerotate * ( $countstep - 1 ) )) ;
-			$vertex_number = $vertexes_numbers[$counterrotate];
-			$yes_or_no_apply = $yes_or_no_apply_to_others[$counterrotate];
+			$vertex_number = $vertexes_numbers[$countrotate];
+			$yes_or_no_apply = $yes_or_no_apply_to_others[$countrotate];
 			if (  ( $swingrotate != 0 ) and ( $stepsvar > 1 ) and ( $yes_or_no_warp eq "y" ) )
 			{
 				my $printthis =
@@ -2736,15 +3420,15 @@ YYY
 				}
 				print  $_toshell_ $printthis;
 			}
-			$counterrotate++;
+			$countrotate++;
 		}
 
 		# THIS SECTION READS THE CONFIG FILE FOR DIMENSIONS
 		open( SOURCEFILE, $sourcefile ) or die "Can't open $sourcefile: $!\n";
 		my @lines = <SOURCEFILE>;
 		close SOURCEFILE;
-		my $counterlines = 0;
-		my $countervert = 0;
+		my $countlines = 0;
+		my $countvert = 0;
 		foreach my $line (@lines)
 		{
 			$line =~ s/^\s+//; 
@@ -2752,19 +3436,19 @@ YYY
 			my @rowelements = split(/\s+|,/, $line);
 			if   ($rowelements[0] eq "*vertex" ) 
 			{
-				if ($countervert == 0) 
+				if ($countvert == 0) 
 				{
 					push (@v, [ "vertexes of  $sourceaddress" ]);
 					push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ] );
 				}
 
-				if ($countervert > 0) 
+				if ($countvert > 0) 
 				{
 					push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ] );
 				}
-				$countervert++;
+				$countvert++;
 			}
-			$counterlines++;
+			$countlines++;
 		}
 
 
@@ -2793,20 +3477,20 @@ YYY
 			eval `cat $configfile`; # HERE AN EXTERNAL FILE FOR PROPAGATION OF CONSTRAINTS IS EVALUATED 
 			# AND PROPAGATED.
 
-			if (-e $constrain) { eval "$constrain"; } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
+			if (-e $constrain) { eval ($constrain); } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
 			# FOR PROPAGATION OF CONSTRAINTS
 
 		}
 		# THIS SECTION SHIFTS THE VERTEX TO LET THE BASE SURFACE AREA UNCHANGED AFTER THE WARPING.
 
-		my $counterthis = 0;
+		my $countthis = 0;
 		$number_of_moves = ( (scalar(@pairs_of_vertexes)) /2 ) ;
 		foreach my $pair_of_vertexes (@pairs_of_vertexes)
 		{
-			if ($counterthis < $number_of_moves)
+			if ($countthis < $number_of_moves)
 			{
-				$vertex1 = $pairs_of_vertexes[ 0 + ( 2 * $counterthis ) ];
-				$vertex2 = $pairs_of_vertexes[ 1 + ( 2 * $counterthis ) ];
+				$vertex1 = $pairs_of_vertexes[ 0 + ( 2 * $countthis ) ];
+				$vertex2 = $pairs_of_vertexes[ 1 + ( 2 * $countthis ) ];
 
 				my $printthis =
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
@@ -2841,9 +3525,9 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 			}
-			$counterthis++;
+			$countthis++;
 		}
 	}
 }    # END SUB warp
@@ -2857,20 +3541,22 @@ YYY
 sub constrain_geometry # IT APPLIES CONSTRAINTS TO ZONE GEOMETRY
 {
 	# IT CONSTRAIN GEOMETRY FILES. IT HAS TO BE CALLED FROM THE MAIN FILE WITH:
-	# constrain_geometry($to, $fileconfig, $stepsvar, $counterzone, $countstep, $exeonfiles, \@applytype, \@constrain_geometry);
-	# constrain_geometry($to, $fileconfig, $stepsvar, $counterzone, 
+	# constrain_geometry($to, $fileconfig, $stepsvar, $countzone, $countstep, $exeonfiles, \@applytype, \@constrain_geometry);
+	# constrain_geometry($to, $fileconfig, $stepsvar, $countzone, 
 	# $countstep, $exeonfiles, \@applytype, \@constrain_geometry, $to_do);
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap = shift;
 	my @constrain_geometry = @$swap;
 	my $to_do = shift;
 	my $countvar = shift;
+	
+	say "Propagating constraints on geometry for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	# print $_outfile_ "YOUCALLED!\n\n";
 	# print $_outfile_ "HERE: \@constrain_geometry:" . Dumper(@constrain_geometry) . "\n\n";
@@ -2906,19 +3592,19 @@ sub constrain_geometry # IT APPLIES CONSTRAINTS TO ZONE GEOMETRY
 		my @work_letters = @{$group[5]}; 
 		my $longmenus = $group[6]; 
 
-		# print $_outfile_ "VARIABLES: \$to:$to, \$fileconfig:$fileconfig, \$stepsvar:$stepsvar, \$counterzone:$counterzone, \$countstep:$countstep, \$exeonfiles:$exeonfiles, 
+		# print $_outfile_ "VARIABLES: \$to:$to, \$fileconfig:$fileconfig, \$stepsvar:$stepsvar, \$countzone:$countzone, \$countstep:$countstep, \$exeonfiles:$exeonfiles, 
 		# \$zone_letter:$zone_letter, \$sourceaddress:$sourceaddress, \$targetaddress:$targetaddress, \$longmenus:$longmenus, \@work_letters, " . Dumper(@work_letters) . "\n\n";
 
 		unless ($to_do eq "justwrite")
 		{
 			checkfile($sourceaddress, $targetaddress);
 			read_geometry($to, $sourcefile, $targetfile, $configfile, \@work_letters, $longmenus);
-			read_geo_constraints($to, $fileconfig, \%varnums, $counterzone, $countstep, $configaddress, \@v, \@tempv, $countvar, $configfile );
+			read_geo_constraints($to, $fileconfig, $stepsvar, $countzone, $countstep, $configaddress, \@v, \@tempv, $countvar, $configfile );
 		}
 
 		unless ($to_do eq "justread")
 		{
-			apply_geo_constraints(\@dov, \@vertexletters, \@work_letters, $exeonfiles, $zone_letter, $toshell, $outfile, $configfile, \@tempv);
+			apply_geo_constraints(\@dov, \@vertexletters, \@work_letters, $exeonfiles, $zone_letter, $toshellmorph, $outfilemorph, $configfile, \@tempv);
 		}
 		# print $_outfile_ "\@v: " . Dumper(@v) . "\n\n";
 	}
@@ -2946,8 +3632,8 @@ sub read_geometry
 	my @lines = <SOURCEFILE>;
 	close SOURCEFILE;
 
-	my $counterlines = 0;
-	my $countervert = 0;
+	my $countlines = 0;
+	my $countvert = 0;
 	foreach my $line (@lines)
 	{
 		$line =~ s/^\s+//; 
@@ -2956,9 +3642,9 @@ sub read_geometry
 		if   ($rowelements[0] eq "*vertex" ) 
 		{
 			push (@v, [ $rowelements[1], $rowelements[2], $rowelements[3] ] );
-			$countervert++;
+			$countvert++;
 		}
-		$counterlines++;
+		$countlines++;
 	}
 	@dov = @v;
 } # END SUB read_geometry
@@ -2969,25 +3655,25 @@ sub read_geo_constraints
 	# THIS FILE IS FOR OPT TO READ GEOMETRY USER-IMPOSED CONSTRAINTS.
 	# IT IS CALLED WITH: read_geo_constraints($configaddress);
 	# THIS MAKES AVAILABLE THE VERTEXES IN THE GEOMETRY FILES TO THE USER FOR MANIPULATION, IN THE FOLLOWING FORM:
-	# $v[$counterzone][$number][$x], $v[$counterzone][$number][$y], $v[$counterzone][$number][$z]. EXAMPLE: $v[0][4][$x] = 1. 
+	# $v[$countzone][$number][$x], $v[$countzone][$number][$y], $v[$countzone][$number][$z]. EXAMPLE: $v[0][4][$x] = 1. 
 	# OR: @v[0][4][$x] =  @v[0][4][$y]. OR EVEN: @v[1][4][$x] =  @v[0][3][$z].
-	# The $counterzone that is actuated is always the last, the one which is active. 
+	# The $countzone that is actuated is always the last, the one which is active. 
 	# It would have therefore no sense writing $v[0][4][$x] =  $v[1][2][$y].
-	# Differentent $counterzones can be referred to the same zone. Different $counterzones just number mutations in series.
+	# Differentent $countzones can be referred to the same zone. Different $countzones just number mutations in series.
 	# ALSO, IT MAKES AVAILABLE TO THE USER INFORMATIONS ABOUT THE MORPHING STEP OF THE MODELS 
 	# AND THE STEPS THE MODEL HAVE TO FOLLOW. 
 	# THIS ALLOWS TO IMPOSE EQUALITY CONSTRAINTS TO THESE VARIABLES, 
 	# WHICH COULD ALSO BE COMBINED WITH THE FOLLOWING ONES: 
 	# $stepsvar, WHICH TELLS THE PROGRAM HOW MANY ITERATION STEPS IT HAS TO DO IN THE CURRENT MORPHING PHASE.
-	# $counterzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
-	# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $counterzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
+	# $countzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
+	# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $countzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
 	# TYPICALLY, IT WILL BE USED FOR A ZONE, BUT NOTHING PREVENTS THAT SEVERAL OF THEM CHAINED ONE AFTER 
 	# THE OTHER ARE APPLIED TO THE SAME ZONE.
 	# $countstep, WHICH TELLS THE PROGRAM WHAT THE CURRENT ITERATION STEP IS.
 	my $to = shift;
 	my $fileconfig = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $configaddress = shift;
 	my $swap = shift;
@@ -2999,14 +3685,14 @@ sub read_geo_constraints
 	my $x = 0;
 	my $y = 1;
 	my $z = 2;
-	unshift (@myv, [ "vertexes of  $sourceaddress. \$counterzone: $counterzone ", [], [] ]);
+	unshift (@myv, [ "vertexes of  $sourceaddress. \$countzone: $countzone ", [], [] ]);
 
 	if (-e $configaddress)
 	{	
 		push (@v, [@myv]); #
 		eval `cat $configaddress`; # HERE AN EXTERNAL FILE FOR PROPAGATION OF CONSTRAINTS IS EVALUATED.
 
-		if (-e $constrain) { eval "$constrain"; } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
+		if (-e $constrain) { eval ($constrain); } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
 		# FOR PROPAGATION OF CONSTRAINTS
 
 		@dov = @{$v[$#v]}; #
@@ -3030,19 +3716,19 @@ sub apply_geo_constraints
 
 	my $exeonfiles = shift;
 	my $zone_letter = shift;
-	my $toshell = shift;
-	my $outfile = shift;
+	my $toshellmorph = shift;
+	my $outfilemorph = shift;
 	my $configfile = shift;
 	my $swap = shift;
 	my @tempv = @$swap;
 	my $configfile = shift;
 	my $countvar = shift;
 
-	my $countervertex = 0;
+	my $countvertex = 0;
 
 	foreach my $v (@v)
 	{
-		my $vertexletter = $vertexletters[$countervertex];
+		my $vertexletter = $vertexletters[$countvertex];
 		if 
 		( 
 			( 
@@ -3050,7 +3736,7 @@ sub apply_geo_constraints
 			)
 			and 
 			( 
-				not ( @{$v[$countervertex]} ~~ @{$tempv[$countervertex]} ) 
+				not ( @{$v[$countvertex]} ~~ @{$tempv[$countvertex]} ) 
 			)
 		)
 		{ 
@@ -3063,7 +3749,7 @@ a
 $zone_letter
 d
 $vertexletter
-$v[$countervertex+1][0] $v[$countervertex+1][1] $v[$countervertex+1][2]
+$v[$countvertex+1][0] $v[$countvertex+1][1] $v[$countvertex+1][2]
 -
 y
 -
@@ -3085,9 +3771,9 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELL $printthis;
+			print TOSHELLMORPH $printthis;
 		}
-		$countervertex++;
+		$countvertex++;
 	}
 
 } # END SUB apply_geo_constraints
@@ -3105,22 +3791,24 @@ YYY
 sub vary_controls
 {  	# IT IS CALLED FROM THE MAIN FILE
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap = shift;
 	my @vary_controls = @$swap;
 	my $countvar = shift;
+	
+	say "Propagating constraints on controls for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my $semaphore_zone;
 	my $semaphore_dataloop;
 	my $semaphore_massflow;
-	my $counter_controlmass = -1;
+	my $count_controlmass = -1;
 	my $semaphore_setpoint;
-	my $counterline = 0;
+	my $countline = 0;
 	my $doline;
 	my @letters = ("e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "z"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
 	my @period_letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
@@ -3139,7 +3827,7 @@ sub vary_controls
 	my $loop_letter;
 	my $loopcontrol_letter;
 
-	my @group = @{$vary_controls[$counterzone]};
+	my @group = @{$vary_controls[$countzone]};
 	my $sourcefile = $group[0];
 	my $targetfile = $group[1];
 	my $configfile = $group[2];
@@ -3172,12 +3860,12 @@ sub vary_controls
 
 
 	sub calc_newctl
-	{	# TO BE CALLED WITH: calc_newcontrols($to, $fileconfig, $stepsvar, $counterzone, $countstep, \@buildbulk, \@flowbulk, \@loopcontrol, \@flowcontrol);
+	{	# TO BE CALLED WITH: calc_newcontrols($to, $fileconfig, $stepsvar, $countzone, $countstep, \@buildbulk, \@flowbulk, \@loopcontrol, \@flowcontrol);
 		# THIS COMPUTES CHANGES TO BE MADE TO CONTROLS BEFORE PROPAGATION OF CONSTRAINTS
 		my $to = shift;
-		my $varnref = shift; 
-		my %varnums = %{ $varnref };
-		my $counterzone = shift;
+		my $stepsvar = shift; 
+		
+		my $countzone = shift;
 		my $countstep = shift;
 		my $swap = shift;
 		my @buildbulk = @$swap;
@@ -3366,7 +4054,7 @@ sub vary_controls
 
 
 
-calc_newctl($to, \%varnums, $counterzone, $countstep, \@buildbulk, 
+calc_newctl($to, $stepsvar, $countzone, $countstep, \@buildbulk, 
 \@flowbulk, \@loopcontrol, \@flowcontrol, $countvar);
 
 
@@ -3374,17 +4062,17 @@ sub constrain_controls
 {	# IT READS CONTROL USER-IMPOSED CONSTRAINTS
 	my $to = shift;
 	my $filecon = shift;
-	my $counterzone = shift;
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap = shift;
 	my @constrain_controls = @$swap;
 	my $to_do = shift;
 	my $countvar = shift;
 
-	my $elm = $constrain_controls[$counterzone];
+	my $elm = $constrain_controls[$countzone];
 	my @group = @{$elm};
 	my $sourcefile = $group[2];
 	my $targetfile = $group[3];
@@ -3392,13 +4080,13 @@ sub constrain_controls
 	my $sourceaddress = "$to$sourcefile";
 	my $targetaddress = "$to$targetfile";
 	my $configaddress = "$to$configfile";
-	#@loopcontrol; @flowcontrol; @new_loopcontrols; @new_flowcontrols; # DON'T PUT "my" HERE. THEY ARE GLOBAL!!!
+	#@loopcontrol; @flowcontrol; @new_loopcontrols; @new_flowcontrols; # DON'T PUT "my" HERE. THEY ARE globsAL!!!
 	my $semaphore_zone;
 	my $semaphore_dataloop;
 	my $semaphore_massflow;
-	my $counter_controlmass = -1;
+	my $count_controlmass = -1;
 	my $semaphore_setpoint;
-	my $counterline = 0;
+	my $countline = 0;
 	my $doline;
 	my @letters = ("e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "z"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
 	my @period_letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
@@ -3433,8 +4121,8 @@ sub constrain_controls
 			print $_outfile_ "THIS\n";
 			checkfile($sourceaddress, $targetaddress);
 			read_controls($sourceaddress, $targetaddress, \@letters, \@period_letters);
-			read_control_constraints($to, \%varnums, 
-			$counterzone, $countstep, $configaddress, \@loopcontrol, \@flowcontrol, \@temploopcontrol, \@tempflowcontrol, $countvar);
+			read_control_constraints($to, $stepsvar, 
+			$countzone, $countstep, $configaddress, \@loopcontrol, \@flowcontrol, \@temploopcontrol, \@tempflowcontrol, $countvar);
 		}
 	}
 
@@ -3465,7 +4153,7 @@ sub read_controls
 	open( SOURCEFILE, $sourceaddress ) or die "Can't open $sourceaddress: $!\n";
 	my @lines = <SOURCEFILE>;
 	close SOURCEFILE;
-	my $counterlines = 0;
+	my $countlines = 0;
 	my $countloop = -1;
 	my $countloopcontrol;
 	my $countflow = -1;
@@ -3503,10 +4191,10 @@ sub read_controls
 
 		if ( ($semaphore_loop eq "yes") and ($semaphore_loopcontrol eq "yes") and ($line =~ /No. of data items/ ) ) 
 		{  
-			$doline = $counterlines + 1;
+			$doline = $countlines + 1;
 		}
 
-		if ( ($semaphore_loop eq "yes" ) and ($semaphore_loopcontrol eq "yes") and ($counterlines == $doline) ) 
+		if ( ($semaphore_loop eq "yes" ) and ($semaphore_loopcontrol eq "yes") and ($countlines == $doline) ) 
 		{
 			my @row = split(/\s+/, $line);
 			my $max_heating_power = $row[1];
@@ -3543,10 +4231,10 @@ sub read_controls
 
 		if ( ($semaphore_flow eq "yes") and ($semaphore_flowcontrol eq "yes") and ($line =~ /No. of data items/ ) ) 
 		{  
-			$doline = $counterlines + 1;
+			$doline = $countlines + 1;
 		}
 
-		if ( ($semaphore_flow eq "yes" ) and ($semaphore_flowcontrol eq "yes") and ($counterlines == $doline) ) 
+		if ( ($semaphore_flow eq "yes" ) and ($semaphore_flowcontrol eq "yes") and ($countlines == $doline) ) 
 		{
 			my @row = split(/\s+/, $line);
 			my $flow_setpoint = $row[1];
@@ -3557,7 +4245,7 @@ sub read_controls
 			$semaphore_flowcontrol = "no";
 			$doline = "";
 		}
-		$counterlines++;
+		$countlines++;
 	}			
 } # END SUB read_controls.
 
@@ -3568,37 +4256,37 @@ sub read_control_constraints
 	# THIS FILE CAN CONTAIN USER-IMPOSED CONSTRAINTS FOR CONTROLS TO BE READ BY OPT.
 	# THE FOLLOWING VALUES CAN BE ADDRESSED IN THE OPT CONSTRAINTS CONFIGURATION FILE, 
 	# SET BY THE PRESENT FUNCTION:
-	# 1) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$loop_hour] 
+	# 1) $loopcontrol[$countzone][$countloop][$countloopcontrol][$loop_hour] 
 	# Where $countloop and  $countloopcontrol has to be set to a specified number in the OPT file for constraints.
-	# 2) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$max_heating_power] # Same as above.
-	# 3) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$min_heating_power] # Same as above.
-	# 4) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$max_cooling_power] # Same as above.
-	# 5) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$min_cooling_power] # Same as above.
-	# 6) $loopcontrol[$counterzone][$countloop][$countloopcontrol][heating_setpoint] # Same as above.
-	# 7) $loopcontrol[$counterzone][$countloop][$countloopcontrol][cooling_setpoint] # Same as above.
-	# 8) $flowcontrol[$counterzone][$countflow][$countflowcontrol][$flow_hour] 
+	# 2) $loopcontrol[$countzone][$countloop][$countloopcontrol][$max_heating_power] # Same as above.
+	# 3) $loopcontrol[$countzone][$countloop][$countloopcontrol][$min_heating_power] # Same as above.
+	# 4) $loopcontrol[$countzone][$countloop][$countloopcontrol][$max_cooling_power] # Same as above.
+	# 5) $loopcontrol[$countzone][$countloop][$countloopcontrol][$min_cooling_power] # Same as above.
+	# 6) $loopcontrol[$countzone][$countloop][$countloopcontrol][heating_setpoint] # Same as above.
+	# 7) $loopcontrol[$countzone][$countloop][$countloopcontrol][cooling_setpoint] # Same as above.
+	# 8) $flowcontrol[$countzone][$countflow][$countflowcontrol][$flow_hour] 
 	# Where $countflow and  $countflowcontrol has to be set to a specified number in the OPT file for constraints.
-	# 9) $flowcontrol[$counterzone][$countflow][$countflowcontrol][$flow_setpoint] # Same as above.
-	# 10) $flowcontrol[$counterzone][$countflow][$countflowcontrol][$flow_onoff] # Same as above.
-	# 11) $flowcontrol[$counterzone][$countflow][$countflowcontrol][$flow_fraction] # Same as above.
+	# 9) $flowcontrol[$countzone][$countflow][$countflowcontrol][$flow_setpoint] # Same as above.
+	# 10) $flowcontrol[$countzone][$countflow][$countflowcontrol][$flow_onoff] # Same as above.
+	# 11) $flowcontrol[$countzone][$countflow][$countflowcontrol][$flow_fraction] # Same as above.
 	# EXAMPLE : $flowcontrol[0][1][2][$flow_fraction] = 0.7
 	# OTHER EXAMPLE: $flowcontrol[2][1][2][$flow_fraction] = $flowcontrol[0][2][1][$flow_fraction]
-	# The $counterzone that is actuated is always the last, the one which is active. 
+	# The $countzone that is actuated is always the last, the one which is active. 
 	# It would have therefore no sense writing $flowcontrol[1][1][2][$flow_fraction] = $flowcontrol[3][2][1][$flow_fraction].
-	# Differentent $counterzones can be referred to the same zone. Different $counterzones just number mutations in series.
+	# Differentent $countzones can be referred to the same zone. Different $countzones just number mutations in series.
 	# ALSO, THIS MAKES AVAILABLE TO THE USER INFORMATIONS ABOUT THE MORPHING STEP OF THE MODELS 
 	# AND THE STEPS THE MODEL HAS TO FOLLOW. 
 	# THIS ALLOWS TO IMPOSE EQUALITY CONSTRAINTS TO THESE VARIABLES, 
 	# WHICH COULD ALSO BE COMBINED WITH THE FOLLOWING ONES: 
 	# $stepsvar, WHICH TELLS THE PROGRAM HOW MANY ITERATION STEPS IT HAS TO DO IN THE CURRENT MORPHING PHASE.
-	# $counterzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
-	# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $counterzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
+	# $countzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
+	# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $countzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
 	# TYPICALLY, IT WILL BE USED FOR A ZONE, BUT NOTHING PREVENTS THAT SEVERAL OF THEM CHAINED ONE AFTER 
 	# THE OTHER ARE APPLIED TO THE SAME ZONE.
 	# $countstep, WHICH TELLS THE PROGRAM WHAT THE CURRENT ITERATION STEP IS.
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	@loopcontrol = @$swap;
@@ -3619,7 +4307,7 @@ sub read_control_constraints
 		eval `cat $configaddress`;	# HERE AN EXTERNAL FILE FOR PROPAGATION OF CONSTRAINTS 
 		# IS EVALUATED, AND HERE BELOW CONSTRAINTS ARE PROPAGATED.	
 
-		if (-e $constrain) { eval "$constrain"; } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
+		if (-e $constrain) { eval ($constrain); } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
 		# FOR PROPAGATION OF CONSTRAINTS
 
 		@doloopcontrol = @{$loopcontrol[$#loopcontrol]}; #
@@ -3675,7 +4363,7 @@ sub apply_loopcontrol_changes
 	my @temploopcontrol = @$swap;
 	my $countvar = shift;
 	
-	my $counterloop = 0;
+	my $countloop = 0;
 
 	foreach my $elm (@new_loop_ctls)
 	{
@@ -3689,7 +4377,7 @@ sub apply_loopcontrol_changes
 		$new_min_cooling_power = $loop[6];
 		$new_heating_setpoint = $loop[7];
 		$new_cooling_setpoint = $loop[8];
-		unless ( @{$new_loop_ctls[$counterloop]} ~~ @{$temploopcontrol[$counterloop]} )
+		unless ( @{$new_loop_ctls[$countloop]} ~~ @{$temploopcontrol[$countloop]} )
 		{
 			my $printthis =
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
@@ -3733,9 +4421,9 @@ YYY
 			{
 				print `$printthis`;
 			}
-			print TOSHELL $printthis;
+			print TOSHELLMORPH $printthis;
 		}
-		$counterloop++;
+		$countloop++;
 	}
 } # END SUB apply_loopcontrol_changes();
 
@@ -3749,7 +4437,7 @@ sub apply_flowcontrol_changes
 	my @new_flowcontrols = @$swap;
 	my $swap = shift;
 	my @tempflowcontrol = @$swap;
-	my $counterflow = 0;
+	my $countflow = 0;
 	my $countvar = shift;
 
 	foreach my $elm (@new_flowcontrols)
@@ -3761,7 +4449,7 @@ sub apply_flowcontrol_changes
 		$new_flow_setpoint = $flow[3];
 		$new_flow_onoff = $flow[4];
 		$new_flow_fraction = $flow[5];
-		unless ( @{$new_flowcontrols[$counterflow]} ~~ @{$tempflowcontrol[$counterflow]} )
+		unless ( @{$new_flowcontrols[$countflow]} ~~ @{$tempflowcontrol[$countflow]} )
 		{
 			my $printthis =
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
@@ -3789,9 +4477,9 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELL $printthis;
+			print TOSHELLMORPH $printthis;
 		}
-		$counterflow++;
+		$countflow++;
 	}
 } # END SUB apply_flowcontrol_changes;
 
@@ -3810,21 +4498,23 @@ YYY
 sub constrain_obstructions # IT APPLIES CONSTRAINTS TO OBSTRUCTIONS
 {
 	# THIS CONSTRAINS OBSTRUCTION FILES. IT HAS TO BE CALLED FROM THE MAIN FILE WITH:
-	# constrain_obstruction($to, $fileconfig, $stepsvar, $counterzone, $countstep, $exeonfiles, \@applytype, \@constrain_obstructions);
+	# constrain_obstruction($to, $fileconfig, $stepsvar, $countzone, $countstep, $exeonfiles, \@applytype, \@constrain_obstructions);
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap2 = shift;
 	my @constrain_obstructions = @$swap2;
 	my $to_do = shift;
 	my $countvar = shift;
+	
+	say "Propagating constraints on obstructions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my @work_letters;
-	#@obs;	# GLOBAL!
+	#@obs;	# globsAL!
 
 	foreach my $elm (@constrain_obstructions)
 	{
@@ -3843,7 +4533,7 @@ sub constrain_obstructions # IT APPLIES CONSTRAINTS TO OBSTRUCTIONS
 		{
 			checkfile($sourceaddress, $targetaddress);
 			read_obstructions($to, $sourceaddress, $targetaddress, $configaddress, \@work_letters, $actonmaterials);
-			read_obs_constraints($to, \%varnums, $counterzone, $countstep, $configaddress, $actonmaterials, \@tempobs, $countvar ); # IT WORKS ON THE VARIABLE @obs, WHICH IS GLOBAL.
+			read_obs_constraints($to, $stepsvar, $countzone, $countstep, $configaddress, $actonmaterials, \@tempobs, $countvar ); # IT WORKS ON THE VARIABLE @obs, WHICH IS globsAL.
 		}
 
 		unless ($to_do eq "justread")
@@ -3871,7 +4561,7 @@ sub read_obstructions
 	my @lines = <SOURCEFILE>;
 	close SOURCEFILE;
 
-	my $counter = 0;
+	my $count = 0;
 	foreach my $line (@lines)
 	{
 		#$line =~ s/^\s+//; 
@@ -3879,12 +4569,12 @@ sub read_obstructions
 		{
 			unless ( $line =~ m/\*obs =/ ) 
 			{
-				$counter++;
+				$count++;
 			}
 		}
 	}
 
-	if ( $counter > 21 )
+	if ( $count > 21 )
 	{																
 		@obs_letters = ("e", "f", "g", "h", "i", "j", "k", "l", "m", "n", 
 		"o", "0\nb\nf", "0\nb\ng", "0\nb\nh", "0\nb\ni", "0\nb\nj", "0\nb\nk", "0\nb\nm", 
@@ -3902,7 +4592,7 @@ sub read_obstructions
 		"0\nm", "0\nn", "0\no");
 	}
 
-	my $counter = 0;
+	my $count = 0;
 	foreach my $line (@lines)
 	{
 		if  ( $line =~ m/\*obs/ ) 
@@ -3914,8 +4604,8 @@ sub read_obstructions
 				push (@obs, [ $rowelements[1], $rowelements[2], $rowelements[3], 
 				$rowelements[4], $rowelements[5], $rowelements[6], 
 				$rowelements[7], $rowelements[8], $rowelements[9], 
-				$rowelements[10], $rowelements[11], $rowelements[12], $obs_letters[$counter] ] );
-				$counter++;
+				$rowelements[10], $rowelements[11], $rowelements[12], $obs_letters[$count] ] );
+				$count++;
 			}
 		}
 	}
@@ -3926,15 +4616,15 @@ sub read_obs_constraints
 {	
 	# THE VARIABLE @obs REGARDS OBSTRUCTION USER-IMPOSED CONSTRAINTS
 	# THIS CONSTRAINT CONFIGURATION FILE MAKES AVAILABLE TO THE USER THE FOLLOWING VARIABLES:
-	# $obs[$counterzone][$obs_number][$x], $obs[$counterzone][$obs_number][$y], $obs[$counterzone][$obs_number][$y]
-	# $obs[$counterzone][$obs_number][$width], $obs[$counterzone][$obs_number][$depth], $obs[$counterzone][$obs_number][$height]
-	# $obs[$counterzone][$obs_number][$z_rotation], $obs[$counterzone][$obs_number][$y_rotation], 
-	# $obs[$counterzone][$obs_number][$tilt], $obs[$counterzone][$obs_number][$opacity], $obs[$counterzone][$obs_number][$material], 
+	# $obs[$countzone][$obs_number][$x], $obs[$countzone][$obs_number][$y], $obs[$countzone][$obs_number][$y]
+	# $obs[$countzone][$obs_number][$width], $obs[$countzone][$obs_number][$depth], $obs[$countzone][$obs_number][$height]
+	# $obs[$countzone][$obs_number][$z_rotation], $obs[$countzone][$obs_number][$y_rotation], 
+	# $obs[$countzone][$obs_number][$tilt], $obs[$countzone][$obs_number][$opacity], $obs[$countzone][$obs_number][$material], 
 	# EXAMPLE: $obs[0][2][$x] = 2. THIS MEANS: AT COUNTERZONE 0, COORDINATE x OF OBSTRUCTION HAS TO BE SET TO 2.
 	# OTHER EXAMPLE: $obs[0][2][$x] = $obs[2][2][$y].
-	# The $counterzone that is actuated is always the last, the one which is active. 
+	# The $countzone that is actuated is always the last, the one which is active. 
 	# There would be therefore no sense in writing $obs[0][4][$x] =  $obs[1][2][$y].
-	# Differentent $counterzones can be referred to the same zone. Different $counterzones just number mutations in series.
+	# Differentent $countzones can be referred to the same zone. Different $countzones just number mutations in series.
 	# NOTE THAT THE MATERIAL TO BE SPECIFIED IS A MATERIAL LETTER, BETWEEN QUOTES. EXAMPLE: $obs[1][$material] = "a".
 	#  $tilt IS PRESENTLY UNUSED.
 	# ALSO, THIS MAKES AVAILABLE TO THE USER INFORMATIONS ABOUT THE MORPHING STEP OF THE MODELS 
@@ -3942,14 +4632,14 @@ sub read_obs_constraints
 	# THIS ALLOWS TO IMPOSE EQUALITY CONSTRAINTS TO THESE VARIABLES, 
 	# WHICH COULD ALSO BE COMBINED WITH THE FOLLOWING ONES: 
 	# $stepsvar, WHICH TELLS THE PROGRAM HOW MANY ITERATION STEPS IT HAS TO DO IN THE CURRENT MORPHING PHASE.
-	# $counterzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
-	# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $counterzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
+	# $countzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
+	# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $countzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
 	# TYPICALLY, IT WILL BE USED FOR A ZONE, BUT NOTHING PREVENTS THAT SEVERAL OF THEM CHAINED ONE AFTER 
 	# THE OTHER ARE APPLIED TO THE SAME ZONE.
 	# $countstep, WHICH TELLS THE PROGRAM WHAT THE CURRENT ITERATION STEP IS.
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $configaddress = shift;
 	my $actonmaterials = shift;
@@ -3976,7 +4666,7 @@ sub read_obs_constraints
 		push (@obs, [@myobs]); #	
 		eval `cat $configaddress`; # HERE AN EXTERNAL FILE FOR PROPAGATION OF CONSTRAINTS IS EVALUATED.
 
-		if (-e $constrain) { eval "$constrain"; } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
+		if (-e $constrain) { eval ($constrain); } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
 		# FOR PROPAGATION OF CONSTRAINTS
 
 		@doobs = @{$obs[$#obs]}; #
@@ -4003,11 +4693,11 @@ sub apply_obs_constraints
 	my @tempobs = @$swap;
 	my $countvar = shift;
 
-	my $counterobs = 0;
+	my $countobs = 0;
 	print $_outfile_ "OBS_LETTERS IN APPLY" . Dumper(@obs_letters) . "\n\n";
 	foreach my $ob (@obs)
 	{
-		my $obs_letter = $obs_letters[$counterobs];
+		my $obs_letter = $obs_letters[$countobs];
 		if ( ( @work_letters eq "") or ($obs_letter  ~~ @work_letters))
 		{
 			my @obstr = @{$ob};
@@ -4025,7 +4715,7 @@ sub apply_obs_constraints
 			my $material = $obs[11];
 			unless
 			( 
-				( @{$obs[$counterobs]} ~~ @{$tempobs[$counterobs]} ) 
+				( @{$obs[$countobs]} ~~ @{$tempobs[$countobs]} ) 
 			)
 			{
 				my $printthis =
@@ -4066,10 +4756,10 @@ YYY
 					print `$printthis`;
 				}
 
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 			}
 
-			my $obs_letter = $obs_letters[$counterobs];
+			my $obs_letter = $obs_letters[$countobs];
 			if ($obs_letter  ~~ @work_letters)
 			{
 				if ($actonmaterials eq "y")
@@ -4103,11 +4793,11 @@ YYY
 						print `$printthis`;
 					}
 
-					print TOSHELL $printthis;
+					print TOSHELLMORPH $printthis;
 				}
 			}
 		}
-		$counterobs++;
+		$countobs++;
 	}
 } # END SUB apply_obs_constraints
 
@@ -4117,20 +4807,20 @@ sub get_obstructions # IT APPLIES CONSTRAINTS TO ZONE GEOMETRY. TO DO. STILL UNU
 # THE SAME FUNCTIONALITIES CAN BE OBTAINED, WITH MORE WORK, BY SPECIFYING APPROPRIATE SETTINGS IN THE OPT CONFIG FILE.
 {
 	# THIS CONSTRAINS OBSTRUCTION FILES. IT HAS TO BE CALLED FROM THE MAIN FILE WITH:
-	# constrain_obstruction($to, $fileconfig, $stepsvar, $counterzone, $countstep, $exeonfiles, \@applytype, \@constrain_obstructions);
+	# constrain_obstruction($to, $fileconfig, $stepsvar, $countzone, $countstep, $exeonfiles, \@applytype, \@constrain_obstructions);
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap2 = shift;
 	my @get_obstructions = @$swap2;
 	my $countvar = shift;
 
 	my @work_letters ;
-	@obs;	# GLOBAL!
+	@obs;	# globsAL!
 	foreach my $elm (@constrain_obstructions)
 	{
 		my @group = @{$elm};
@@ -4165,17 +4855,17 @@ sub write_temporary
 	my $countvar = shift;
 
 	open( SOURCEFILE, ">$temp" ) or die "Can't open $temp: $!\n";
-	my $counterobs = 0;
+	my $countobs = 0;
 
 	foreach my $ob (@obs)
 	{
-		my $obs_letter = $obs_letters[$counterobs];
+		my $obs_letter = $obs_letters[$countobs];
 		if ($obs_letter  ~~ @work_letters)
 		{
 			my @obs = @{$ob};
 			print SOURCEFILE . "*obs $obs[1] $obs[2] $obs[3] $obs[4] $obs[5] $obs[6] $obs[7] $obs[8] $obs[10] $obs[11] $obs[12] $obs_letter\n";
 		}
-		$counterobs++;
+		$countobs++;
 		close SOURCEFILE;
 	}
 } # END SUB write_temporary
@@ -4185,14 +4875,14 @@ sub pin_obstructions  # TO DO. ZZZ
 {
 	# THIS CONSTRAINS OBSTRUCTION FILES. TO DO. STILL UNUSED. ZZZ
 	# IT HAS TO BE CALLED FROM THE MAIN FILE WITH:
-	# constrain_obstruction($to, $fileconfig, $stepsvar, $counterzone, $countstep, $exeonfiles, \@applytype, \@pin_obstructions);
+	# constrain_obstruction($to, $fileconfig, $stepsvar, $countzone, $countstep, $exeonfiles, \@applytype, \@pin_obstructions);
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap = shift;
 	my @pin_obstructions = @$swap;
 	my $countvar = shift;
@@ -4219,7 +4909,7 @@ sub pin_obstructions  # TO DO. ZZZ
 			my @elts = split(/\s+|,/, $line);
 			push (@newobs, [ $elts[1],  $elts[2], $elts[3], $elts[4], $elts[5], $elts[6], $elts[7], $elts[8], $elts[9], $elts[10], $elts[11], $elts[12], $elts[13] ] );
 		}
-		apply_pin_obstructions($to, \%varnums, $counterzone, $countstep, \@newobs, $countvar );
+		apply_pin_obstructions($to, $stepsvar, $countzone, $countstep, \@newobs, $countvar );
 	}
 	close SOURCEFILE;
 } # END SUB pin_obstructions
@@ -4229,17 +4919,17 @@ sub apply_pin_obstructions # TO DO. STILL UNUSED. ZZZ
 {
 	# IT APPLY USER-IMPOSED CONSTRAINTS TO A GEOMETRY FILES VIA SHELL
 	# IT HAS TO BE CALLED WITH: 
-	# apply_pin_obstructions( $to, $fileconfig,$stepsvar, $counterzone, $countstep, $exeonfiles, \@obs );
+	# apply_pin_obstructions( $to, $fileconfig,$stepsvar, $countzone, $countstep, $exeonfiles, \@obs );
 	my $to = shift;
-	my $varnref = shift; 
-	my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @obs = @$swap;
 	my $countvar = shift;
 
-	my $counterobs = 0;
+	my $countobs = 0;
 	foreach my $ob (@obs)
 	{
 		my @obs = @{$ob};
@@ -4295,9 +4985,9 @@ YYY
 			print `$printthis`;
 		}
 
-		print TOSHELL $printthis;
+		print TOSHELLMORPH $printthis;
 	}
-	$countervertex++;
+	$countvertex++;
 } # END SUB apply_pin_obstructions
 ############################################################## END OF GROUP GET AND PIN OBSTRUCTIONS
 
@@ -4315,26 +5005,28 @@ YYY
 sub vary_net
 {  	# IT IS CALLED FROM THE MAIN FILE
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap = shift;
 	my @vary_net = @$swap;
 	my $countvar = shift;
+	
+	say "Propagating constraints on networks for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
-	my $activezone = $applytype[$counterzone][3];
+	my $activezone = $applytype[$countzone][3];
 	my ($semaphore_node, $semaphore_component, $node_letter);
-	my $counter_component = -1;
-	my $counterline = 0;
+	my $count_component = -1;
+	my $countline = 0;
 	my @node_letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
 	my @component_letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
 	# NOTE: THE FOLLOWING VARIABLE NAMES ARE SHADOWED IN THE FOREACH LOOP BELOW, 
 	# BUT ARE THE ONES USED IN THE OPT CONSTRAINTS FILES.
 
-	my @group = @{$vary_net[$counterzone]};
+	my @group = @{$vary_net[$countzone]};
 	my $sourcefile = $group[0];
 	my $targetfile = $group[1];
 	my $configfile = $group[2];
@@ -4360,11 +5052,11 @@ sub vary_net
 	}
 
 	sub calc_newnet
-	{	# TO BE CALLED WITH: calc_newnet($to, $fileconfig, $stepsvar, $counterzone, $countstep, \@nodebulk, \@componentbulk, \@node_, \@component);
+	{	# TO BE CALLED WITH: calc_newnet($to, $fileconfig, $stepsvar, $countzone, $countstep, \@nodebulk, \@componentbulk, \@node_, \@component);
 		# THIS COMPUTES CHANGES TO BE MADE TO CONTROLS BEFORE PROPAGATION OF CONSTRAINTS
 		my $to = shift;
-		my $varnref = shift; my %varnums = %{ $varnref };
-		my $counterzone = shift;
+		my $stepsvar = shift; 
+		my $countzone = shift;
 		my $countstep = shift;
 		my $swap = shift;
 		my @nodebulk = @$swap;
@@ -4494,7 +5186,7 @@ sub vary_net
 		}
 	} # END SUB calc_newnet
 
-	calc_newnet($to, \%varnums, $counterzone, $countstep, \@nodebulk, \@componentbulk, \@node, \@component, $countvar );	# PLURAL
+	calc_newnet($to, $stepsvar, $countzone, $countstep, \@nodebulk, \@componentbulk, \@node, \@component, $countvar );	# PLURAL
 
 	apply_node_changes(\@new_nodes);
 	apply_component_changes(\@new_components);
@@ -4516,7 +5208,7 @@ sub read_net
 	open( SOURCEFILE, $sourceaddress ) or die "Can't open $sourcefile : $!\n";
 	my @lines = <SOURCEFILE>;
 	close SOURCEFILE;
-	my $counterlines = 0;
+	my $countlines = 0;
 	my $countnode = -1;
 	my $countcomponent = -1;
 	my $countcomp = 0;
@@ -4592,7 +5284,7 @@ sub read_net
 
 		}
 
-		$counterlines++;
+		$countlines++;
 	}
 } # END SUB read_controls.
 
@@ -4606,7 +5298,7 @@ sub apply_node_changes
 	my @tempnodes = @$swap;
 	my $countvar = shift;
 
-	my $counternode = 0;
+	my $countnode = 0;
 	foreach my $elm (@new_nodes)
 	{
 		my @node_ = @{$elm};
@@ -4619,7 +5311,7 @@ sub apply_node_changes
 		my $new_surface = $node_[6];
 		my $new_cp = $node_[7];
 
-		unless ( @{$new_nodes[$counternode]} ~~ @{$tempnodes[$counternode]} )
+		unless ( @{$new_nodes[$countnode]} ~~ @{$tempnodes[$countnode]} )
 		{
 			if ($new_type eq "a" ) # IF NODES ARE INTERNAL
 			{
@@ -4655,7 +5347,7 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 			}
 
 			if ($new_type eq "e" ) # IF NODES ARE BOUNDARY ONES, WIND-INDUCED
@@ -4692,10 +5384,10 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 			}
 		}
-		$counternode++;
+		$countnode++;
 	}
 } # END SUB apply_node_changes;
 
@@ -4710,7 +5402,7 @@ sub apply_component_changes
 	my @tempcomponents = @$swap;
 	my $countvar = shift;
 
-	my $countercomponent = 0;
+	my $countcomponent = 0;
 	foreach my $elm (@new_components)
 	{
 		my @component_ = @{$elm};
@@ -4723,7 +5415,7 @@ sub apply_component_changes
 		my $new_data_4 = $component_[6];
 
 		unless
-		( @{$new_components[$countercomponents]} ~~ @{$tempcomponents[$countercomponents]} )
+		( @{$new_components[$countcomponents]} ~~ @{$tempcomponents[$countcomponents]} )
 		{
 			if ($new_type eq "k" ) # IF THE COMPONENT IS A GENERIC OPENING
 			{
@@ -4754,7 +5446,7 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 			}
 
 			if ($new_type eq "l" ) # IF THE COMPONENT IS A CRACK
@@ -4786,7 +5478,7 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 			}
 
 			if ($new_type eq "m" ) # IF THE COMPONENT IS A DOOR
@@ -4818,10 +5510,10 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELL $printthis;
+				print TOSHELLMORPH $printthis;
 			}
 		}
-		$countercomponent++;
+		$countcomponent++;
 	}
 } # END SUB apply_component_changes;
 
@@ -4829,19 +5521,19 @@ YYY
 sub constrain_net 
 {	# IT ALLOWS TO MANIPULATE USER-IMPOSED CONSTRAINTS REGARDING NETS
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap = shift;
 	my @constrain_net = @$swap;
 	my $to_do = shift;
 	my $countvar = shift;
 
 
-	my $elm = $constrain_net[$counterzone];
+	my $elm = $constrain_net[$countzone];
 	my @group = @{$elm};
 	my $sourcefile = $group[2];
 	my $targetfile = $group[3];
@@ -4866,17 +5558,17 @@ sub constrain_net
 	my $door_nodeheight = 6;
 	my $door_discharge = 7;
 
-	my $activezone = $applytype[$counterzone][3];
+	my $activezone = $applytype[$countzone][3];
 	my ($semaphore_node, $semaphore_component, $node_letter);
-	my $counter_component = -1;
-	my $counterline = 0;
+	my $count_component = -1;
+	my $countline = 0;
 	my @node_letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
 	my @component_letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
 	my $countnode = 0;
 	my $countcomponent = 0;
 
-	#@node; @component; # PLURAL! DON'T PUT "MY" HERE. GLOBAL.
-	#@new_nodes; @new_components; # DON'T PUT "my" HERE. THEY ARE GLOBAL!!!
+	#@node; @component; # PLURAL! DON'T PUT "MY" HERE. globsAL.
+	#@new_nodes; @new_components; # DON'T PUT "my" HERE. THEY ARE globsAL!!!
 
 	unless ($to_do eq "justwrite")
 	{
@@ -4885,7 +5577,7 @@ sub constrain_net
 		{
 			read_net($sourceaddress, $targetaddress, \@node_letters, \@component_letters);
 			read_net_constraints
-			($to, \%varnums, $counterzone, $countstep, $configaddress, \@node, \@component, \@tempnode, \@tempcomponent, $countvar ); # PLURAL
+			($to, $stepsvar, $countzone, $countstep, $configaddress, \@node, \@component, \@tempnode, \@tempcomponent, $countvar ); # PLURAL
 		}
 	}
 
@@ -4899,8 +5591,8 @@ sub constrain_net
 sub read_net_constraints
 {
 	my $to = shift;
-	my $varnref = shift; my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	my $countzone = shift;
 	my $countstep = shift;
 	my $configaddress = shift;
 	my $swap = shift;
@@ -4932,36 +5624,36 @@ sub read_net_constraints
 		# ALSO, THIS MAKES AVAILABLE TO THE USER INFORMATIONS ABOUT THE MORPHING STEP OF THE MODELS.
 		# SPECIFICALLY, THE FOLLOWING VARIABLES WHICH REGARD BOTH INTERNAL AND BOUNDARY NODES.
 		# NOTE THAT "node_number" IS THE NUMBER OF THE NODE IN THE ".afn" ESP-r FILE. 
-		# $node[$counterzone][node_number][$node]. # EXAMPLE: $node[0][3][$node]. THIS IS THE LETTER OF THE THIRD NODE, 
+		# $node[$countzone][node_number][$node]. # EXAMPLE: $node[0][3][$node]. THIS IS THE LETTER OF THE THIRD NODE, 
 		# AT THE FIRST CONTERZONE (NUMBERING STARTS FROM 0)
-		# $node[$counterzone][node_number][$type]
-		# $node[$counterzone][node_number][$height]. # EXAMPLE: $node[0][3][$node]. THIS IS THE HEIGHT OF THE 3RD NODE AT THE FIRST COUNTERZONE
+		# $node[$countzone][node_number][$type]
+		# $node[$countzone][node_number][$height]. # EXAMPLE: $node[0][3][$node]. THIS IS THE HEIGHT OF THE 3RD NODE AT THE FIRST COUNTERZONE
 		# THEN IT MAKES AVAILABLE THE FOLLOWING VARIABLES REGARDING NODES:
-		# $node[$counterzone][node_number][$volume] # REGARDING INTERNAL NODES
-		# $node[$counterzone][node_number][$azimut] # REGARDING BOUNDARY NODES
+		# $node[$countzone][node_number][$volume] # REGARDING INTERNAL NODES
+		# $node[$countzone][node_number][$azimut] # REGARDING BOUNDARY NODES
 		# THEN IT MAKE AVAILABLE THE FOLLOWING VARIABLES REGARDING COMPONENTS:
-		# $node[$counterzone][node_number][$area] # REGARDING SIMPLE OPENINGS
-		# $node[$counterzone][node_number][$width] # REGARDING CRACKS
-		# $node[$counterzone][node_number][$length] # REGARDING CRACKS
-		# $node[$counterzone][node_number][$door_width] # REGARDING DOORS
-		# $node[$counterzone][node_number][$door_height] # REGARDING DOORS
-		# $node[$counterzone][node_number][$door_nodeheight] # REGARDING DOORS
-		# $node[$counterzone][node_number][$door_discharge] # REGARDING DOORS (DISCHARGE FACTOR)
+		# $node[$countzone][node_number][$area] # REGARDING SIMPLE OPENINGS
+		# $node[$countzone][node_number][$width] # REGARDING CRACKS
+		# $node[$countzone][node_number][$length] # REGARDING CRACKS
+		# $node[$countzone][node_number][$door_width] # REGARDING DOORS
+		# $node[$countzone][node_number][$door_height] # REGARDING DOORS
+		# $node[$countzone][node_number][$door_nodeheight] # REGARDING DOORS
+		# $node[$countzone][node_number][$door_discharge] # REGARDING DOORS (DISCHARGE FACTOR)
 		# ALSO, THIS MAKES AVAILABLE TO THE USER INFORMATIONS ABOUT THE MORPHING STEP OF THE MODELS 
 		# AND THE STEPS THE MODEL HAVE TO FOLLOW.
 		# THIS ALLOWS TO IMPOSE EQUALITY CONSTRAINTS TO THESE VARIABLES, 
 		# WHICH COULD ALSO BE COMBINED WITH THE FOLLOWING ONES: 
 		# $stepsvar, WHICH TELLS THE PROGRAM HOW MANY ITERATION STEPS IT HAS TO DO IN THE CURRENT MORPHING PHASE.
-		# $counterzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
-		# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $counterzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
+		# $countzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
+		# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $countzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
 		# TYPICALLY, IT WILL BE USED FOR A ZONE, BUT NOTHING PREVENTS THAT SEVERAL OF THEM CHAINED ONE AFTER 
 		# THE OTHER ARE APPLIED TO THE SAME ZONE.
 		# $countstep, WHICH TELLS THE PROGRAM WHAT THE CURRENT ITERATION STEP IS.
-		# The $counterzone that is actuated is always the last, the one which is active. 
+		# The $countzone that is actuated is always the last, the one which is active. 
 		# It would have therefore no sense writing $node[0][3][$node] =  $node[1][3][$node].
-		# Differentent $counterzones can be referred to the same zone. Different $counterzones just number mutations in series.
+		# Differentent $countzones can be referred to the same zone. Different $countzones just number mutations in series.
 
-		if (-e $constrain) { eval "$constrain"; } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
+		if (-e $constrain) { eval ($constrain); } # HERE THE INSTRUCTION WRITTEN IN THE OPT CONFIGURATION FILE CAN BE SPEFICIED
 		# FOR PROPAGATION OF CONSTRAINTS
 
 		@donode = @{$node[$#node]}; #
@@ -4990,14 +5682,14 @@ sub propagate_constraints
 	# IT MAKES AVAILABLE TO THE USER THE FOLLOWING VARIABLES FOR MANIPULATION.
 
 	# REGARDING GEOMETRY:
-	# $v[$counterzone][$number][$x], $v[$counterzone][$number][$y], $v[$counterzone][$number][$z]. EXAMPLE: $v[0][4][$x] = 1. 
+	# $v[$countzone][$number][$x], $v[$countzone][$number][$y], $v[$countzone][$number][$z]. EXAMPLE: $v[0][4][$x] = 1. 
 	# OR: @v[0][4][$x] =  @v[0][4][$y]. OR EVEN: @v[1][4][$x] =  @v[0][3][$z].
 
 	# REGARDING OBSTRUCTIONS:
-	# $obs[$counterzone][$obs_number][$x], $obs[$counterzone][$obs_number][$y], $obs[$counterzone][$obs_number][$y]
-	# $obs[$counterzone][$obs_number][$width], $obs[$counterzone][$obs_number][$depth], $obs[$counterzone][$obs_number][$height]
-	# $obs[$counterzone][$obs_number][$z_rotation], $obs[$counterzone][$obs_number][$y_rotation], 
-	# $obs[$counterzone][$obs_number][$tilt], $obs[$counterzone][$obs_number][$opacity], $obs[$counterzone][$obs_number][$material], 
+	# $obs[$countzone][$obs_number][$x], $obs[$countzone][$obs_number][$y], $obs[$countzone][$obs_number][$y]
+	# $obs[$countzone][$obs_number][$width], $obs[$countzone][$obs_number][$depth], $obs[$countzone][$obs_number][$height]
+	# $obs[$countzone][$obs_number][$z_rotation], $obs[$countzone][$obs_number][$y_rotation], 
+	# $obs[$countzone][$obs_number][$tilt], $obs[$countzone][$obs_number][$opacity], $obs[$countzone][$obs_number][$material], 
 	# EXAMPLE: $obs[0][2][$x] = 2. THIS MEANS: AT COUNTERZONE 0, COORDINATE x OF OBSTRUCTION HAS TO BE SET TO 2.
 	# OTHER EXAMPLE: $obs[0][2][$x] = $obs[2][2][$y].
 	# NOTE THAT THE MATERIAL TO BE SPECIFIED IS A MATERIAL LETTER, BETWEEN QUOTES! EXAMPLE: $obs[1][$material] = "a".
@@ -5011,19 +5703,19 @@ sub propagate_constraints
 	# ALSO, THIS MAKES AVAILABLE TO THE USER INFORMATIONS ABOUT THE MORPHING STEP OF THE MODELS.
 	# SPECIFICALLY, THE FOLLOWING VARIABLES WHICH REGARD BOTH INTERNAL AND BOUNDARY NODES.
 	# NOTE THAT "node_number" IS THE NUMBER OF THE NODE IN THE ".afn" ESP-r FILE. 
-	# 1) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$loop_hour] 
+	# 1) $loopcontrol[$countzone][$countloop][$countloopcontrol][$loop_hour] 
 	# Where $countloop and  $countloopcontrol has to be set to a specified number in the OPT file for constraints.
-	# 2) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$max_heating_power] # Same as above.
-	# 3) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$min_heating_power] # Same as above.
-	# 4) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$max_cooling_power] # Same as above.
-	# 5) $loopcontrol[$counterzone][$countloop][$countloopcontrol][$min_cooling_power] # Same as above.
-	# 6) $loopcontrol[$counterzone][$countloop][$countloopcontrol][heating_setpoint] # Same as above.
-	# 7) $loopcontrol[$counterzone][$countloop][$countloopcontrol][cooling_setpoint] # Same as above.
-	# 8) $flowcontrol[$counterzone][$countflow][$countflowcontrol][$flow_hour] 
+	# 2) $loopcontrol[$countzone][$countloop][$countloopcontrol][$max_heating_power] # Same as above.
+	# 3) $loopcontrol[$countzone][$countloop][$countloopcontrol][$min_heating_power] # Same as above.
+	# 4) $loopcontrol[$countzone][$countloop][$countloopcontrol][$max_cooling_power] # Same as above.
+	# 5) $loopcontrol[$countzone][$countloop][$countloopcontrol][$min_cooling_power] # Same as above.
+	# 6) $loopcontrol[$countzone][$countloop][$countloopcontrol][heating_setpoint] # Same as above.
+	# 7) $loopcontrol[$countzone][$countloop][$countloopcontrol][cooling_setpoint] # Same as above.
+	# 8) $flowcontrol[$countzone][$countflow][$countflowcontrol][$flow_hour] 
 	# Where $countflow and  $countflowcontrol has to be set to a specified number in the OPT file for constraints.
-	# 9) $flowcontrol[$counterzone][$countflow][$countflowcontrol][$flow_setpoint] # Same as above.
-	# 10) $flowcontrol[$counterzone][$countflow][$countflowcontrol][$flow_onoff] # Same as above.
-	# 11) $flowcontrol[$counterzone][$countflow][$countflowcontrol][$flow_fraction] # Same as above.
+	# 9) $flowcontrol[$countzone][$countflow][$countflowcontrol][$flow_setpoint] # Same as above.
+	# 10) $flowcontrol[$countzone][$countflow][$countflowcontrol][$flow_onoff] # Same as above.
+	# 11) $flowcontrol[$countzone][$countflow][$countflowcontrol][$flow_fraction] # Same as above.
 	# EXAMPLE : $flowcontrol[0][1][2][$flow_fraction] = 0.7
 	# OTHER EXAMPLE: $flowcontrol[2][1][2][$flow_fraction] = $flowcontrol[0][2][1][$flow_fraction]
 
@@ -5033,57 +5725,59 @@ sub propagate_constraints
 	# ALSO, THIS MAKES AVAILABLE TO THE USER INFORMATIONS ABOUT THE MORPHING STEP OF THE MODELS.
 	# SPECIFICALLY, THE FOLLOWING VARIABLES WHICH REGARD BOTH INTERNAL AND BOUNDARY NODES.
 	# NOTE THAT "node_number" IS THE NUMBER OF THE NODE IN THE ".afn" ESP-r FILE. 
-	# $node[$counterzone][node_number][$node]. # EXAMPLE: $node[0][3][$node]. THIS IS THE LETTER OF THE THIRD NODE, 
+	# $node[$countzone][node_number][$node]. # EXAMPLE: $node[0][3][$node]. THIS IS THE LETTER OF THE THIRD NODE, 
 	# AT THE FIRST CONTERZONE (NUMBERING STARTS FROM 0)
-	# $node[$counterzone][node_number][$type]
-	# $node[$counterzone][node_number][$height]. # EXAMPLE: $node[0][3][$node]. THIS IS THE HEIGHT OF THE 3RD NODE AT THE FIRST COUNTERZONE
+	# $node[$countzone][node_number][$type]
+	# $node[$countzone][node_number][$height]. # EXAMPLE: $node[0][3][$node]. THIS IS THE HEIGHT OF THE 3RD NODE AT THE FIRST COUNTERZONE
 	# THEN IT MAKES AVAILABLE THE FOLLOWING VARIABLES REGARDING NODES:
-	# $node[$counterzone][node_number][$volume] # REGARDING INTERNAL NODES
-	# $node[$counterzone][node_number][$azimut] # REGARDING BOUNDARY NODES
+	# $node[$countzone][node_number][$volume] # REGARDING INTERNAL NODES
+	# $node[$countzone][node_number][$azimut] # REGARDING BOUNDARY NODES
 	# THEN IT MAKE AVAILABLE THE FOLLOWING VARIABLES REGARDING COMPONENTS:
-	# $node[$counterzone][node_number][$area] # REGARDING SIMPLE OPENINGS
-	# $node[$counterzone][node_number][$width] # REGARDING CRACKS
-	# $node[$counterzone][node_number][$length] # REGARDING CRACKS
-	# $node[$counterzone][node_number][$door_width] # REGARDING DOORS
-	# $node[$counterzone][node_number][$door_height] # REGARDING DOORS
-	# $node[$counterzone][node_number][$door_nodeheight] # REGARDING DOORS
-	# $node[$counterzone][node_number][$door_discharge] # REGARDING DOORS (DISCHARGE FACTOR)
+	# $node[$countzone][node_number][$area] # REGARDING SIMPLE OPENINGS
+	# $node[$countzone][node_number][$width] # REGARDING CRACKS
+	# $node[$countzone][node_number][$length] # REGARDING CRACKS
+	# $node[$countzone][node_number][$door_width] # REGARDING DOORS
+	# $node[$countzone][node_number][$door_height] # REGARDING DOORS
+	# $node[$countzone][node_number][$door_nodeheight] # REGARDING DOORS
+	# $node[$countzone][node_number][$door_discharge] # REGARDING DOORS (DISCHARGE FACTOR)
 
 	# ALSO, THIS KIND OF FILE MAKES INFORMATION AVAILABLE ABOUT 
 	# THE MORPHING STEP OF THE MODELS AND THE STEPS THE MODEL HAVE TO FOLLOW.
 	# THIS ALLOWS TO IMPOSE EQUALITY CONSTRAINTS TO THESE VARIABLES, 
 	# WHICH COULD ALSO BE COMBINED WITH THE FOLLOWING ONES: 
 	# $stepsvar, WHICH TELLS THE PROGRAM HOW MANY ITERATION STEPS IT HAS TO DO IN THE CURRENT MORPHING PHASE.
-	# $counterzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
-	# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $counterzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
+	# $countzone, WHICH TELLS THE PROGRAM WHAT OPERATION IS BEING EXECUTED IN THE CHAIN OF OPERATIONS 
+	# THAT MAY BE EXECUTES AT EACH MORPHING PHASE. EACH $countzone WILL CONTAIN ONE OR MORE ITERATION STEPS.
 	# TYPICALLY, IT WILL BE USED FOR A ZONE, BUT NOTHING PREVENTS THAT SEVERAL OF THEM CHAINED ONE AFTER 
 	# THE OTHER ARE APPLIED TO THE SAME ZONE.
 	# $countstep, WHICH TELLS THE PROGRAM WHAT THE CURRENT ITERATION STEP IS.
 
-	# The $counterzone that is actuated is always the last, the one which is active. 
-	# It would have therefore no sense writing for example @v[0][4][$x] =  @v[1][2][$y], because $counterzone 0 is before than $counterzone 1.
-	# Also, it would not have sense setting $counterzone 1 if the current $counterzone is already 2.
-	# Differentent $counterzones can be referred to the same zone. Different $counterzones just number mutations in series.
+	# The $countzone that is actuated is always the last, the one which is active. 
+	# It would have therefore no sense writing for example @v[0][4][$x] =  @v[1][2][$y], because $countzone 0 is before than $countzone 1.
+	# Also, it would not have sense setting $countzone 1 if the current $countzone is already 2.
+	# Differentent $countzones can be referred to the same zone. Different $countzones just number mutations in series.
 
 	my $to = shift;
-	my $varnref = shift; 
-	my %varnums = %{ $varnref };
-	my $counterzone = shift;
+	my $stepsvar = shift; 
+	
+	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my ($justread, $justwrite);
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$counterzone][3];
+	my $zone_letter = $applytype[$countzone][3];
 	my $swap = shift;
 	my @propagate_constraints = @$swap;
 	my $countvar = shift;
+	
+	say "Propagating constraints on multiple databases " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
-	my $zone = $applytype[$counterzone][3];
-	my $counter = 0;
-	my @group = @{$propagate_constraints[$counterzone]};
+	my $zone = $applytype[$countzone][3];
+	my $count = 0;
+	my @group = @{$propagate_constraints[$countzone]};
 	foreach my $elm (@group)
 	{
-		if ($counter > 0)
+		if ($count > 0)
 		{
 			my @items = @{$elm};
 			my $what_to_do = $items[0];
@@ -5096,7 +5790,7 @@ sub propagate_constraints
 				my @vertex_letters = @{$items[4]};
 				my $long_menus = $items[5];
 				my @constrain_geometry = ( [ "", $zone,  $sourcefile, $targetfile, $configfile , \@vertex_letters, $long_menus ] );
-				constrain_geometry($to, $fileconfig, \%varnums, $counterzone, 
+				constrain_geometry($to, $fileconfig, $stepsvar, $countzone, 
 				$countstep, $exeonfiles, \@applytype, \@constrain_geometry, $to_do, $countvar);
 
 			}
@@ -5105,15 +5799,15 @@ sub propagate_constraints
 				$to_do = "justread";
 				my @obs_letters = @{$items[4]};
 				my $act_on_materials = $items[5];
-				my @constrain_obstructions = ( [ "", $applytype[$counterzone][3], $sourcefile, $targetfile, $configfile , \@obs_letters, $act_on_materials ] );
-				constrain_obstructions($to, \%varnums, $counterzone, 
+				my @constrain_obstructions = ( [ "", $applytype[$countzone][3], $sourcefile, $targetfile, $configfile , \@obs_letters, $act_on_materials ] );
+				constrain_obstructions($to, $stepsvar, $countzone, 
 				$countstep, \@applytype, \@constrain_obstructions, $to_do, $countvar);
 			}
 			if ($what_to_do eq "read_ctl")
 			{
 				$to_do = "justread";
 				my @constrain_controls = ( [ "", $zone, $sourcefile, $targetfile, $configfile ] );
-				constrain_controls($to, \%varnums, $counterzone, 
+				constrain_controls($to, $stepsvar, $countzone, 
 				$countstep, \@applytype, \@constrain_controls, $to_do, $countvar );
 			}
 			if ($what_to_do eq "read_net")
@@ -5122,7 +5816,7 @@ sub propagate_constraints
 				my @surfaces = @{$items[4]};
 				my @cps = @{$items[5]};
 				my @constrain_net = ( [ "", $zone, $sourcefile, $targetfile, $configfile , \@surfaces, \@cps ] );
-				constrain_net($to, \%varnums, $counterzone, 
+				constrain_net($to, $stepsvar, $countzone, 
 				$countstep, \@applytype, \@constrain_net, $to_do, $countvar );
 			}
 
@@ -5132,7 +5826,7 @@ sub propagate_constraints
 				my @vertex_letters = @{$items[4]};
 				my $long_menus = $items[5];
 				my @constrain_geometry = ( [ "", $zone,  $sourcefile, $targetfile, $configfile , \@vertex_letters, $long_menus ] );
-				constrain_geometry($to, \%varnums, $counterzone, 
+				constrain_geometry($to, $stepsvar, $countzone, 
 				$countstep, \@applytype, \@constrain_geometry, $to_do, $countvar);
 			}
 			if ($what_to_do eq "write_obs")
@@ -5141,14 +5835,14 @@ sub propagate_constraints
 				my @obs_letters = @{$items[4]};
 				my $act_on_materials = $items[5];
 				my @constrain_obstructions = ( [ "", $zone, $sourcefile, $targetfile, $configfile , \@obs_letters, $act_on_materials] );
-				constrain_obstructions($to, \%varnums, $counterzone, 
+				constrain_obstructions($to, $stepsvar, $countzone, 
 				$countstep, \@applytype, \@constrain_obstructions, $to_do, $countvar );
 			}
 			if ($what_to_do eq "write_ctl")
 			{
 				$to_do = "justwrite";
 				my @constrain_controls = ( [ "", $zone, $sourcefile, $targetfile, $configfile ] );
-				constrain_controls($to, \%varnums, $counterzone, 
+				constrain_controls($to, $stepsvar, $countzone, 
 				$countstep, \@applytype, \@constrain_controls, $to_do, $countvar );
 			}
 			if ($what_to_do eq "write_net")
@@ -5157,548 +5851,16 @@ sub propagate_constraints
 				my @surfaces = @{$items[4]};
 				my @cps = @{$items[5]};
 				my @constrain_net = ( [ "", $zone, $sourcefile, $targetfile, $configfile , \@surfaces, \@cps ] );
-				constrain_net($to, \%varnums, $counterzone, 
+				constrain_net($to, $stepsvar, $countzone, 
 				$countstep, \@applytype, \@constrain_net, $to_do, $countvar);
 			}		
 		}
-		$counter++;
+		$count++;
 	}
 }
 
 ###########################################################################
 # END OF SECTION DEDICATED TO GENERIC FUNCTIONS FOR PROPAGATING CONSTRAINTS
-
-sub morph
-{
-	say "\nIn Sim::OPT::Morph.";
-	my $swap = shift;
-	my %dat = %$swap;
-	my @instances = @{ $dat{instances} };
-	#my $countcase = $dat{countcase}; say "dump(\$countcase): " . dump($countcase); # IT WILL BE SHADOWED. CUT ZZZ
-	#my $countblock = $dat{countblock}; say "dump(\$countblock): " . dump($countblock); # IT WILL BE SHADOWED. CUT ZZZ
-	
-	my @simcases = @{ $dat{simcases} };
-	my @simstruct = @{ $dat{simstruct} };
-	my @morphcases = @{ $dat{morphcase} };
-	my @morphstruct = @{ $dat{morphstruct} };
-	my @rescases = @{ $dat{rescases} };
-	my @resstruct = @{ $dat{resstruct} };
-	my $morphlist = $dat{morphlist};
-	my $morphblock = $dat{morphblock};
-	my $simlist = $dat{simlist};
-	my $simblock = $dat{simblock};
-	my $reslist = $dat{reslist};
-	my $resblock = $dat{resblock};
-	my $retlist = $dat{retlist};
-	my $retblock = $dat{retblock};
-	my $mergecase = $dat{mergecase};
-	my $mergeblock = $dat{mergeblock};
-	
-	#my $getpars = shift;
-	#eval( $getpars );
-	
-	#if ( fileno (MORPHLIST) )
-	if (not (-e $morphlist ) )
-	{
-		if ( $countblock == 0 )
-		{
-			open (MORPHLIST, ">$morphlist") or die;
-		}
-		else
-		{
-			open (MORPHLIST, ">>$morphlist") or die;
-		}
-	}
-	
-	#if ( fileno (MORPHBLOCK) )
-	if (not (-e $morphblock ) )
-	{
-		if ( $countblock == 0 )
-		{
-			open (MORPHBLOCK, ">$morphblock");# or die;
-		}
-		else
-		{
-			open (MORPHBLOCK, ">>$morphblock");# or die;
-		}		
-	}	
-
-	foreach my $instance (@instances)
-	{
-		my %dat = %{$instance};
-		my @rootnames = @{ $dat{rootnames} }; #say \"dump(\@rootnames): " . dump(@rootnames);
-		my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
-		my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
-		my @sweeps = @{ $dat{sweeps} }; #say "dump(\@sweeps): " . dump(@sweeps);
-		my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
-		my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
-		my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
-		my $countvar = $dat{countvar}; #say "dump(\$countvar): " . dump($countvar);
-		my $countstep = $dat{countstep}; #say "dump(\countstep): " . dump(countstep);
-		#eval($getparshere);
-		
-		my %instancecarrier = %{ $dat{instancecarrier} }; #say "dump(\%instancecarrier): " . dump(%instancecarrier);
-		my $to = $dat{to}; #say "dump(\$to): " . dump($to);
-		
-		my $rootname = Sim::OPT::getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
-		my @blockelts = Sim::OPT::getblockelts(\@sweeps, $countcase, $countblock); #say "dumpIN( \@blockelts) " . dump(@blockelts);
-		my @blocks = Sim::OPT::getblocks(\@sweeps, $countcase);  #say "dumpIN( \@blocks) " . dump(@blocks);
-		my $winneritem = Sim::OPT::getitem(\@winneritems, $countcase, $countblock); #say "dump(\$winneritem): " . dump($winneritem);
-		my $winnerline = Sim::OPT::getline($winneritem); #say "dump(\$winnerline): " . dump($winnerline);
-		my $from = $winnerline;
-		my @winnerlines = Sim::OPT::getlines( \@winneritems ); #say "dump(\@winnerlines): " . dump(@winnerlines);
-		my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
-		my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
-		#eval($getfly);
-		
-		my $stepsvar = Sim::OPT::getstepsvar($countvar, $countcase, \@varinumbers);
-		
-		#@totblockelts = (@totblockelts, @blockelts); # @blockelts
-		#@totblockelts = uniq(@totblockelts);
-		#@totblockelts = sort(@totblockelts);
-		#if ( $countvar == $#blockelts )
-		#{
-		#	$$general_variables[0] = "n";
-		#} # THIS TELLS THAT IF THE SEARCH IS ENDING (LAST SUBSEARCH CYCLE) GENERATION OF CASES HAS TO BE TURNED OFF	
-		####### OLD. $stepsvar = ${ "varnums{$countvar}" . "$varnumber" };
-		@applytype = @{ "applytype" . "$varnumber" };
-		@generic_change = @{ "generic_change" . "$varnumber" };
-		$rotate = ${ "rotate" . "$varnumber" };
-		$rotatez = ${ "rotatez" . "$varnumber" };
-		$general_variables = ${ "general_variables" . "$varnumber" };
-		$translate = ${ "translate" . "$varnumber" };
-		$translate_surface_simple = ${ "translate_surface_simple" . "$varnumber" };
-		$translate_surface = ${ "translate_surface" . "$varnumber" };
-		$keep_obstructions = ${ "keep_obstructions" . "$varnumber" };
-		$shift_vertexes = ${ "shift_vertexes" . "$varnumber" };
-		$construction_reassignment = ${ "construction_reassignment" . "$varnumber" };
-		$thickness_change = ${ "thickness_change" . "$varnumber" };
-		$recalculateish = ${ "recalculateish" . "$varnumber" };
-		@recalculatenet = @{ "recalculatenet" . "$varnumber" };
-		$obs_modify = ${ "obs_modify" . "$varnumber" };
-		$netcomponentchange = ${ "netcomponentchang" . "$varnumber" };
-		$changecontrol = ${ "changecontrol" . "$varnumber" };
-		@apply_constraints = @{ "apply_constraints" . "$varnumber" }; # NOW SUPERSEDED BY @constrain_geometry
-		$rotate_surface = ${ "rotate_surface" . "$varnumber" };
-		@reshape_windows = @{ "reshape_windows" . "$varnumber" };
-		@apply_netconstraints = @{ "apply_netconstraints" . "$varnumber" };
-		@apply_windowconstraints = @{ "apply_windowconstraints" . "$varnumber" };
-		@translate_vertexes = @{ "translate_vertexes" . "$varnumber" };
-		$warp = ${ "warp" . "$varnumber" };
-		@daylightcalc = @{ "daylightcalc" . "$varnumber" };
-		@change_config = @{ "change_config" . "$varnumber" };
-		@constrain_geometry = @{ "constrain_geometry" . "$varnumber" };
-		@vary_controls = @{ "vary_controls" . "$varnumber" };
-		@constrain_controls =  @{ "constrain_controls" . "$varnumber" };
-		@constrain_geometry = @{ "constrain_geometry" . "$varnumber" };
-		@constrain_obstructions = @{ "constrain_obstructions" . "$varnumber" };
-		@get_obstructions = @{ "get_obstructions" . "$varnumber" };
-		@pin_obstructions = @{ "pin_obstructions" . "$varnumber" };
-		$checkfile = ${ "checkfile" . "$varnumber" };
-		@vary_net = @{ "vary_net" . "$varnumber" };
-		@constrain_net = @{ "constrain_net" . "$varnumber" };
-		@propagate_constraints = @{ "propagate_constraints" . "$varnumber" };
-		@change_climate = @{ "change_climate" . "$varnumber" };
-		$skip = ${ "skip" . "$varnumber" };
-		$constrain = ${ "constrain" . "$varnumber" };
-		my @cases_to_sim;
-		my @files_to_convert;
-		my (@v, @obs, @node, @component, @loopcontrol, @flowcontrol); # THINGS GLOBAL AS REGARDS TO COUNTER ZONE CYCLES
-		my (@myv, @myobs, @mynode, @mycomponent, @myloopcontrol, @myflowcontrol); # THINGS LOCAL AS REGARDS TO COUNTER ZONE CYCLES
-		my (@tempv, @tempobs, @tempnode, @tempcomponent, @temploopcontrol, @tempflowcontrol); # THINGS LOCAL AS REGARDS TO COUNTER ZONE CYCLES
-		my (@dov, @doobs, @donode, @docomponent, @doloopcontrol, @doflowcontrol); # THINGS LOCAL AS REGARDS TO COUNTER ZONE CYCLES
-		my $generate  = $$general_variables[0];
-		my $sequencer = $$general_variables[1];
-		my $dffile = "df-$file.txt";	
-		
-		open ( TOSHELL, ">>$toshell" );
-		open ( OUTFILE, ">>$outfile" );
-		
-		if ( not ( $to ~~ @morphstruct ) )
-		{
-			push ( @{ $morphstruct[$countcase][$countblock] }, $to );
-			print MORPHBLOCK "$to\n";
-		}
-
-		if ( not ( $to ~~ @{ $morphcases[$countcase] } ) )
-		{
-			push ( @morphcases, $to );
-			print MORPHLIST "$to\n";
-
-			#my $from = "$case_to_sim";
-			#my $almost_to = $from;
-			#$almost_to =~ s/$varnumber-\d+/$varnumber-$countstep/ ;
-			#if (     ( $generate eq "n" )
-			#	 and ( ( $sequencer eq "y" ) or ( $sequencer eq "last" ) ) )
-			#{
-			#	if ( $almost_to =~ m/§$/ ) { $to = "$almost_to" ; }
-			#	else
-			#	{
-			#		#$to = "$case_to_sim$varnumber-$countstep§";
-			#		$to = "$almost_to" . "§";
-			#	}
-			#} 
-			#elsif ( ( $generate eq "y" ) and ( $sequencer eq "n" ) )
-			#{
-			#	if ( $almost_to =~ m/_$/ ) { $to = "$almost_to" ; }
-			#	else
-			#	{
-			#		$to = "$case_to_sim$varnumber-$countstep" . "_";
-			#		$to = "$almost_to" . "_";
-			#		if ( $countstep == $stepsvar )
-			#		{
-			#			if ($exeonfiles eq "y") { print `chmod -R 777 $from\n`; }
-			#			print TOSHELL "chmod -R 777 $from\n\n";
-			#		}
-			#	}
-			#} 
-			#elsif ( ( $generate eq "y" ) and ( $sequencer eq "y" ) )
-			#{
-			#	#$to = "$case_to_sim$varnumber-$countstep" . "£";
-			#	$to = "$almost_to" . "£";
-			#} 
-			#elsif ( ( $generate eq "y" ) and ( $sequencer eq "last" ) )
-			#{
-			#	if ( $almost_to =~ m/£$/ ) { $to = "$almost_to" ; }
-			#	else
-			#	{
-			#		#$to = "$case_to_sim$varnumber-$countstep" . "£";
-			#		$to = "$almost_to" . "£";
-			#		#if ( $countstep == $stepsvar )
-			#		#{
-			#		#	if ($exeonfiles eq "y") { print `chmod -R 777 $from\n`; }
-			#		#	print TOSHELL "chmod -R 777 $from\n\n";
-			#		#}
-			#	}
-			#} 
-			#elsif ( ( $generate eq "n" ) and ( $sequencer eq "n" ) )
-			#{
-			#	 $almost_to =~ s/[_|£]$// ;
-			#	#$to = "$case_to_sim$varnumber-$countstep";
-			#	$to = "$almost_to";
-			#}
-			
-			if ( eval $skip) { $skipask = "yes"; }
-						
-			if (     ( $generate eq "y" )
-				 and ( $countstep == $stepsvar )
-				 and ( ( $sequencer eq "n" ) or ( $sequencer eq "last" ) ) 
-				 and ( ($skip ne "")  and ($skipask ne "yes") )
-			   )
-			{
-				unless (-e $to)
-				{
-					if ($exeonfiles eq "y") { `cp -R $from $to\n`; }
-					print TOSHELL "cp -R $from $to\n\n";
-				}
-			} 
-			else
-			{
-				unless (-e $to)
-				{
-					
-					if ($exeonfiles eq "y") { `cp -R $from $to\n`; }
-					print TOSHELL "cp -R $from $to\n\n";
-				}
-			}
-			push(@morphed, $to);
-
-			$counterzone = 0;
-			foreach my $zone (@applytype)
-			{
-				my $modification_type = $applytype[$counterzone][0];
-				if ( ( $applytype[$counterzone][1] ne $applytype[$counterzone][2] )
-					 and ( $modification_type ne "changeconfig" ) )
-				{
-					if ($exeonfiles eq "y") 
-					{  
-						`cp -f $to/zones/$applytype[$counterzone][1] $to/zones/$applytype[$counterzone][2]\n`; 
-					}
-					print TOSHELL "cp -f $to/zones/$applytype[$counterzone][1] $to/zones/$applytype[$counterzone][2]\n\n";
-					if ($exeonfiles eq "y") 
-					{  
-						`cp -f $to/cfg/$applytype[$counterzone][1] $to/cfg/$applytype[$counterzone][2]\n`; 
-					}    # ORDINARILY, THIS PART CAN BE REMOVED
-					print TOSHELL "cp -f $to/cfg/$applytype[$counterzone][1] $to/cfg/$applytype[$counterzone][2]\n\n";
-				}# ORDINARILY, THIS PART CAN BE REMOVED
-				if (
-					 (
-					   $applytype[$counterzone][1] ne $applytype[$counterzone][2]
-					 )
-					 and ( $modification_type eq "changeconfig" )
-				  )
-				{
-					if ($exeonfiles eq "y") 
-					{ 
-						`cp -f $to/cfg/$applytype[$counterzone][1] $to/cfg/$applytype[$counterzone][2]\n`; 
-					}
-					print TOSHELL "cp -f $to/cfg/$applytype[$counterzone][1] $to/cfg/$applytype[$counterzone][2]\n\n"; 
-				} # ORDINARILY, THIS PART CAN BE REMOVED
-
-				#########################################################################################
-				# Sim::OPT::Morph
-				#########################################################################################
-									
-				my $yes_or_no_rotate_obstructions = "$$rotate[$counterzone][1]" ; 
-				# WHY $BRING_CONSTRUCTION_BACK DOES NOT WORK IF THESE TWO VARIABLES ARE PRIVATE?
-				my $yes_or_no_keep_some_obstructions = "$$keep_obstructions[$counterzone][0]";
-				
-				print `cd $to`;
-				print TOSHELL "cd $to\n\n";
-				my $countercycles_transl_surfs = 0;				
-
-				if ( $stepsvar > 1)
-				{	
-					sub dothings
-					{	# THIS CONTAINS FUNCTIONS THAT APPLY CONSTRAINTS AND UPDATE CALCULATIONS.							
-						#if ( $get_obstructions[$counterzone][0] eq "y" )
-						#{ 
-						#	get_obstructions # THIS IS TO MEMORIZE OBSTRUCTIONS.
-						#	# THEY WILL BE SAVED IN A TEMPORARY FILE.
-						#	($to, $fileconfig, $stepsvar, $counterzone, 
-						#	$countstep, $exeonfiles, \@applytype, \@get_obstructions, $configfile, $countvar); 
-						#}
-						if ($propagate_constraints[$counterzone][0] eq "y") 
-						{ 
-							&propagate_constraints
-							($to, \%varnums, $counterzone, 
-							$countstep, \@applytype, \@propagate_constraints, $countvar); 
-						}
-						if ($apply_constraints[$counterzone][0] eq "y") 
-						{ 
-							&apply_constraints
-							($to, \%varnums, $counterzone, 
-							$countstep, \@applytype, \@constrain_geometry, $countvar); 
-						}
-						if ($constrain_geometry[$counterzone][0] eq "y") 
-						{ 
-							&constrain_geometry
-							($to, \%varnums, $counterzone, 
-							$countstep, \@applytype, \@constrain_geometry, $countvar); 
-						}
-						if ($constrain_controls[$counterzone][0] eq "y") 
-						{ 
-							&constrain_controls
-							($to, \%varnums, $counterzone, 
-							$countstep, \@applytype, \@constrain_controls, $countvar); 
-						}
-						if ($$keep_obstructions[$counterzone][0] eq "y") # TO BE SUPERSEDED BY get_obstructions AND pin_obstructions
-						{ 
-							&bring_obstructions_back($to, \%varnums, $counterzone, 
-							$countstep, \@applytype, $keep_obstructions, $countvar); 
-						}
-						if ($constrain_net[$counterzone][0] eq "y")
-						{ 
-							&constrain_net($to, \%varnums, $counterzone, 
-							$countstep, \@applytype, \@constrain_net, $to_do, $countvar); 
-						}
-						if ($recalculatenet[0] eq "y") 
-						{ 
-							&recalculatenet
-							($to, \%varnums, $counterzone, 
-							$countstep, \@applytype, \@recalculatenet, $countvar); 
-						}
-						if ($constrain_obstructions[$counterzone][0] eq "y") 
-						{ 
-							&constrain_obstructions
-							($to, \%varnums, $counterzone, 
-							$countstep, \@applytype, \@constrain_obstructions, $to_do, $countvar); 
-						}
-						#if ( $pin_obstructions[$counterzone][0] eq "y" ) 
-						#{ 
-						#	pin_obstructions ($to, \%varnums, $counterzone, 
-						#	$countstep, \@applytype, $zone_letter, \@pin_obstructions, $countvar); 
-						#}
-						if ($recalculateish eq "y") 
-						{ 
-							&recalculateish
-							($to, \%varnums, $counterzone, 
-							$countstep, \@applytype, \@recalculateish, $countvar); 
-						}
-						if ($daylightcalc[0] eq "y") 
-						{ 
-							&daylightcalc
-							($to, \%varnums, $counterzone,  
-							$countstep, \@applytype, $filedf, \@daylightcalc, $countvar); 
-						}
-					} # END SUB DOTHINGS
-
-					if ( $modification_type eq "generic_change" )#
-					{
-						&make_generic_change
-						($to, \%varnums, $counterzone, $countstep,
-						\@applytype, $generic_change, $countvar);
-						&dothings;
-					} #
-					elsif ( $modification_type eq "surface_translation_simple" )
-					{
-						&translate_surfaces_simple
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $translate_surface_simple, $countvar);
-						&dothings;
-					} 
-					elsif ( $modification_type eq "surface_translation" )
-					{
-						&translate_surfaces
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $translate_surface, $countvar);
-						&dothings;
-					} 
-					elsif ( $modification_type eq "surface_rotation" )              #
-					{
-						&rotate_surface
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $rotate_surface, $countvar);
-						&dothings;
-					} 
-					elsif ( $modification_type eq "vertexes_shift" )
-					{
-						&shift_vertexes
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $shift_vertexes, $countvar);
-						&dothings;
-					}
-					elsif ( $modification_type eq "vertex_translation" )
-					{
-						&translate_vertexes
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, \@translate_vertexes, $countvar);                         
-						&dothings;
-					}  
-					elsif ( $modification_type eq "construction_reassignment" )
-					{
-						&reassign_construction
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $construction_reassignment, $countvar);
-						&dothings;
-					} 
-					elsif ( $modification_type eq "rotation" )
-					{
-						&rotate
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $rotate, $countvar);
-						&dothings;
-					} 
-					elsif ( $modification_type eq "translation" )
-					{
-						&translate
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $translate, $countvar);
-						&dothings;
-					} 
-					elsif ( $modification_type eq "thickness_change" )
-					{
-						&change_thickness
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $thickness_change, $countvar);
-						&dothings;
-					} 
-					elsif ( $modification_type eq "rotationz" )
-					{
-						&rotatez
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $rotatez, $countvar );
-						&dothings;
-					} 
-					elsif ( $modification_type eq "change_config" )
-					{
-						&change_config
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, \@change_config, $countvar);
-						&dothings;
-					}
-					elsif ( $modification_type eq "window_reshapement" ) 
-					{
-						&reshape_windows
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, \@reshape_windows, $countvar);					
-						&dothings;
-					}
-					elsif ( $modification_type eq "obs_modification" )  # REWRITE FOR NEW GEO FILE?
-					{
-						&obs_modify
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $obs_modify, $countvar);
-						&dothings;
-					}
-					elsif ( $modification_type eq "warping" )
-					{
-						&warp
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, $warp, $countvar);
-						&dothings;
-					}
-					elsif ( $modification_type eq "vary_controls" )
-					{
-						&vary_controls
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, \@vary_controls, $countvar);
-						&dothings;
-					}
-					elsif ( $modification_type eq "vary_net" )
-					{
-						&vary_net
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, \@vary_net, $countvar);
-						&dothings;
-					}
-					elsif ( $modification_type eq "change_climate" )
-					{
-						&change_climate
-						($to, \%varnums, $counterzone, $countstep, 
-						\@applytype, \@change_climate, $countvar);
-						&dothings;
-					} 
-					elsif ( $modification_type eq "constrain_controls" )
-					{
-						&dothings;
-					}
-					#elsif ( $modification_type eq "get_obstructions" )
-					#{
-					#	dothings;
-					#}
-					#elsif ( $modification_type eq "pin_obstructions" )
-					#{
-					#	dothings;
-					#}
-					elsif ( $modification_type eq "constrain_geometry" )
-					{
-						&dothings;
-					}
-					elsif ( $modification_type eq "apply_constraints" )
-					{
-						&dothings;
-					}
-					elsif ( $modification_type eq "constrain_net" )
-					{
-						&dothings;
-					}
-					elsif ( $modification_type eq "propagate_net" )
-					{
-						&dothings;
-					}
-					elsif ( $modification_type eq "recalculatenet" )
-					{
-						&dothings;
-					}
-					elsif ( $modification_type eq "constrain_obstructions" )
-					{
-						&dothings;
-					}
-					elsif ( $modification_type eq "propagate_constraints" )
-					{
-						&dothings;
-					}
-				}
-				$counterzone++;
-				print `cd $mypath`;
-				print TOSHELL "cd $mypath\n\n";
-			}
-		}
-		close MORPHLIST;
-		close MORPHBLOCK;
-	}
-}    # END SUB morph
 
 # END OF THE CONTENT OF THE "Morph.pm" FILE.
 #########################################################################################

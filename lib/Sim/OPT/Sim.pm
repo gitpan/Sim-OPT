@@ -46,7 +46,7 @@ $VERSION = '0.37'; # our $VERSION = '';
 #____________________________________________________________________________
 # Activate or deactivate the following function calls depending from your needs
 
-sub getglobals
+sub getglobsals
 {
 	$configfile = shift;
 	
@@ -58,15 +58,23 @@ sub sim    # This function launch the simulations in ESP-r
 	my $swap = shift;
 	my %dat = %$swap;
 	my @instances = @{ $dat{instances} };
+	my %vals = %{ $dat{vals} };
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase); # IT WILL BE SHADOWED. CUT ZZZ
 	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock); # IT WILL BE SHADOWED. CUT ZZZ
 	
+	my %globs = %{ $dat{globs} };
+	
+	$configfile = $dat{configfile}; #say "dump(\$configfile): " . dump($configfile);
+	
+	$filenew = "$file"."_";
+
 	my @simcases = @{ $dat{simcases} };
 	my @simstruct = @{ $dat{simstruct} };
 	my @morphcases = @{ $dat{morphcase} };
 	my @morphstruct = @{ $dat{morphstruct} };
 	my @rescases = @{ $dat{rescases} };
 	my @resstruct = @{ $dat{resstruct} };
+		
 	my $morphlist = $dat{morphlist};
 	my $morphblock = $dat{morphblock};
 	my $simlist = $dat{simlist};
@@ -78,11 +86,55 @@ sub sim    # This function launch the simulations in ESP-r
 	my $mergecase = $dat{mergecase};
 	my $mergeblock = $dat{mergeblock};
 	
+	my $configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
+		
+	my $mypath = $main::mypath;  #say "dumpINSIM(\$mypath): " . dump($mypath);
+	my $exeonfiles = $main::exeonfiles; #say "dumpINSIM(\$exeonfiles): " . dump($exeonfiles);
+	my $generatechance = $main::generatechance; 
+	my $file = $main::file;
+	my $preventsim = $main::preventsim;
+	my $fileconfig = $main::fileconfig;
+	my $outfile = $main::outfile;
+	my $toshell = $main::toshell;
+	my $report = $main::report;
+	my $simnetwork = $main::simnetwork;
+	my $reportloadsdata = $main::reportloadsdata;
+
+	my @themereports = @main::themereports; #say "dumpINMORPH(\@themereports): " . dump(@themereports);
+	my @simtitles = @main::simtitles; #say "dumpINMORPH(\@simtitles): " . dump(@simtitles);
+	my @reporttitles = @main::reporttitles;
+	my @simdata = @main::simdata;
+	my @retrievedata = @main::retrievedata;
+	my @keepcolumns = @main::keepcolumns;
+	my @weights = @main::weights;
+	my @weightsaim = @main::weightsaim;
+	my @varthemes_report = @main::varthemes_report;
+	my @varthemes_variations = @vmain::arthemes_variations;
+	my @varthemes_steps = @main::varthemes_steps;
+	my @rankdata = @main::rankdata;
+	my @rankcolumn = @main::rankcolumn;
+	my @reporttempsdata = @main::reporttempsdata;
+	my @reportcomfortdata = @main::reportcomfortdata;
+	my @reportradiationenteringdata = @main::reportradiationenteringdata;
+	my @reporttempsstats = @main::reporttempsstats;
+	my @files_to_filter = @main::files_to_filter;
+	my @filter_reports = @main::filter_reports;
+	my @base_columns = @main::base_columns;
+	my @maketabledata = @main::maketabledata;
+	my @filter_columns = @main::filter_columns;
+	
+	my $filenew = "$file"."_";
+	
 	#my $getpars = shift;
 	#eval( $getpars );
 	
-	#open ( TOSHELL, ">>$toshell" );
-	#open ( OUTFILE, ">>$outfile" );
+	my $toshellsim = "$toshell" . "-2sim.txt";
+	my $outfilesim = "$outfile" . "-2sim.txt";
+		
+	open ( TOSHELLSIM, ">>$toshellsim" );
+	open ( OUTFILESIM, ">>$outfilesim" );
+	
+	open ( SIMLIST, ">$simlist") or ( say "\$simlist: $simlist" and die );
 	
 	#if ( fileno (SIMLIST) )
 	if (not (-e $simlist ) )
@@ -157,10 +209,10 @@ sub sim    # This function launch the simulations in ESP-r
 		}
 
 		my $simelt = $to;
-		my $countersim = 0;
+		my $countsim = 0;
 		foreach my $date_to_sim (@simtitles)
 		{
-			my $simdataref = $simdata[$countersim];
+			my $simdataref = $simdata[$countsim];
 			my @simdata = @{$simdataref};
 			
 			unless ( $preventsim eq "y" )
@@ -187,10 +239,10 @@ sub sim    # This function launch the simulations in ESP-r
 
 c
 $resfile
-$simdata[0 + (4*$countersim)]
-$simdata[1 + (4*$countersim)]
-$simdata[2 + (4*$countersim)]
-$simdata[3 + (4*$countersim)]
+$simdata[0 + (4*$countsim)]
+$simdata[1 + (4*$countsim)]
+$simdata[2 + (4*$countsim)]
+$simdata[3 + (4*$countsim)]
 s
 $simnetwork
 Results for $simelt-$date_to_sim
@@ -209,7 +261,7 @@ XXX
 							{
 								print `$printthis`;
 							}
-							print TOSHELL $printthis;
+							print TOSHELLSIM $printthis;
 						}
 					
 						if ( $simnetwork eq "y" )
@@ -220,10 +272,10 @@ XXX
 c
 $resfile
 $flfile
-$simdata[0 + (4*$countersim)]
-$simdata[1 + (4*$countersim)]
-$simdata[2 + (4*$countersim)]
-$simdata[3 + (4*$countersim)]
+$simdata[0 + (4*$countsim)]
+$simdata[1 + (4*$countsim)]
+$simdata[2 + (4*$countsim)]
+$simdata[3 + (4*$countsim)]
 s
 $simnetwork
 Results for $simelt-$dates_to_sim
@@ -242,19 +294,21 @@ XXX
 							{
 								print `$printthis`;
 							}
-							print TOSHELL $printthis;
-							print OUTFILE "TWO, $resfile\n";
+							print TOSHELLSIM $printthis;
+							print OUTFILESIM "TWO, $resfile\n";
 						}						
 					}
 				}		
 			}
-			$countersim++;
+			$countsim++;
 		}
 		$countdir++;
 	}
 
 	close SIMLIST;
 	close SIMBLOCK;
+	close TOSHELLSIM;
+	close OUTFILESIM;
 }    # END SUB sim;			
 
 # END OF THE CONTENT OF Sim::OPT::Sim
