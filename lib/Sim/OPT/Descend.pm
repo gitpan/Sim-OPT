@@ -35,7 +35,7 @@ $VERSION = '0.37'; # our $VERSION = '';
 
 
 #########################################################################################
-# HERE FOLLOWS THE CONTENT OF "Descend.pm", Sim::OPT::Descend
+# HERE FOLLOWS THE CONTENT OF "Descend.pm" and Sim::OPT::Descend
 ##############################################################################
 
 sub getglobsals
@@ -44,9 +44,9 @@ sub getglobsals
 	require $configfile;
 }
 
-sub merge_reports    # Self-explaining
+sub merge_reports 
 {
-	say "In Sim::OPT::Descend.\n";
+	say "Now in Sim::OPT::Descend.\n";
 	my $swap = shift;
 	my %dat = %$swap;
 	my @instances = @{ $dat{instances} };
@@ -105,8 +105,6 @@ sub merge_reports    # Self-explaining
 	my @base_columns = @main::base_columns;
 	my @maketabledata = @main::maketabledata;
 	my @filter_columns = @main::filter_columns;
-	
-	my $filenew = "$file"."_";
 	
 	my @simcases = @{ $dat{simcases} };
 	my @simstruct = @{ $dat{simstruct} };
@@ -507,10 +505,7 @@ sub takeoptima
 	my @filter_reports = @{ $globs{filter_reports} };
 	my @base_columns = @{ $globs{base_columns} };
 	my @maketabledata = @{ $globs{maketabledata} };
-	my @filter_columns = @{ $globs{filter_columns} };
-	
-	my $filenew = "$file"."_";
-	
+	my @filter_columns = @{ $globs{filter_columns} };	
 	
 	#open ( TOSHELL, ">>$toshell" ); # or die;
 	#open ( OUTFILE, ">>$outfile" ); # or die;

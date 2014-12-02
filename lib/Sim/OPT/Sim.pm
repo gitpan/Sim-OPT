@@ -54,7 +54,7 @@ sub getglobsals
 
 sub sim    # This function launch the simulations in ESP-r
 {
-	say "\nIn Sim::OPT::Sim.\n";
+	say "\nNow in Sim::OPT::Sim.\n";
 	my $swap = shift;
 	my %dat = %$swap;
 	my @instances = @{ $dat{instances} };
@@ -65,8 +65,6 @@ sub sim    # This function launch the simulations in ESP-r
 	my %globs = %{ $dat{globs} };
 	
 	$configfile = $dat{configfile}; #say "dump(\$configfile): " . dump($configfile);
-	
-	$filenew = "$file"."_";
 
 	my @simcases = @{ $dat{simcases} };
 	my @simstruct = @{ $dat{simstruct} };
@@ -122,8 +120,6 @@ sub sim    # This function launch the simulations in ESP-r
 	my @base_columns = @main::base_columns;
 	my @maketabledata = @main::maketabledata;
 	my @filter_columns = @main::filter_columns;
-	
-	my $filenew = "$file"."_";
 	
 	#my $getpars = shift;
 	#eval( $getpars );
@@ -259,7 +255,7 @@ XXX
 ";
 							if ($exeonfiles eq "y") 
 							{
-								print `$printthis`;
+								#print `$printthis`;
 							}
 							print TOSHELLSIM $printthis;
 						}
@@ -292,7 +288,7 @@ XXX
 ";
 							if ($exeonfiles eq "y") 
 							{
-								print `$printthis`;
+								#print `$printthis`;
 							}
 							print TOSHELLSIM $printthis;
 							print OUTFILESIM "TWO, $resfile\n";

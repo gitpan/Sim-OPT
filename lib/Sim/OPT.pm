@@ -64,7 +64,7 @@ $simnetwork, $reportloadsdata, @themereports, @simtitles, @reporttitles, @simdat
 @reporttempsstats, @files_to_filter, @filter_reports, @base_columns, @maketabledata, @filter_columns, 
 @files_to_filter, @filter_reports, @base_columns, @maketabledata, @filter_columns );
 
-$VERSION = '0.39.3_01'; # our $VERSION = '';
+$VERSION = '0.39._5'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -321,7 +321,7 @@ sub getitersnum
 sub makefilename # IT DEFINES A FILE NAME GIVEN A %carrier.
 {
 	my %carrier = @_;
-	my $filename = "$mypath/$filenew";
+	my $filename = "$mypath/$file" . "_";
 	my $countcase = 0;
 	foreach $key (sort {$a <=> $b} (keys %carrier) )
 	{
@@ -408,7 +408,7 @@ sub definerootcases #### DEFINES THE ROOT-CASE'S NAME.
 		{
 			$rootname = $rootname . $key . "-" . $miditers[$countcase]{$key} . "_";
 		}
-		$rootname = $filenew . $rootname; 
+		$rootname = "$file" . "_" . "$rootname"; 
 		$casetopass{rootname} = $rootname;
 		chomp $rootname;
 		push ( @rootnames, $rootname);
@@ -605,7 +605,7 @@ sub deffiles # IT DEFINED THE FILES TO BE CALLED.
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids);
 	#eval($getfly);
 	
-	my $rootitem = "$mypath/$filenew"; #say "\$rootitem $rootitem";
+	my $rootitem = "$mypath/$file" . "_"; #say "\$rootitem $rootitem";
 	my (@basket, @box);
 	push (@basket, $rootitem); 
 	
@@ -797,19 +797,6 @@ sub exe
 			morphcases => \@morphcases, morphstruct => \@morphstruct
 		} );
 	}
-	if ( $dowhat{report} eq "y" )
-	{
-		 Sim::OPT::Report::convert_report( 
-		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
-		} );
-	}
 	if ( $dowhat{substitutenames} eq "y" )
 	{
 		 Sim::OPT::Report::filter_reports( 
@@ -898,9 +885,7 @@ sub opt
 #	if ($chancefile) { eval `cat $chancefile` or die; }
 
 	print "\nNow in Sim::OPT.\n";
-	
-	my $filenew = "$file"."_";
-	
+		
 	if ( ($outfile) and (-e $outfile) ) { open ( OUTFILE, ">$outfile" ) or die "Can't open $outfile: $!"; }
 	if ( ($toshell) and (-e $toshell) ) { open ( TOSHELL, ">$toshell" ) or die "Can't open $toshell: $!"; }	
 	
@@ -980,7 +965,7 @@ A working knowledge of ESP-r is necessary to use OPT. Information about ESP-r ca
 To install OPT, the command <cpanm Sim::OPT> has to be issued. Perl will take care to install all dependencies. OPT can be loaded through the command <use Sim::OPT> in Perl. For that purpose, the "Devel::REPL" module can be used. As an alternative, the batch file "opt" (which can be found packed in the "optw.tar.gz" file in "example" folder in this distribution) may be copied in a work directory and the command <opt> may be issued. That command will activate the OPT's functions, following the settings specified in a previously prepared configuration file. When launched, OPT will ask the path to that file. Its activity will start after receiving that information. 
 That file must contain a suitable description of the operations to be accomplished pointing to an existing ESP-r model.
 
-In "optw.tar.gz" there is an example of OPT configuration file. An example of configuration file for an earlier version of the program may be downloaded at http://figshare.com/authors/Gian_luca_Brunetti/624879 .
+In "optw.tar.gz" there is an example of OPT configuration file ("d.pl"). That file should be decompacted and the resulting folder ("optw") may be used as a work folder for OPT, in which the ESP-r models to be worked should reside. The "mypath" variable should be set to that work directory. An example of configuration file for an earlier version of the program may be downloaded at http://figshare.com/authors/Gian_luca_Brunetti/624879 .
 
 To run OPT without making it launch ESP-r, the setting <$exeonfiles = "n";> should be specified in the configuration file. Note that this can only be aimed to inspect the command that OPTS will give to ESP-r through the shell. The search obtained will be very likely to be different from that driven by simulation results. If simulations are not launched, the optimal instance  at each subspace search cannot indeed be selected. In its place, the base case will be kept by the program, just to bring the process to completion. A sequential block search (Gauss-Seidel method) cannot indeed be run "dry". The variable "$toshell" specifies the path to a file that will receive the shell commands in place of the shell.
 
@@ -994,7 +979,7 @@ The structure of block searches is described through the variable "@sweeps" . Ea
 
 The number of iterations to be taken into account for each parameter for each case is specified in the "@varinumbers" variable. To specifiy that the parameters of the last example are tried for three values (iterations) each, @varinumbers = ( { 1 => '3', 2 => '3', 3 => '3', 4 => '3', 5 => '3', 6 => '3' } ).
 
-OPT is a program I have begun to write as a side project in 2008 with no funding. It is still in alpha stage though. It is the first real program I attempted to write. From time to time I add some parts to it. The parts of it that have been written earlier or later are the ones that are coded in the strangest manner.
+OPT is a program I have begun to write as a side project in 2008 with no funding. It is the first real program I attempted to write. From time to time I add some parts to it. The parts of it that have been written earlier or later are the ones that are coded in the strangest manner.
 
 Gian Luca Brunetti, Politecnico di Milano
 gianluca.brunetti@polimi.it

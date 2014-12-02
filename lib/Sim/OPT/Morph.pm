@@ -49,6 +49,7 @@ $VERSION = '0.39.1_01'; # our $VERSION = '';
 
 sub morph
 {
+	say "\nNow in Sim::OPT::Morph.\n";
 	my $swap = shift;
 	my %dat = %$swap;
 
@@ -94,9 +95,7 @@ sub morph
 	my @base_columns = @main::base_columns;
 	my @maketabledata = @main::maketabledata;
 	my @filter_columns = @main::filter_columns;
-	
-	my $filenew = "$file"."_";
-	
+		
 	my @simcases = @{ $dat{simcases} }; #say "dump(\@simcases): " . dump(@simcases);
 	my @simstruct = @{ $dat{simstruct} };
 	my @morphcases = @{ $dat{morphcase} };
@@ -124,7 +123,7 @@ sub morph
 	{
 		if ( $countblock == 0 )
 		{
-			say "morphlist: $morphlist";
+			#say "morphlist: $morphlist";
 			open (MORPHLIST, ">$morphlist") or die;
 		}
 		else
@@ -258,7 +257,7 @@ sub morph
 		#say "TELL ME: " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 		if ( ( $countblock == 0 ) and ( $countvar == 1 ) and ( $countstep == 1) )
 		{
-			$from = "$mypath/$file"; say "FROM: $from";
+			$from = "$mypath/$file"; #say "FROM: $from";
 		}
 		## ADDED IN NEW VERSION, ZZZ
 
@@ -688,36 +687,7 @@ sub translate
 			my $z_pace = ( $z_swingtranslate / ( $stepsvar - 1 ) );
 			my $z_movement = (- ( $z_end - ( $z_pace * ( $countstep - 1 ) ) ));
 
-			if ($exeonfiles eq "y") 
-			{
-				print 
-`prj -file $to/cfg/$fileconfig -mode script<<YYY
-
-m
-c
-a
-$zone_letter
-i
-e
-$x_movement $y_movement $z_movement
-y
-$yes_or_no_translate_obstructions
--
-y
-c
--
--
--
--
--
--
--
--
--
-YYY
-`;
-			}
-			print TOSHELLMORPH 
+my $printthis =
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
 
 m
@@ -743,10 +713,19 @@ c
 -
 YYY
 ";
+
+			if ($exeonfiles eq "y") 
+			{
+				print 
+`$printthis
+`;
+			}
+			print TOSHELLMORPH 
+"$printthis
+";
 		}
 	}
 }    # end sub translate
-
 
 my $countcycles_transl_surfs = 0;					
 #############################################################################

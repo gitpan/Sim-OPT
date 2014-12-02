@@ -48,7 +48,7 @@ sub getglobsals
 
 sub retrieve
 {	
-	say "In Sim::OPT::Retrieve.\n";
+	say "Now in Sim::OPT::Retrieve.\n";
 	my $swap = shift;
 	my %dat = %$swap;
 	my @instances = @{ $dat{instances} };
@@ -59,10 +59,6 @@ sub retrieve
 	my %globs = %{ $dat{globs} };
 	
 	$configfile = $dat{configfile}; #say "dump(\$configfile): " . dump($configfile);
-	
-	$filenew = "$file"."_";
-	
-	
 	
 	my @simcases = @{ $dat{simcases} };
 	my @simstruct = @{ $dat{simstruct} };
@@ -117,9 +113,7 @@ sub retrieve
 	my @base_columns = @main::base_columns;
 	my @maketabledata = @main::maketabledata;
 	my @filter_columns = @main::filter_columns;
-	
-	my $filenew = "$file"."_";
-	
+		
 	#my $getpars = shift;
 	#eval( $getpars );
 	
@@ -306,29 +300,29 @@ ZZZ
 		unless (-e "$result-$reporttitle-$theme.grt-")
 		{
 			my $printthis =
-	"res -file $resfile -mode script<<TTT
+"res -file $resfile -mode script<<TTT
 
-	3
-	$retrievedataloads[0]
-	$retrievedataloads[1]
-	$retrievedataloads[2]
-	d
-	>
-	a
-	$result-$reporttitle-$theme.grt
-	Simulation results $result-$reporttitle-$theme
-	l
-	a
+3
+$retrievedataloads[0]
+$retrievedataloads[1]
+$retrievedataloads[2]
+d
+>
+a
+$result-$reporttitle-$theme.grt
+Simulation results $result-$reporttitle-$theme
+l
+a
 
-	-
-	-
-	-
-	-
-	-
-	-
-	-
-	TTT
-	";
+-
+-
+-
+-
+-
+-
+-
+TTT
+";
 			if ($exeonfiles eq "y") 
 			{
 				print `$printthis`;
@@ -376,25 +370,25 @@ ZZZ
 		unless (-e "$result-$reporttitle-$theme.grt-")
 		{
 			my $printthis =
-			"res -file $resfile -mode script<<TTT
+		"res -file $resfile -mode script<<TTT
 
-	3
-	$retrievedatatempsstats[0]
-	$retrievedatatempsstats[1]
-	$retrievedatatempsstats[2]
-	d
-	>
-	a
-	$result-$reporttitle-$theme.grt
-	Simulation results $result-$reporttitle-$theme.grt
-	m
-	-
-	-
-	-
-	-
-	-
-	TTT
-	";
+3
+$retrievedatatempsstats[0]
+$retrievedatatempsstats[1]
+$retrievedatatempsstats[2]
+d
+>
+a
+$result-$reporttitle-$theme.grt
+Simulation results $result-$reporttitle-$theme.grt
+m
+-
+-
+-
+-
+-
+TTT
+";
 
 			if ($exeonfiles eq "y") 
 			{ 
