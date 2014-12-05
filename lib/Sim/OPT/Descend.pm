@@ -35,7 +35,7 @@ no warnings;
 
 @EXPORT = qw( merge_reports takeoptima ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_5'; # our $VERSION = '';
+$VERSION = '0.39.6_7'; # our $VERSION = '';
 
 
 #########################################################################################

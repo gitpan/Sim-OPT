@@ -37,7 +37,7 @@ no warnings;
 retrieve retrieve_comfort_results retrieve_loads_results retrieve_temps_stats 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_5'; # our $VERSION = '';
+$VERSION = '0.39.6_7'; # our $VERSION = '';
 
 
 #########################################################################################
