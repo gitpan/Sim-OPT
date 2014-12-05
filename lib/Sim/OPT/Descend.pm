@@ -21,6 +21,10 @@ use Data::Dumper;
 use Data::Dump qw(dump);
 #use Sub::Signatures;
 use Sim::OPT;
+use Sim::OPT::Morph;
+use Sim::OPT::Sim;
+use Sim::OPT::Retrieve;
+use Sim::OPT::Report;
 use feature 'say';
 no strict; 
 no warnings;
@@ -31,18 +35,12 @@ no warnings;
 
 @EXPORT = qw( merge_reports takeoptima ); # our @EXPORT = qw( );
 
-$VERSION = '0.37'; # our $VERSION = '';
+$VERSION = '0.39.6_5'; # our $VERSION = '';
 
 
 #########################################################################################
-# HERE FOLLOWS THE CONTENT OF "Descend.pm" and Sim::OPT::Descend
+# HERE FOLLOWS THE CONTENT OF "Descend.pm"DESCEND and Sim::OPT::Descend
 ##############################################################################
-
-sub getglobsals
-{
-	$configfile = shift;
-	require $configfile;
-}
 
 sub merge_reports 
 {
@@ -127,9 +125,12 @@ sub merge_reports
 	#my $getpars = shift;
 	#eval( $getpars );
 	
-	#open ( TOSHELL, ">>$toshell" ); # or die;
-	#open ( OUTFILE, ">>$outfile" ); # or die;
-		
+	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
+	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
+	
+	say "Descending into case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
+	say TOSHELL "#Descending into case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
+
 	my @columns_to_report           = @{ $reporttempsdata[1] };
 	my $number_of_columns_to_report = scalar(@columns_to_report);
 	my $counterlines;
@@ -139,8 +140,10 @@ sub merge_reports
 
 	sub merge
 	{
+		say "Merging performances for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
+		say TOSHELL "#Merging performances for  case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
 		open (MERGEFILE, ">$mergefile"); # or die;
-		open (FILECASELIST, "$simlistfile"); # or die;
+		open (FILECASELIST, "$simlist"); # or die;
 		my @lines = <FILECASELIST>;
 		close FILECASELIST;
 		my $counterline = 1;
@@ -182,6 +185,8 @@ sub merge_reports
 	my $selectmerged = "$cleanfile-select";
 	sub cleanselect
 	{ # CLEANS THE MERGED FILE AND SELECTS SOME COLUMNS AND COPIES THEM IN ANOTHER FILE
+		say "Cleaning results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
+		say TOSHELL "#Cleaning results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
 		open ( MERGEFILE, $mergefile); # or die;
 		my @lines = <MERGEFILE>;
 		close MERGEFILE;
@@ -231,6 +236,8 @@ sub merge_reports
 	my $weight = "$selectmerged-weight"; # THIS WILL HOST PARTIALLY SCALED VALUES, MADE POSITIVE AND WITH A CELING OF 1
 	sub weight
 	{
+		say "Scaling results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
+		say TOSHELL "#Scaling results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
 		open (SELECTEDMERGED, $selectmerged); # or die;
 		my @lines = <SELECTEDMERGED>;
 		close SELECTEDMERGED;
@@ -360,6 +367,8 @@ sub merge_reports
 	my $weighttwo = "$selectmerged-weighttwo"; # THIS WILL HOST PARTIALLY SCALED VALUES, MADE POSITIVE AND WITH A CELING OF 1
 	sub weighttwo
 	{
+		say "Weighting  results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
+		say TOSHELL "#Weighting results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
 		open (WEIGHT, $weight); # or die;
 		my @lines = <WEIGHT>;
 		close WEIGHT;
@@ -412,6 +421,8 @@ sub merge_reports
 	$sortmerged = "$mergefile-sortmerged"; # globsAL!
 	sub sortmerged
 	{
+		say "Processing  results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
+		say TOSHELL "#Processing results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
 		open (WEIGHTTWO, $weighttwo); # or die;
 		open (SORTMERGED_, ">$sortmerged"); # or die;
 		my @lines = <WEIGHTTWO>;
@@ -450,14 +461,49 @@ sub takeoptima
 	my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	
+	my $configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
+		
+	my $mypath = $main::mypath;  #say "dumpINDESCEND(\$mypath): " . dump($mypath);
+	my $exeonfiles = $main::exeonfiles; #say "dumpINDESCEND(\$exeonfiles): " . dump($exeonfiles);
+	my $generatechance = $main::generatechance; 
+	my $file = $main::file;
+	my $preventsim = $main::preventsim;
+	my $fileconfig = $main::fileconfig;
+	my $outfile = $main::outfile;
+	my $toshell = $main::toshell;
+	my $report = $main::report;
+	my $simnetwork = $main::simnetwork;
+	my $reportloadsdata = $main::reportloadsdata;
+
+	my @themereports = @main::themereports; #say "dumpINMORPH(\@themereports): " . dump(@themereports);
+	my @simtitles = @main::simtitles; #say "dumpINMORPH(\@simtitles): " . dump(@simtitles);
+	my @reporttitles = @main::reporttitles;
+	my @simdata = @main::simdata;
+	my @retrievedata = @main::retrievedata;
+	my @keepcolumns = @main::keepcolumns;
+	my @weights = @main::weights;
+	my @weightsaim = @main::weightsaim;
+	my @varthemes_report = @main::varthemes_report;
+	my @varthemes_variations = @vmain::arthemes_variations;
+	my @varthemes_steps = @main::varthemes_steps;
+	my @rankdata = @main::rankdata;
+	my @rankcolumn = @main::rankcolumn;
+	my @reporttempsdata = @main::reporttempsdata;
+	my @reportcomfortdata = @main::reportcomfortdata;
+	my @reportradiationenteringdata = @main::reportradiationenteringdata;
+	my @reporttempsstats = @main::reporttempsstats;
+	my @files_to_filter = @main::files_to_filter;
+	my @filter_reports = @main::filter_reports;
+	my @base_columns = @main::base_columns;
+	my @maketabledata = @main::maketabledata;
+	my @filter_columns = @main::filter_columns;
+	
 	my @simcases = @{ $dat{simcases} };
 	my @simstruct = @{ $dat{simstruct} };
 	my @morphcases = @{ $dat{morphcase} };
 	my @morphstruct = @{ $dat{morphstruct} };
 	my @rescases = @{ $dat{rescases} };
 	my @resstruct = @{ $dat{resstruct} };
-	
-	my $configfile = $dat{configfile};
 	
 	my $morphlist = $dat{morphlist};
 	my $morphblock = $dat{morphblock};
@@ -469,43 +515,6 @@ sub takeoptima
 	my $retblock = $dat{retblock};
 	my $mergecase = $dat{mergecase};
 	my $mergeblock = $dat{mergeblock};
-	
-	my %globs = $dat{globs};
-	
-	my $mypath = $globs{mypath};
-	my $exeonfiles = $globs{exeonfiles};
-	my $generatechance = $globs{generatechance};
-	my $file = $globs{file};
-	my $preventsim = $globs{preventsim};
-	my $fileconfig = $globs{fileconfig};
-	my $outfilerep = $globs{outfile};
-	my $toshellrep = $globs{toshell};
-	my $report = $globs{report};
-	my $simnetwork = $globs{simnetwork};
-	my $reportloadsdata = $globs{reportloadsdata};
-
-	my @themereports = @{ $globs{themereports} };
-	my @simtitles = @{ $globs{simtitles} };
-	my @reporttitles = @{ $globs{reporttitles} };
-	my @simdata = @{ $globs{simdata} };
-	my @retrievedata = @{ $globs{retrievedata} };
-	my @keepcolumns = @{ $globs{keepcolumns} };
-	my @weights = @{ $globs{weights} };
-	my @weightsaim = @{ $globs{weightsaim} };
-	my @varthemes_report = @{ $globs{varthemes_report} };
-	my @varthemes_variations = @{ $globs{varthemes_variations} };
-	my @varthemes_steps = @{ $globs{varthemes_steps} };
-	my @rankdata = @{ $globs{rankdata} };
-	my @rankcolumn = @{ $globs{rankcolumn} };
-	my @reporttempsdata = @{ $globs{reporttempsdata} };
-	my @reportcomfortdata = @{ $globs{reportcomfortdata} };
-	my @reportradiationenteringdata = @{ $globs{reportradiationenteringdata} };
-	my @reporttempsstats = @{ $globs{reporttempsstats} };
-	my @files_to_filter = @{ $globs{files_to_filter} };
-	my @filter_reports = @{ $globs{filter_reports} };
-	my @base_columns = @{ $globs{base_columns} };
-	my @maketabledata = @{ $globs{maketabledata} };
-	my @filter_columns = @{ $globs{filter_columns} };	
 	
 	#open ( TOSHELL, ">>$toshell" ); # or die;
 	#open ( OUTFILE, ">>$outfile" ); # or die;
@@ -648,9 +657,7 @@ sub takeoptima
 	my %newcarrier = %{$taken[1]}; #say "\%instancecarrier:--------->" . dump(%instancecarrier);
 	%{ $miditers[$countcase] } = %newcarrier; #say "->\%miditers: " . dump(%miditers);
 	
-	Sim::OPT::callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => ($countblock + 1), # INCREMENT
-	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
-	morphcases => \@morphcases, morphstruct => \@morphstruct } );
+	#Sim::OPT::callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => ($countblock + 1), sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, morphcases => \@morphcases, morphstruct => \@morphstruct } );
 	
 } # END OF SUB TAKEOPTIMA
 

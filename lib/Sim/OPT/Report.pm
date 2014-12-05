@@ -16,6 +16,10 @@ use Statistics::Basic qw(:all);
 use Set::Intersection;
 use List::Compare;
 use Sim::OPT;
+use Sim::OPT::Morph;
+use Sim::OPT::Sim;
+use Sim::OPT::Retrieve;
+use Sim::OPT::Descend;
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
@@ -32,18 +36,11 @@ no warnings;
 
 @EXPORT = qw( report retrieve merge rank_reports filter_reports maketable ); # our @EXPORT = qw( );
 
-$VERSION = '0.37'; # our $VERSION = '';
+$VERSION = '0.39.6_5'; # our $VERSION = '';
 
 #########################################################################################
 # HERE FOLLOWS THE CONTENT OF "Sim.pm", Sim::OPT::Sim
 ##############################################################################
-
-sub getglobsals
-{
-	$configfile = shift;
-	require $configfile;
-}
-
 
 sub report # This function retrieves the results of interest from the text file created by the "retrieve" function
 {
@@ -133,26 +130,40 @@ sub report # This function retrieves the results of interest from the text file 
 	
 	my $filenew = "file" . "_";
 		
-	#open ( TOSHELLREP, ">>$toshell" ) or die;
+	#open ( TOSHELL, ">>$toshell" ) or die;
 	#open ( OUTFILE, ">>$outfile" ) or die;
 	
-	my $toshellrep = "$toshell" . "-4rep.txt";
-	my $outfilerep = "$outfile" . "-4rep.txt";
+	#my $toshellrep = "$toshell" . "-4rep.txt";
+	#my $outfilerep = "$outfile" . "-4rep.txt";
 		
-	open ( TOSHELLREP, ">>$toshellrep" );
-	open ( OUTFILEREP, ">>$outfilerep" );
+	#open ( TOSHELL, ">>$toshellrep" );
+	#open ( OUTFILE, ">>$outfilerep" );
 
 	$" = "";
+	
+	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
+	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
+	
+	say TOSHELL "#Processing reports for case " . ($countcase + 1) . ", block " . ($countblock + 1);
+	
+	say "THEMEREPORTS: " . dump (@themereports);
+	say "THEMEREPORT: " . dump ($themereport);
+	say TOSHELL "THEMEREPORTS: " . dump (@themereports);
+	say TOSHELL "THEMEREPORT: " . dump ($themereport);
 
 	sub strip_files_temps
 	{
+		say "Extracting temperatures for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
+		say TOSHELL "
+		#Extracting temperatures for case 
+		" . ($countcase + 1) . ", block " . ($countblock + 1);
 		my $themereport = $_[0];
 		my @measurements_to_report      = @{ $reporttempsdata[0] };
 		my @columns_to_report           = @{ $reporttempsdata[1] };
 		my $number_of_columns_to_report = $#{ $reporttempsdata[1] };
 		my $counterreport               = 0;
 		my $dates_to_report             = $simtitle[$counterreport];
-		my @files_to_report             = <"$mypath/$filenew*temperatures.grt>;
+		my @files_to_report             = <"$mypath/results/$filenew*temperatures-$countcase-$countblock.grt>;
 
 		foreach my $file_to_report (@files_to_report)
 		{    #
@@ -162,7 +173,7 @@ sub report # This function retrieves the results of interest from the text file 
 			my $infile         = "$file_to_report";
 			my $outfilerep        = "$file_to_report-stripped";
 			open( INFILEREPORT,  "$infile" )   or die "Can't open infile $infile 3: $!";
-			open( OUTFILEREPORT, ">$outfilerep" ) or die "Can't open outfile $outfilerep: $!";
+			open( OUTFILEPORT, ">$outfilerep" ) or die "Can't open outfile $outfilerep: $!";
 			my @lines_to_report = <INFILEREPORT>;
 
 			foreach $line_to_report (@lines_to_report)
@@ -188,33 +199,35 @@ sub report # This function retrieves the results of interest from the text file 
 								{
 									$title_of_column =  "$element_of_row-" . "$file_and_period";
 								}
-								print OUTFILEREPORT "$title_of_column\t";
+								print OUTFILEPORT "$title_of_column\t";
 							}
 						}
 						$countercolumn = $countercolumn + 1;
 					}
-					print OUTFILEREPORT "\n";
+					print OUTFILEPORT "\n";
 				} elsif ( $counterline > 3 )
 				{
 					foreach $columnumber (@countercolumns)
 					{
 						if ( $columnumber =~ /\d/ )
 						{
-							print OUTFILEREPORT "$roww[$columnumber]\t";
+							print OUTFILEPORT "$roww[$columnumber]\t";
 						}
 					}
-					print OUTFILEREPORT "\n";
+					print OUTFILEPORT "\n";
 				}
 				$counterline++;
 			}
 			$counterreport++;
 		}
 		close(INFILEREPORT);
-		close(OUTFILEREPORT);
+		close(OUTFILEPORT);
 	}
 
 	sub strip_files_comfort
 	{
+		say "Extracting comfort data for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
+		say TOSHELL "#Extracting comfort data for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
 		my $themereport = $_[0];
 		my @measurements_to_report      = @{ reportcomfortdata->[0] };
 		my @columns_to_report           = @{ reportcomfortdata->[1] };
@@ -223,7 +236,7 @@ sub report # This function retrieves the results of interest from the text file 
 
 		#
 		my $dates_to_report = $simtitle[$counterreport];
-		my @files_to_report = <$mypath/$filenew*comfort.grt>;
+		my @files_to_report = <$mypath/results/$filenew*comfort-$countcase-$countblock.grt>;
 		my $file_to_report;
 		foreach $file_to_report (@files_to_report)
 		{    #
@@ -233,7 +246,7 @@ sub report # This function retrieves the results of interest from the text file 
 			my $infile  = "$file_to_report";
 			my $outfilerep = "$file_to_report-stripped";
 			open( INFILEREPORT,  "$infile" )   or die "Can't open infile $infile 4: $!";
-			open( OUTFILEREPORT, ">$outfilerep" ) or die "Can't open outfile $outfilerep: $!";
+			open( OUTFILEPORT, ">$outfilerep" ) or die "Can't open outfile $outfilerep: $!";
 			my @lines_to_report = <INFILEREPORT>;
 
 			foreach $line_to_report (@lines_to_report)
@@ -264,22 +277,22 @@ sub report # This function retrieves the results of interest from the text file 
 									$title_of_column =
 									  "$element_of_row-" . "$file_and_period";
 								}
-								print OUTFILEREPORT "$title_of_column\t";
+								print OUTFILEPORT "$title_of_column\t";
 							}
 						}
 						$countercolumn = $countercolumn + 1;
 					}
-					print OUTFILEREPORT "\n";
+					print OUTFILEPORT "\n";
 				} elsif ( $counterline > 3 )
 				{
 					foreach $columnumber (@countercolumns)
 					{
 						if ( $columnumber =~ /\d/ )
 						{
-							print OUTFILEREPORT "$roww[$columnumber]\t";
+							print OUTFILEPORT "$roww[$columnumber]\t";
 						}
 					}
-					print OUTFILEREPORT "\n";
+					print OUTFILEPORT "\n";
 				}
 				$counterline++;
 			}
@@ -287,11 +300,13 @@ sub report # This function retrieves the results of interest from the text file 
 
 		#
 		close(INFILEREPORT);
-		close(OUTFILEREPORT);
+		close(OUTFILEPORT);
 	}
 
 	sub strip_files_loads_no_transpose
 	{
+		say "Extracting loads for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
+		say TOSHELL "#Extracting loads for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
 		my $themereport = $_[0];
 		my @measurements_to_report = @{ reportloadsdata->[0] };
 		my @rows_to_report =
@@ -300,7 +315,7 @@ sub report # This function retrieves the results of interest from the text file 
 		  ( 1 + $#{ reportloadsdata->[1] } );    # see above: rows
 		                                         #
 		my $dates_to_report = $simtitle[$counterreport];
-		my @files_to_report = <$mypath/$filenew*loads.grt>;
+		my @files_to_report = <$mypath/results/$filenew*loads-$countcase-$countblock.grt>;
 		my $tofilter = $$reportloadsdata[1];
 		foreach my $file_to_report (@files_to_report)
 		{                                        #
@@ -310,7 +325,7 @@ sub report # This function retrieves the results of interest from the text file 
 			my $fullpath_outfile = "$outfilerep";
 			my $fullpath_infile  = "$infile";
 			open( INFILEREPORT,  "$infile" )   or die "Can't open $infile: $!";
-			open( OUTFILEREPORT, ">$outfilerep" ) or die "Can't open $outfilerep: $!";
+			open( OUTFILEPORT, ">$outfilerep" ) or die "Can't open $outfilerep: $!";
 			my @lines_to_report = <INFILEREPORT>;
 			
 			$" = " ";
@@ -321,27 +336,25 @@ sub report # This function retrieves the results of interest from the text file 
 				{
 					if ($roww eq $tofilter )
 					{
-						print OUTFILEREPORT  "$file_to_report @roww\n";
+						print OUTFILEPORT  "$file_to_report @roww\n";
 					}
 				}
 			}
 
 			close(INFILEREPORT);
-			close(OUTFILEREPORT);
+			close(OUTFILEPORT);
 		}
 	}
 
 	sub transposefileloads
 	{
 		my $themereport = $_[0];
-		my @files_to_transpose = <$mypath/$filenew*loads.grt->;
+		my @files_to_transpose = <$mypath/results/$filenew*loads-$countcase-$countblock.grt->;
 		foreach $file_to_transpose (@files_to_transpose)
 		{
 			print `chmod -R 755 $file_to_transpose`;
-			print TOSHELLREP "chmod -R 755 $file_to_transpose\n";
-			open( INPUT_FILE, "$file_to_transpose" )
-			  or die
-			  "Something's wrong with the input file $file_to_transpose: !\n";
+			print TOSHELL "chmod -R 755 $file_to_transpose\n";
+			open( INPUT_FILE, "$file_to_transpose" ) or die "Something's wrong with the input file $file_to_transpose: !\n";
 			my $line = <INPUT_FILE>;
 
 			#$line =~ s/All zones/All_zones/;
@@ -385,6 +398,9 @@ sub report # This function retrieves the results of interest from the text file 
 
 	sub strip_files_tempsstats_no_transpose
 	{
+		say "Extracting temperatures statistics for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
+		say TOSHELL "
+		#Extracting temperatures statistics for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
 		my $themereport = $_[0];
 		my @measurements_to_report = @{ reporttempsstats->[0] };
 		my @rows_to_report =
@@ -393,7 +409,7 @@ sub report # This function retrieves the results of interest from the text file 
 		  ( 1 + $#{ reporttempsstats->[1] } );    # see above: rows
 		my $tofilter = $reporttempsstats[1];
 		my $dates_to_report = $simtitle[$counterreport];
-		my @files_to_report = <$mypath/$filenew*tempsstats.grt>;
+		my @files_to_report = <$mypath/results/$filenew*tempsstats-$countcase-$countblock.grt>;
 		foreach my $file_to_report (@files_to_report)
 		{
 			$file_to_report =~ s/\.\/$file\///;
@@ -402,7 +418,7 @@ sub report # This function retrieves the results of interest from the text file 
 			my $fullpath_outfile = "$outfilerep";
 			my $fullpath_infile  = "$infile";
 			open( INFILEREPORT,  "$infile" )   or die "Can't open $infile 6: $!";
-			open( OUTFILEREPORT, ">$outfilerep" ) or die "Can't open $outfilerep: $!";
+			open( OUTFILEPORT, ">$outfilerep" ) or die "Can't open $outfilerep: $!";
 			my $countzones    = 0;
 			my @lines_to_report = <INFILEREPORT>;
 
@@ -427,12 +443,12 @@ sub report # This function retrieves the results of interest from the text file 
 				  )
 				{
 					$" = " ";
-					print OUTFILEREPORT
+					print OUTFILEPORT
 					  "$file_to_report\t @roww\n";
 				}
 			}
 			close(INFILEREPORT);
-			close(OUTFILEREPORT);
+			close(OUTFILEPORT);
 			
 		}
 	}
@@ -446,11 +462,11 @@ sub report # This function retrieves the results of interest from the text file 
 	sub transposefiletempsstats
 	{
 		my $themereport = $_[0];
-		my @files_to_transpose = <$mypath/$filenew*tempsstats.grt->;
+		my @files_to_transpose = <$mypath/results/$filenew*tempsstats-$countcase-$countblock.grt->;
 		foreach $file_to_transpose (@files_to_transpose)
 		{
 			print `chmod -R 755 $file_to_transpose`;
-			print TOSHELLREP "chmod -R 755 $file_to_transpose\n";
+			print TOSHELL "chmod -R 755 $file_to_transpose\n";
 			open( INPUT_FILE, "$file_to_transpose" )
 			  or die
 			  "Something's wrong with the input file $file_to_transpose: !\n";
@@ -518,6 +534,8 @@ sub report # This function retrieves the results of interest from the text file 
 
 sub merge_reports    # Self-explaining
 {
+	say "Merging reports for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
+	say TOSHELL "#Merging reports for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
 	my $swap = shift;
 	my %dat = %$swap;
 	my $getpars = shift;
@@ -530,6 +548,8 @@ sub merge_reports    # Self-explaining
 
 	sub merge_reports_temps
 	{       
+		say "Merging temperature reports for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
+		say TOSHELL "#Merging temperature reports for case " . ($countcase + 1) . ", block " . ($countblock + 1) ;
 		my $themereport = $_[0];       
 		my $counterdate = 0;
 		foreach my $date (@dates)
@@ -538,7 +558,7 @@ sub merge_reports    # Self-explaining
 			my @resultingfile;
 			my @lines_to_merge;
 			my $date_to_merge  = $simtitle[$counterdate];
-			my @files_to_merge = <$mypath/$filenew*$date*temperatures.grt->;
+			my @files_to_merge = <$mypath/$filenew*$date*temperatures-$countcase-$countblock.grt->;
 			my $counterfiles   = 0;
 			foreach my $file_to_merge (@files_to_merge)
 			{          #
@@ -571,8 +591,9 @@ sub merge_reports    # Self-explaining
 			}
 
 			my $outfilerep = "$mypath/$filenew-$date-temperatures-sum-up.txt";
-			if (-e $outfilerep) { `chmod 777 $outfilerep\n`; `mv -b $outfilerep-bak\n`;};
-			print TOSHELLREP "chmod 777 $outfilerep\n"; print TOSHELLREP "mv -b $outfilerep-bak\n";
+			if (-e $outfilerep) { `chmod 755 $outfilerep\n`; `mv -b $outfilerep-bak\n`;};
+
+			print TOSHELL "chmod 755 $outfilerep\n"; print TOSHELL "mv -b $outfilerep-bak\n";
 			open( OUTFILEMERGE, ">$outfilerep" ) or die "Can't open $outfilerep: $!";
 			my $newcounterlines = 0;
 			my $numberrow       = $#resultingfile;
@@ -583,12 +604,12 @@ sub merge_reports    # Self-explaining
 				$newcounterlines++;
 			}
 			close(OUTFILEMERGE);
-			my @files_to_erase = <$mypath/$filenew*$date*temperatures.grt->;
+			my @files_to_erase = <$mypath/$filenew*$date*temperatures-$countcase-$countblock.grt->;
 			foreach my $file_to_erase (@files_to_erase)
 			{
 				print "rm -r $file_to_erase";
 			}
-			my @files_to_erase = <$mypath/$filenew*$date*temperatures.grt.par>;
+			my @files_to_erase = <$mypath/$filenew*$date*temperatures-$countcase-$countblock.grt.par>;
 			foreach my $file_to_erase (@files_to_erase)
 			{
 				print "rm -r $file_to_erase";
@@ -598,7 +619,10 @@ sub merge_reports    # Self-explaining
 	}
 
 	sub merge_reports_comfort
-	{    #
+	{    	say "Merging comfort reports for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar.";
+		say TOSHELL "
+		#Merging comfort reports for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar.
+		";
 		my $themereport = $_[0];
 		my $counterdate = 0;
 		foreach my $date (@dates)
@@ -607,7 +631,7 @@ sub merge_reports    # Self-explaining
 			my @resultingfile;
 			my @lines_to_merge;
 			my $date_to_merge  = $simtitle[$counterdate];
-			my @files_to_merge = <$mypath/$filenew*$date*comfort.grt->;
+			my @files_to_merge = <$mypath/$filenew*$date*comfort-$countcase-$countblock.grt->;
 			my $counterfiles   = 0;
 			foreach my $file_to_merge (@files_to_merge)
 			{    #
@@ -636,8 +660,8 @@ sub merge_reports    # Self-explaining
 			}
 
 			my $outfilerep = "$mypath/$filenew-$date-comfort-sum-up.txt";
-			if (-e $outfilerep) { `chmod 777 $outfilerep\n`; `mv -b $outfilerep-bak\n`;}
-			print TOSHELLREP "chmod 777 $outfilerep\n"; print TOSHELLREP "mv -b $outfilerep-bak\n"; 
+			if (-e $outfilerep) { `chmod 755 $outfilerep\n`; `mv -b $outfilerep-bak\n`;}
+			print TOSHELL "chmod 755 $outfilerep\n"; print TOSHELL "mv -b $outfilerep-bak\n"; 
 			open( OUTFILEMERGE, ">$outfilerep" ) or die "Can't open $outfilerep: $!";
 			my $newcounterlines = 0;
 			my $numberrow       = $#resultingfile;
@@ -649,12 +673,12 @@ sub merge_reports    # Self-explaining
 
 			}
 			close(OUTFILEMERGE);
-			my @files_to_erase = <$mypath/$filenew*$date*comfort.grt->;
+			my @files_to_erase = <$mypath/$filenew*$date*comfort-$countcase-$countblock.grt->;
 			foreach my $file_to_erase (@files_to_erase)
 			{
 				print "rm -r $file_to_erase";
 			}
-			my @files_to_erase = <$mypath/$filenew*$date*comfort.grt.par>;
+			my @files_to_erase = <$mypath/$filenew*$date*comfort.grt-$countcase-$countblock.par>;
 			foreach my $file_to_erase (@files_to_erase)
 			{
 				print "rm -r $file_to_erase";
@@ -666,7 +690,10 @@ sub merge_reports    # Self-explaining
 	}
 
 	sub merge_reports_loads
-	{    #
+	{    	say "Merging loads reports for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar.";
+		say TOSHELL "
+		#Merging loads reports for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar.
+		";
 		my $themereport = $_[0];
 		my $counterdate = 0;
 		foreach my $date (@dates)
@@ -675,7 +702,7 @@ sub merge_reports    # Self-explaining
 			my @resultingfile;
 			my @lines_to_merge;
 			my $date_to_merge  = $simtitle[$counterdate];
-			my @files_to_merge = <$mypath/$filenew*$date*loads.grt->;
+			my @files_to_merge = <$mypath/$filenew*$date*loads-$countcase-$countblock.grt->;
 			my $counterfiles = 0;
 			foreach my $file_to_merge (@files_to_merge)
 			{    #
@@ -705,8 +732,8 @@ sub merge_reports    # Self-explaining
 
 			#
 			my $outfile0 = "$mypath/$filenew-$date-loads-sum-up-transient.txt";
-			if (-e $outfilerep) { `chmod 777 $outfilerep\n`; `mv -b $outfilerep-bak\n`;};
-			print TOSHELLREP "chmod 777 $outfilerep\n"; print TOSHELLREP "mv -b $outfilerep-bak\n";
+			if (-e $outfilerep) { `chmod 755 $outfilerep\n`; `mv -b $outfilerep-bak\n`;};
+			print TOSHELL "chmod 755 $outfilerep\n"; print TOSHELL "mv -b $outfilerep-bak\n";
 			open( OUTFILEMERGE0, ">$outfile0" )
 			  or die "Can't open outfile0 $outfile0: $!";
 			my $newcounterlines = 0;
@@ -737,15 +764,15 @@ sub merge_reports    # Self-explaining
 			print OUTFILEMERGE "$return_txt";
 			close(INFILEMERGE0);
 			if (-e $outfilerep) { print `rm $infile0\n`;}
-			print TOSHELLREP "rm $infile0\n";
+			print TOSHELL "rm $infile0\n";
 			close(OUTFILEMERGE);
-			my @files_to_erase = <$mypath/$filenew*$date*loads.grt->;
+			my @files_to_erase = <$mypath/$filenew*$date*loads-$countcase-$countblock.grt->;
 
 			foreach my $file_to_erase (@files_to_erase)
 			{
 				print "rm -r $file_to_erase";
 			}
-			my @files_to_erase = <$mypath/$filenew*$date*loads.grt.par>;
+			my @files_to_erase = <$mypath/$filenew*$date*loads.grt-$countcase-$countblock.par>;
 			foreach my $file_to_erase (@files_to_erase)
 			{
 				print "rm -r $file_to_erase";
@@ -756,6 +783,10 @@ sub merge_reports    # Self-explaining
 
 	sub merge_reports_tempsstats
 	{
+		say "Merging reports about temperature statistics for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar.";
+		say TOSHELL "
+		#Merging reports about temperature statistic for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar.
+		";
 		my $themereport = $_[0];
 		my $counterdate = 0;
 		foreach my $date (@dates)
@@ -764,7 +795,7 @@ sub merge_reports    # Self-explaining
 			my @resultingfile;
 			my @lines_to_merge;
 			my $date_to_merge  = $simtitle[$counterdate];
-			my @files_to_merge = <$mypath/$filenew*$date*tempsstats.grt-> ; # my @files_to_merge = <./$file*$date*loads.grt-stripped.reversed.txt>;
+			my @files_to_merge = <$mypath/$filenew*$date*tempsstats-$countcase-$countblock.grt-> ; # my @files_to_merge = <./$file*$date*loads.grt-stripped.reversed.txt>;
 			my $counterfiles = 0;
 			foreach my $file_to_merge (@files_to_merge)
 			{    #
@@ -794,8 +825,8 @@ sub merge_reports    # Self-explaining
 
 			#
 			my $outfile0 = "$mypath/$filenew-$date-tempsstats-sum-up-transient.txt";
-			if (-e $outfilerep) { `chmod 777 $outfilerep\n`; `mv -b $outfilerep-bak\n`;};
-			print TOSHELLREP "chmod 777 $outfilerep\n"; print TOSHELLREP "mv -b $outfilerep-bak\n";
+			if (-e $outfilerep) { `chmod 755 $outfilerep\n`; `mv -b $outfilerep-bak\n`;};
+			print TOSHELL "chmod 755 $outfilerep\n"; print TOSHELL "mv -b $outfilerep-bak\n";
 			open( OUTFILEMERGE0, ">$outfile0" ) or die "Can't open $outfile0: $!";
 			my $newcounterlines = 0;
 			my $numberrow = $#resultingfile;
@@ -826,15 +857,15 @@ sub merge_reports    # Self-explaining
 			print OUTFILEMERGE "$return_txt";
 			close(INFILEMERGE0);
 			if (-e $outfilerep) { print `rm $infile0\n`;}
-			print TOSHELLREP "rm $infile0\n";
+			print TOSHELL "rm $infile0\n";
 			close(OUTFILEMERGE);
-			my @files_to_erase = <$mypath/$filenew*$date*tempsloads.grt->;
+			my @files_to_erase = <$mypath/$filenew*$date*tempsloads-$countcase-$countblock.grt->;
 
 			foreach my $file_to_erase (@files_to_erase)
 			{
 				print "rm -r $file_to_erase";
 			}
-			my @files_to_erase = <$mypath/$filenew*$date*tempsloads.grt.par>;
+			my @files_to_erase = <$mypath/$filenew*$date*tempsloads-$countcase-$countblock.grt.par>;
 			foreach my $file_to_erase (@files_to_erase)
 			{
 				print "rm -r $file_to_erase";
@@ -843,18 +874,31 @@ sub merge_reports    # Self-explaining
 		}
 	}
 	
-	foreach my $themereport (@themereports)
+	foreach my $themereport (@themereports) 
 	{
-	if ( $themereport eq "temps" ) { merge_reports_temps($themereport); }
-		if ( $themereport eq "comfort" ) { merge_reports_comfort($themereport); }
+		say "THEMEREPORTS: " . dump (@themereports);
+		say "THEMEREPORT: " . dump ($themereport);
+		say TOSHELL "THEMEREPORTS: " . dump (@themereports);
+		say TOSHELL "THEMEREPORT: " . dump ($themereport);
+		if ( $themereport eq "temps" ) 
+		{ 
+			merge_reports_temps($themereport); 
+		}
+		if ( $themereport eq "comfort" ) 
+		{ 
+			merge_reports_comfort($themereport); 
+		}
 		if ( $themereport eq "loads" )
 		{
 			merge_reports_loads($themereport);
 		}
-		if ( $themereport eq "tempsstats" ) { merge_reports_tempsstats($themereport); }
+		if ( $themereport eq "tempsstats" ) 
+		{ 
+			merge_reports_tempsstats($themereport); 
+		}
 	}
-	close TOSHELLREP;
-	close OUTFILEREP;
+	#close TOSHELL;
+	#close OUTFILE;
 }    # END SUB merge_reports
 
 sub enrich_reports

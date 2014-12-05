@@ -21,6 +21,10 @@ use Data::Dumper;
 use Data::Dump qw(dump);
 #use Sub::Signatures;
 use Sim::OPT;
+use Sim::OPT::Morph;
+use Sim::OPT::Retrieve;
+use Sim::OPT::Report;
+use Sim::OPT::Descend;
 use feature 'say';
 no strict; 
 no warnings;
@@ -31,7 +35,7 @@ no warnings;
 
 @EXPORT = qw( sim ); # our @EXPORT = qw( );
 
-$VERSION = '0.37'; # our $VERSION = '';
+$VERSION = '0.39.6_5'; # our $VERSION = '';
 
 
 #########################################################################################
@@ -45,12 +49,6 @@ $VERSION = '0.37'; # our $VERSION = '';
 
 #____________________________________________________________________________
 # Activate or deactivate the following function calls depending from your needs
-
-sub getglobsals
-{
-	$configfile = shift;
-	
-}
 
 sub sim    # This function launch the simulations in ESP-r
 {
@@ -124,11 +122,11 @@ sub sim    # This function launch the simulations in ESP-r
 	#my $getpars = shift;
 	#eval( $getpars );
 	
-	my $toshellsim = "$toshell" . "-2sim.txt";
-	my $outfilesim = "$outfile" . "-2sim.txt";
+	#my $toshellsim = "$toshell" . "-2sim.txt";
+	#my $outfilesim = "$outfile" . "-2sim.txt";
 		
-	open ( TOSHELLSIM, ">>$toshellsim" );
-	open ( OUTFILESIM, ">>$outfilesim" );
+	#open ( TOSHELL, ">>$toshellsim" );
+	#open ( OUTFILE, ">>$outfilesim" );
 	
 	open ( SIMLIST, ">$simlist") or ( say "\$simlist: $simlist" and die );
 	
@@ -157,9 +155,13 @@ sub sim    # This function launch the simulations in ESP-r
 			open ( SIMBLOCK, ">>$simblock"); # or die;
 		}
 	}
+	
+	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
+	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
 
 	foreach my $instance (@instances)
 	{
+		say "\nNow in Sim::OPT::Sim.\n";
 		my %dat = %{$instance};
 		my @rootnames = @{ $dat{rootnames} }; #say \"dump(\@rootnames): " . dump(@rootnames);
 		my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
@@ -255,9 +257,12 @@ XXX
 ";
 							if ($exeonfiles eq "y") 
 							{
-								#print `$printthis`;
+								print `$printthis`;
 							}
-							print TOSHELLSIM $printthis;
+							print TOSHELL "  
+#Simulating zones for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis
+";
 						}
 					
 						if ( $simnetwork eq "y" )
@@ -288,10 +293,13 @@ XXX
 ";
 							if ($exeonfiles eq "y") 
 							{
-								#print `$printthis`;
+								print `$printthis`;
 							}
-							print TOSHELLSIM $printthis;
-							print OUTFILESIM "TWO, $resfile\n";
+							print TOSHELL " 
+#Simulating zones for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.\
+$printthis
+\n";
+							print OUTFILE "TWO, $resfile\n";
 						}						
 					}
 				}		
@@ -303,8 +311,8 @@ XXX
 
 	close SIMLIST;
 	close SIMBLOCK;
-	close TOSHELLSIM;
-	close OUTFILESIM;
+	#close TOSHELL;
+	#close OUTFILE;
 }    # END SUB sim;			
 
 # END OF THE CONTENT OF Sim::OPT::Sim

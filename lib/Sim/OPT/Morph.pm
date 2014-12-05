@@ -16,6 +16,10 @@ use Set::Intersection;
 use List::Compare;
 use Data::Dumper;
 use Sim::OPT;
+use Sim::OPT::Sim;
+use Sim::OPT::Retrieve;
+use Sim::OPT::Report;
+use Sim::OPT::Descend;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
 #$Data::Dumper::Terse  = 1;
@@ -40,7 +44,7 @@ get_obstructions write_temporary pin_obstructions apply_pin_obstructions vary_ne
 apply_component_changes constrain_net read_net_constraints propagate_constraints 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.1_01'; # our $VERSION = '';
+$VERSION = '0.39.6_05'; # our $VERSION = '';
 
 
 ##############################################################################
@@ -145,6 +149,9 @@ sub morph
 		}		
 	}	
 	
+	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
+	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
+	
 	$countinstance = 1;
 	foreach my $instance (@instances)
 	{		
@@ -242,11 +249,11 @@ sub morph
 		my $sequencer = $$general_variables[1];
 		my $dffile = "df-$file.txt";	
 		
-		my $toshellmorph = "$toshell" . "-1morph.txt";
-		my $outfilemorph = "$outfile" . "-1morph.txt";
+		#my $toshellmorph = "$toshell" . "-1morph.txt";
+		#my $outfilemorph = "$outfile" . "-1morph.txt";
 		
-		open ( TOSHELLMORPH, ">>$toshellmorph" );
-		open ( OUTFILEMORPH, ">>$outfilemorph" );
+		#open ( TOSHELL, ">>$toshellmorph" );
+		#open ( OUTFILE, ">>$outfilemorph" );
 		
 		if ( not ( $to ~~ @morphstruct ) )
 		{
@@ -289,7 +296,7 @@ sub morph
 			#		if ( $countstep == $stepsvar )
 			#		{
 			#			if ($exeonfiles eq "y") { print `chmod -R 777 $from\n`; }
-			#			print TOSHELLMORPH "chmod -R 777 $from\n\n";
+			#			print TOSHELL "chmod -R 777 $from\n\n";
 			#		}
 			#	}
 			#} 
@@ -308,7 +315,7 @@ sub morph
 			#		#if ( $countstep == $stepsvar )
 			#		#{
 			#		#	if ($exeonfiles eq "y") { print `chmod -R 777 $from\n`; }
-			#		#	print TOSHELLMORPH "chmod -R 777 $from\n\n";
+			#		#	print TOSHELL "chmod -R 777 $from\n\n";
 			#		#}
 			#	}
 			#} 
@@ -330,7 +337,7 @@ sub morph
 				unless (-e $to)
 				{
 					if ($exeonfiles eq "y") { `cp -R $from $to\n`; }
-					print TOSHELLMORPH "cp -R $from $to\n\n";
+					print TOSHELL "cp -R $from $to\n\n";
 				}
 			} 
 			else
@@ -339,7 +346,7 @@ sub morph
 				{
 					
 					if ($exeonfiles eq "y") { `cp -R $from $to\n`; }
-					print TOSHELLMORPH "cp -R $from $to\n\n";
+					print TOSHELL "cp -R $from $to\n\n";
 				}
 			}
 			push(@morphed, $to);
@@ -355,12 +362,12 @@ sub morph
 					{  
 						`cp -f $to/zones/$applytype[$countzone][1] $to/zones/$applytype[$countzone][2]\n`; 
 					}
-					print TOSHELLMORPH "cp -f $to/zones/$applytype[$countzone][1] $to/zones/$applytype[$countzone][2]\n\n";
+					print TOSHELL "cp -f $to/zones/$applytype[$countzone][1] $to/zones/$applytype[$countzone][2]\n\n";
 					if ($exeonfiles eq "y") 
 					{  
 						`cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n`; 
 					}    # ORDINARILY, THIS PART CAN BE REMOVED
-					print TOSHELLMORPH "cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n\n";
+					print TOSHELL "cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n\n";
 				}# ORDINARILY, THIS PART CAN BE REMOVED
 				if (
 					 (
@@ -373,7 +380,7 @@ sub morph
 					{ 
 						`cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n`; 
 					}
-					print TOSHELLMORPH "cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n\n"; 
+					print TOSHELL "cp -f $to/cfg/$applytype[$countzone][1] $to/cfg/$applytype[$countzone][2]\n\n"; 
 				} # ORDINARILY, THIS PART CAN BE REMOVED
 
 				#########################################################################################
@@ -385,7 +392,7 @@ sub morph
 				my $yes_or_no_keep_some_obstructions = "$$keep_obstructions[$countzone][0]";
 				
 				print `cd $to`;
-				print TOSHELLMORPH "cd $to\n\n";
+				print TOSHELL "cd $to\n\n";
 				my $countcycles_transl_surfs = 0;				
 
 				if ( $stepsvar > 1)
@@ -633,15 +640,15 @@ sub morph
 				}
 				$countzone++;
 				print `cd $mypath`;
-				print TOSHELLMORPH "cd $mypath\n\n";
+				print TOSHELL "cd $mypath\n\n";
 			}
 		}
 		close MORPHLIST;
 		close MORPHBLOCK;
 		$countinstance++;
 	}
-	close TOSHELLMORPH;
-	close OUTFILEMORPH;
+	close TOSHELL;
+	close OUTFILE;
 }    # END SUB morph
 
 sub translate
@@ -720,8 +727,9 @@ YYY
 `$printthis
 `;
 			}
-			print TOSHELLMORPH 
-"$printthis
+			print TOSHELL 
+"#Translating zones for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.\"
+$printthis
 ";
 		}
 	}
@@ -814,7 +822,7 @@ YYY\n\n";
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL $printthis;
 
 				my $printthis = 
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
@@ -848,7 +856,7 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL $printthis;
 
 				$countsurface++;
 				$countcycles_transl_surfs++;
@@ -932,7 +940,9 @@ YYY
 						if ($exeonfiles eq "y") { 
 						print `$printthis`;
 					}
-					print T $printthis;
+					print TOSHELL "
+#Translating surfaces for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance
+$printthis";
 
 					$countsurface++;
 					$countcycles_transl_surfs++;
@@ -987,7 +997,9 @@ YYY
 						print `$printthis`;
 					}
 
-					print TOSHELLMORPH $printthis;
+					print TOSHELL "
+#Translating surfaces for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance
+$printthis";
 
 					$countsurface++;
 					$countcycles_transl_surfs++;
@@ -1067,7 +1079,9 @@ YYY
 					print `$printthis`;
 				}
 
-				print  $_toshell_ $printthis;
+				print  TOSHELL "
+Rotating surfaces for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance
+$printthis";
 			}
 			$countrotate++;
 		}
@@ -1217,7 +1231,9 @@ YYY
 							print `$printthis`;
 						}
 
-						print TOSHELLMORPH $printthis;
+						print TOSHELL "
+#Translating vertexes for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.			
+$printthis";
 					}
 				}
 				$countvertex++;
@@ -1252,8 +1268,6 @@ sub shift_vertexes
 	my $yes_or_no_radiation_update = $$shift_vertexes[$countzone][4];
 	my $configfile = $$shift_vertexes[$countzone][5];
 	
-	say "Shifting vertexes for problem $countcaseplus1, block $countblockplus1, parameter $countvar at iteration $countstep.";
-
 	if ( $stepsvar > 1 )
 	{
 		if ( $yes_or_no_shift_vertexes eq "y" )
@@ -1303,7 +1317,9 @@ YYY
 					{ 
 						print `$printthis`;
 					}
-					print TOSHELLMORPH $printthis;
+					print TOSHELL "
+#Shifting vertexes for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 
 					$countthis++;
 				}
@@ -1349,7 +1365,9 @@ YYY
 					{ 
 						print `$printthis`;
 					}
-					print TOSHELLMORPH $printthis;
+					print TOSHELL "
+#Shifting vertexes for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 				}
 			}
 		}
@@ -1391,39 +1409,7 @@ sub rotate    # generic zone rotation
 		  ( ( $swingrotate / 2 ) -
 			 ( $pacerotate * ( $countstep - 1 ) ) );
 
-		if ($exeonfiles eq "y") 
-		{ 
-			print 
-`prj -file $to/cfg/$fileconfig -mode script<<YYY
-
-
-m
-c
-a
-$zone_letter
-i
-b
-$rotation_degrees
-$base_vertex
--
-$yes_or_no_rotate_obstructions
--
-y
-c
--
-y
--
--
--
--
--
--
--
--
-YYY
-`;
-		}
-		print TOSHELLMORPH 
+		my $printthis = 
 "prj -file $to/cfg/$fileconfig -mode script<<YYY
 
 
@@ -1452,6 +1438,16 @@ y
 -
 YYY
 ";
+
+		if ($exeonfiles eq "y") 
+		{ 
+			print `$printthis`;
+		}
+		print TOSHELL 
+"
+#Rotating zones for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis
+";
 	}
 }    # END SUB rotate
 ##############################################################################
@@ -1471,7 +1467,7 @@ sub rotatez # PUT THE ROTATION POINT AT POINT 0, 0, 0. I HAVE NOT YET MADE THE F
 	my $rotatez = shift;
 	my $countvar = shift;
 	
-	say "Rotating zones on the horizontal plane for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
+	say "Rotating zones on the vertical plane for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 
 	my $yes_or_no_rotation = "$$rotatez[0]";
 	my @centerpoints = @{$$rotatez[1]};
@@ -1601,17 +1597,17 @@ sub rotatez # PUT THE ROTATION POINT AT POINT 0, 0, 0. I HAVE NOT YET MADE THE F
 
 		close($_outfile_);
 		if ($exeonfiles eq "y") { print `chmod 777 $infile`; }
-		print TOSHELLMORPH "chmod -R 777 $infile\n";
+		print TOSHELL "chmod -R 777 $infile\n";
 		if ($exeonfiles eq "y") { print `chmod 777 $infile2`; }
-		print TOSHELLMORPH "chmod -R 777 $infile2\n";
+		print TOSHELL "chmod -R 777 $infile2\n";
 		if ($exeonfiles eq "y") { print `rm $infile`; }
-		print TOSHELLMORPH "rm $infile\n";
+		print TOSHELL "rm $infile\n";
 		if ($exeonfiles eq "y") { print `chmod 777 $outfile2`; }
-		print TOSHELLMORPH "chmod 777 $outfile2\n";
+		print TOSHELL "chmod 777 $outfile2\n";
 		if ($exeonfiles eq "y") { print `cp $outfile2 $infile`; }
-		print TOSHELLMORPH "cp $outfile2 $infile\n";
+		print TOSHELL "cp $outfile2 $infile\n";
 		if ($exeonfiles eq "y") { print `cp $outfile2 $infile2`; }
-		print TOSHELLMORPH "cp $outfile2 $infile2\n";
+		print TOSHELL "cp $outfile2 $infile2\n";
 	}
 } # END SUB rotatez
 ##############################################################################
@@ -1732,12 +1728,12 @@ sub make_generic_change # WITH THIS FUNCTION YOU TARGET PORTIONS OF A FILE AND Y
 	}
 	close($_outfile_);
 	if ($exeonfiles eq "y") { print `chmod -R 755 $infile`; }
-	print TOSHELLMORPH "chmod -R 755 $infile\n";
+	print TOSHELL "chmod -R 755 $infile\n";
 	if ($exeonfiles eq "y") { print `chmod -R 755 $outfilemorph`; }
-	print TOSHELLMORPH
+	print TOSHELL
 	  "chmod -R 755 $outfilemorph\n";
 	if ($exeonfiles eq "y") { print `cp -f $outfilemorph $infile`; }
-	print TOSHELLMORPH
+	print TOSHELL
 	  "cp -f $outfilemorph $infile\n";
 }    # END SUB generic_change
 ##############################################################################
@@ -1809,7 +1805,9 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELLMORPH $printthis;
+			print TOSHELL "
+#Reassign construction solutions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 			$count++;
 		}
 	}
@@ -1899,14 +1897,16 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL "
+#Changing thicknesses in construction layer for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 				$countstrata++;
 			}
 			$thiscount++;
 		}
 		$" = " ";
 		if ($exeonfiles eq "y") { print `$enter_esp$go_to_construction_database@change_entries_with_thicknesses$exit_construction_database_and_esp`; }
-		print TOSHELLMORPH "$enter_esp$go_to_construction_database@change_entries_with_thicknesses$exit_construction_database_and_esp\n";
+		print TOSHELL "$enter_esp$go_to_construction_database@change_entries_with_thicknesses$exit_construction_database_and_esp\n";
 	}
 } # END sub change_thickness
 ##############################################################################		
@@ -2005,7 +2005,9 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL "
+#Modifying obstructions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 				$countobs++;
 				}
 			}
@@ -2051,7 +2053,9 @@ YYY
 					{ 
 						print `$printthis`;
 					}
-					print TOSHELLMORPH $printthis;
+					print TOSHELL "
+#Modifying obstructions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 					$countobs++;
 				}
 			}
@@ -2097,7 +2101,9 @@ YYY
 							{ 
 								print `$printthis`;
 							}
-							print TOSHELLMORPH $printthis;
+							print TOSHELL "
+Modifying obstructions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 						$countobs++;
 						$count++;
 					}
@@ -2147,7 +2153,7 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL $printthis;
 				$countobs++;
 			}
 		}
@@ -2203,7 +2209,9 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL "
+Modifying obstructions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 				$countobs++;
 				}
 			}
@@ -2238,7 +2246,9 @@ YYY
 			{ 
 				print `$printthis`;
 			}
-			print TOSHELLMORPH $printthis;
+			print TOSHELL "
+Modifying obstructions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 	}
 }    # END SUB obs_modify. FIX THE INDENTATION.
 ##############################################################################
@@ -2324,7 +2334,9 @@ YYY
 			{ 
 				print `$printthis`;
 			}
-			print TOSHELLMORPH $printthis;
+			print TOSHELL "
+#Keeping some obstructions in positions for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 			$keep_obs_count++;
 		}
 
@@ -2336,7 +2348,7 @@ YYY
 		{ 
 			print `$printthis`;
 		}
-		print TOSHELLMORPH $printthis;
+		print TOSHELL $printthis;
 	}
 }    # END SUB bring_obstructions_back
 ##################################################################					
@@ -2365,7 +2377,9 @@ sub recalculateish
 		print `$printthis`;
 	}
 
-	print TOSHELLMORPH $printthis;
+	print TOSHELL "
+#Updating the insolation calculations for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 } #END SUB RECALCULATEISH
 ##############################################################################				
 
@@ -2433,7 +2447,9 @@ cd $mypath
 		print `$printthis`;
 	}
 
-	print TOSHELLMORPH $printthis;
+	print TOSHELL "
+#Performing daylight calculations through Radiance for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 
 	open( RADFILE, $pathdf) or die "Can't open $pathdf: $!\n";
 	my @linesrad = <RADFILE>;
@@ -2533,7 +2549,9 @@ cd $mypath
 		print `$printthis`;
 	}
 
-	print TOSHELLMORPH $printthis;
+	print TOSHELL "
+#Performing daylight calculations through Radiance for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 
 	open( RADFILE, $pathdf) or die "Can't open $pathdf: $!\n";
 	my @linesrad = <RADFILE>;
@@ -2585,7 +2603,7 @@ sub change_config
 	if (  $new_configfile ne $original_configfile )
 	{
 		if ($exeonfiles eq "y") { `cp -f $to/$new_configfile $to/$original_configfile\n`; }
-		print TOSHELLMORPH "cp -f $to/$new_configfile $to/$original_configfile\n";
+		print TOSHELL "cp -f $to/$new_configfile $to/$original_configfile\n";
 	}
 $countconfig++;
 } # END SUB copy_config
@@ -2608,7 +2626,7 @@ sub checkfile # THIS FUNCTION DOES WHAT IS DONE BY THE PREVIOUS ONE, BUT BETTER.
 				print 
 				`cp -f $sourceaddress $targetaddress\n`; 
 			}
-			print TOSHELLMORPH 
+			print TOSHELL 
 			"cp -f $sourceaddress $targetaddress\n\n";
 		}
 	}
@@ -2654,7 +2672,9 @@ ZZZ
 	{
 		print `$printthis`;
 	}
-	print TOSHELLMORPH $printthis;
+	print TOSHELL "
+#Substituting a configuration file for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 }	
 
 
@@ -2858,7 +2878,9 @@ YYY
 					print `$printthis`;
 				}
 
-				print TOSHELLMORPH $printthis;
+				print TOSHELL "
+#Adequating the ventilation network for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 				$countnode++;
 			}
 			elsif ( $nodetype eq "3")							
@@ -2905,7 +2927,9 @@ YYY
 						print `printthis`;
 					}
 
-					print TOSHELLMORPH $printthis;
+					print TOSHELL "
+#Adequating the ventilation network for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 					$countnode++;
 				}
 			}
@@ -2949,7 +2973,9 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELLMORPH $printthis;
+			print TOSHELL "
+#Adequating the ventilation network for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 
 			$countopening++;
 			$countthing++;
@@ -2990,7 +3016,7 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELLMORPH $printthis;
+			print TOSHELL $printthis;
 
 			$countcrack++;
 			$countthing++;
@@ -3154,7 +3180,9 @@ YYY
 								print `$printthis`;
 							}
 
-							print TOSHELLMORPH $printthis;
+							print TOSHELL "
+#Propagating geometry constraints for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 						}
 					}
 					$countvertex++;
@@ -3313,7 +3341,9 @@ YYY
 								print `$printthis`;
 							}
 
-							print TOSHELLMORPH $printthis;
+							print TOSHELL "
+#Reshaping windows for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 						}
 					}
 					$countvertex++;
@@ -3397,7 +3427,9 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print  $_toshell_ $printthis;
+				print  TOSHELL "
+#Warping zones for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 			}
 			$countrotate++;
 		}
@@ -3504,7 +3536,9 @@ YYY
 				{ 
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL "
+#Warping zones for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.
+$printthis";
 			}
 			$countthis++;
 		}
@@ -3750,7 +3784,7 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELLMORPH $printthis;
+			print TOSHELL $printthis;
 		}
 		$countvertex++;
 	}
@@ -4400,7 +4434,7 @@ YYY
 			{
 				print `$printthis`;
 			}
-			print TOSHELLMORPH $printthis;
+			print TOSHELL $printthis;
 		}
 		$countloop++;
 	}
@@ -4456,7 +4490,7 @@ YYY
 				print `$printthis`;
 			}
 
-			print TOSHELLMORPH $printthis;
+			print TOSHELL $printthis;
 		}
 		$countflow++;
 	}
@@ -4735,7 +4769,7 @@ YYY
 					print `$printthis`;
 				}
 
-				print TOSHELLMORPH $printthis;
+				print TOSHELL $printthis;
 			}
 
 			my $obs_letter = $obs_letters[$countobs];
@@ -4772,7 +4806,7 @@ YYY
 						print `$printthis`;
 					}
 
-					print TOSHELLMORPH $printthis;
+					print TOSHELL $printthis;
 				}
 			}
 		}
@@ -4964,7 +4998,7 @@ YYY
 			print `$printthis`;
 		}
 
-		print TOSHELLMORPH $printthis;
+		print TOSHELL $printthis;
 	}
 	$countvertex++;
 } # END SUB apply_pin_obstructions
@@ -5326,7 +5360,7 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL $printthis;
 			}
 
 			if ($new_type eq "e" ) # IF NODES ARE BOUNDARY ONES, WIND-INDUCED
@@ -5363,7 +5397,7 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL $printthis;
 			}
 		}
 		$countnode++;
@@ -5425,7 +5459,7 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL $printthis;
 			}
 
 			if ($new_type eq "l" ) # IF THE COMPONENT IS A CRACK
@@ -5457,7 +5491,7 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL $printthis;
 			}
 
 			if ($new_type eq "m" ) # IF THE COMPONENT IS A DOOR
@@ -5489,7 +5523,7 @@ YYY
 				{
 					print `$printthis`;
 				}
-				print TOSHELLMORPH $printthis;
+				print TOSHELL "$printthis";
 			}
 		}
 		$countcomponent++;
