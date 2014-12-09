@@ -9,7 +9,6 @@ lib/Sim/OPT/Morph.pm
 lib/Sim/OPT/Sim.pm
 lib/Sim/OPT/Retrieve.pm
 lib/Sim/OPT/Descend.pm
-lib/Sim/OPT/Report.pm
 #lib/Sim/OPT/Pursue.pm
 examples/optw.tar.zip
 META.yml                                 Module YAML meta-data (added by MakeMaker)

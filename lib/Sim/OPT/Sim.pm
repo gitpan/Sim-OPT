@@ -23,7 +23,7 @@ use Data::Dump qw(dump);
 use Sim::OPT;
 use Sim::OPT::Morph;
 use Sim::OPT::Retrieve;
-use Sim::OPT::Report;
+#use Sim::OPT::Report;
 use Sim::OPT::Descend;
 use feature 'say';
 no strict; 
@@ -35,7 +35,7 @@ no warnings;
 
 @EXPORT = qw( sim ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_7'; # our $VERSION = '';
+$VERSION = '0.39.6_11'; # our $VERSION = '';
 
 
 #########################################################################################
@@ -52,159 +52,133 @@ $VERSION = '0.39.6_7'; # our $VERSION = '';
 
 sub sim    # This function launch the simulations in ESP-r
 {
-	say "\nNow in Sim::OPT::Sim.\n";
-	my $swap = shift;
+	say  "\nNow in Sim::OPT::Sim.\n";
+	my $swap = shift; #say TOSHELL "swapINSIM: " . dump($swap);
 	my %dat = %$swap;
-	my @instances = @{ $dat{instances} };
-	my %vals = %{ $dat{vals} };
+	my @instances = @{ $dat{instances} }; #say "scalar(\@instances): " . scalar(@instances);
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase); # IT WILL BE SHADOWED. CUT ZZZ
-	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock); # IT WILL BE SHADOWED. CUT ZZZ
-	
-	my %globs = %{ $dat{globs} };
-	
-	$configfile = $dat{configfile}; #say "dump(\$configfile): " . dump($configfile);
-
-	my @simcases = @{ $dat{simcases} };
-	my @simstruct = @{ $dat{simstruct} };
-	my @morphcases = @{ $dat{morphcase} };
-	my @morphstruct = @{ $dat{morphstruct} };
-	my @rescases = @{ $dat{rescases} };
-	my @resstruct = @{ $dat{resstruct} };
+	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock); # IT WILL BE SHADOWED. CUT ZZZ		
+	my %dirfiles = %{ $dat{dirfiles} }; #say "dump(\%dirfiles): " . dump(%dirfiles); 
 		
-	my $morphlist = $dat{morphlist};
-	my $morphblock = $dat{morphblock};
-	my $simlist = $dat{simlist};
-	my $simblock = $dat{simblock};
-	my $reslist = $dat{reslist};
-	my $resblock = $dat{resblock};
-	my $retlist = $dat{retlist};
-	my $retblock = $dat{retblock};
-	my $mergecase = $dat{mergecase};
-	my $mergeblock = $dat{mergeblock};
+	$configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
+	@sweeps = @main::sweeps; #say "dump(\@sweeps): " . dump(@sweeps);
+	@varinumbers = @main::varinumbers; #say "dump(\@varinumbers): " . dump(@varinumbers);
+	@mediumiters = @main::mediumiters;
+	@rootnames = @main::rootnames; #say "dump(\@rootnames): " . dump(@rootnames);
+	%vals = %main::vals; #say "dump(\%vals): " . dump(%vals);
 	
-	my $configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
-		
-	my $mypath = $main::mypath;  #say "dumpINSIM(\$mypath): " . dump($mypath);
-	my $exeonfiles = $main::exeonfiles; #say "dumpINSIM(\$exeonfiles): " . dump($exeonfiles);
-	my $generatechance = $main::generatechance; 
-	my $file = $main::file;
-	my $preventsim = $main::preventsim;
-	my $fileconfig = $main::fileconfig;
-	my $outfile = $main::outfile;
-	my $toshell = $main::toshell;
-	my $report = $main::report;
-	my $simnetwork = $main::simnetwork;
-	my $reportloadsdata = $main::reportloadsdata;
+	$mypath = $main::mypath;  #say TOSHELL "dumpINSIM(\$mypath): " . dump($mypath);
+	$exeonfiles = $main::exeonfiles; #say TOSHELL "dumpINSIM(\$exeonfiles): " . dump($exeonfiles);
+	$generatechance = $main::generatechance; 
+	$file = $main::file;
+	$preventsim = $main::preventsim;
+	$fileconfig = $main::fileconfig; #say TOSHELL "dumpINSIM(\$fileconfig): " . dump($fileconfig); # NOW GLOBAL. TO MAKE IT PRIVATE, FIX PASSING OF PARAMETERS IN CONTRAINTS PROPAGATION SECONDARY SUBROUTINES
+	$outfile = $main::outfile;
+	$toshell = $main::toshell;
+	$report = $main::report;
+	$simnetwork = $main::simnetwork;
+	$reportloadsdata = $main::reportloadsdata;
+	
+	%dowhat = %main::dowhat;
 
-	my @themereports = @main::themereports; #say "dumpINMORPH(\@themereports): " . dump(@themereports);
-	my @simtitles = @main::simtitles; #say "dumpINMORPH(\@simtitles): " . dump(@simtitles);
-	my @reporttitles = @main::reporttitles;
-	my @simdata = @main::simdata;
-	my @retrievedata = @main::retrievedata;
-	my @keepcolumns = @main::keepcolumns;
-	my @weights = @main::weights;
-	my @weightsaim = @main::weightsaim;
-	my @varthemes_report = @main::varthemes_report;
-	my @varthemes_variations = @vmain::arthemes_variations;
-	my @varthemes_steps = @main::varthemes_steps;
-	my @rankdata = @main::rankdata;
-	my @rankcolumn = @main::rankcolumn;
-	my @reporttempsdata = @main::reporttempsdata;
-	my @reportcomfortdata = @main::reportcomfortdata;
-	my @reportradiationenteringdata = @main::reportradiationenteringdata;
-	my @reporttempsstats = @main::reporttempsstats;
-	my @files_to_filter = @main::files_to_filter;
-	my @filter_reports = @main::filter_reports;
-	my @base_columns = @main::base_columns;
-	my @maketabledata = @main::maketabledata;
-	my @filter_columns = @main::filter_columns;
+	@themereports = @main::themereports; #say "dumpINSIM(\@themereports): " . dump(@themereports);
+	@simtitles = @main::simtitles; #say "dumpINSIM(\@simtitles): " . dump(@simtitles);
+	@reporttitles = @main::reporttitles;
+	@simdata = @main::simdata;
+	@retrievedata = @main::retrievedata;
+	@keepcolumns = @main::keepcolumns;
+	@weights = @main::weights;
+	@weightsaim = @main::weightsaim;
+	@varthemes_report = @main::varthemes_report;
+	@varthemes_variations = @vmain::arthemes_variations;
+	@varthemes_steps = @main::varthemes_steps;
+	@rankdata = @main::rankdata; # CUT ZZZ
+	@rankcolumn = @main::rankcolumn;
+	@reporttempsdata = @main::reporttempsdata;
+	@reportcomfortdata = @main::reportcomfortdata;
+	@reportradiationenteringdata = @main::reportradiationenteringdata;
+	@reporttempsstats = @main::reporttempsstats;
+	@files_to_filter = @main::files_to_filter;
+	@filter_reports = @main::filter_reports;
+	@base_columns = @main::base_columns;
+	@maketabledata = @main::maketabledata;
+	@filter_columns = @main::filter_columns;
+	
+	my @simcases = @{ $dirfiles{simcases} }; #say "dump(\@simcases): " . dump(@simcases);
+	my @simstruct = @{ $dirfiles{simstruct} }; #say "dump(\@simstruct): " . dump(@simstruct);
+	my @morphcases = @{ $dirfiles{morphcases} };
+	my @morphstruct = @{ $dirfiles{morphstruct} };
+	my @retcases = @{ $dirfiles{retcases} };
+	my @retstruct = @{ $dirfiles{retstruct} };
+	my @repcases = @{ $dirfiles{repcases} };
+	my @repstruct = @{ $dirfiles{repstruct} };
+	my @mergecases = @{ $dirfiles{mergecases} };
+	my @mergestruct = @{ $dirfiles{mergestruct} };
+	my @descendcases = @{ $dirfiles{descendcases} };
+	my @descendstruct = @{ $dirfiles{descendstruct} };
+	
+	my $morphlist = $dirfiles{morphlist}; #say "dump(\$dat{morphlist}): " . dump($dat{morphlist});
+	my $morphblock = $dirfiles{morphblock};
+	my $simlist = $dirfiles{simlist}; #say "dump(\$simlist): " . dump($simlist);
+	my $simblock = $dirfiles{simblock};
+	my $retlist = $dirfiles{retlist};
+	my $retblock = $dirfiles{retblock};
+	my $replist = $dirfiles{retpist};
+	my $repblock = $dirfiles{repblock};
+	my $mergelist = $dirfiles{mergelist};
+	my $mergeblock = $dirfiles{mergeblock};
+	my $descendlist = $dirfiles{descendlist};
+	my $descendblock = $dirfiles{descendblock};
 	
 	#my $getpars = shift;
 	#eval( $getpars );
-	
-	#my $toshellsim = "$toshell" . "-2sim.txt";
-	#my $outfilesim = "$outfile" . "-2sim.txt";
-		
-	#open ( TOSHELL, ">>$toshellsim" );
-	#open ( OUTFILE, ">>$outfilesim" );
-	
-	open ( SIMLIST, ">$simlist") or ( say "\$simlist: $simlist" and die );
-	
-	#if ( fileno (SIMLIST) )
-	if (not (-e $simlist ) )
-	{
-		if ( $countblock == 0 )
-		{
-			open ( SIMLIST, ">$simlist") or die;
-		}
-		else 
-		{
-			open ( SIMLIST, ">>$simlist") or die;
-		}
-	}
-	
-	#if ( fileno (SIMBLOCK) )
-	if (not (-e $simblock ) )
-	{
-		if ( $countblock == 0 )
-		{
-			open ( SIMBLOCK, ">$simblock"); # or die;
-		}
-		else 
-		{
-			open ( SIMBLOCK, ">>$simblock"); # or die;
-		}
-	}
+
+	#if ( fileno (MORPHLIST) 
 	
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
 
+	my @container;
+
 	foreach my $instance (@instances)
 	{
-		say "\nNow in Sim::OPT::Sim.\n";
-		my %dat = %{$instance};
-		my @rootnames = @{ $dat{rootnames} }; #say \"dump(\@rootnames): " . dump(@rootnames);
-		my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
-		my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
-		my @sweeps = @{ $dat{sweeps} }; #say "dump(\@sweeps): " . dump(@sweeps);
-		my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
-		my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
-		my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
-		my $countvar = $dat{countvar}; #say "dump(\$countvar): " . dump($countvar);
-		my $countstep = $dat{countstep}; #say "dump(\countstep): " . dump(countstep);
+		my %d = %{$instance};
+		my $countcase = $d{countcase}; #say TOSHELL "dump(\$countcase): " . dump($countcase);
+		my $countblock = $d{countblock}; #say TOSHELL "dump(\$countblock): " . dump($countblock);
+		my @miditers = @{ $d{miditers} }; #say TOSHELL "dump(\@miditers): " . dump(@miditers);
+		my @winneritems = @{ $d{winneritems} }; #say TOSHELL "dumpIN( \@winneritems) " . dump(@winneritems);
+		my $countvar = $d{countvar}; #say TOSHELL "dump(\$countvar): " . dump($countvar);
+		my $countstep = $d{countstep}; #say TOSHELL "dump(\$countstep): " . dump($countstep);						
+		my $to = $d{to}; #say TOSHELL "dump(\$to): " . dump($to);
+		my $origin = $d{origin}; #say TOSHELL "dump(\$origin): " . dump($origin);
+		my @uplift = @{ $d{uplift} }; #say TOSHELL "dump(\@uplift): " . dump(@uplift);
 		#eval($getparshere);
 		
-		my %instancecarrier = %{ $dat{instancecarrier} }; #say "dump(\%instancecarrier): " . dump(%instancecarrier);
-		my $to = $dat{to}; #say "dump(\$to): " . dump($to);
-		
-		my $rootname = Sim::OPT::getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
-		my @blockelts = Sim::OPT::getblockelts(\@sweeps, $countcase, $countblock); #say "dumpIN( \@blockelts) " . dump(@blockelts);
-		my @blocks = Sim::OPT::getblocks(\@sweeps, $countcase);  #say "dumpIN( \@blocks) " . dump(@blocks);
-		my $winneritem = Sim::OPT::getitem(\@winneritems, $countcase, $countblock); #say "dump(\$winneritem): " . dump($winneritem);
-		my $winnerline = Sim::OPT::getline($winneritem); #say "dump(\$winnerline): " . dump($winnerline);
-		my $from = $winnerline;
-		my @winnerlines = Sim::OPT::getlines( \@winneritems ); #say "dump(\@winnerlines): " . dump(@winnerlines);
-		my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
-		my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
+		my $rootname = Sim::OPT::getrootname(\@rootnames, $countcase); #say TOSHELL "dump(\$rootname): " . dump($rootname);
+		my @blockelts = Sim::OPT::getblockelts(\@sweeps, $countcase, $countblock); #say TOSHELL "dumpIN( \@blockelts) " . dump(@blockelts);
+		my @blocks = Sim::OPT::getblocks(\@sweeps, $countcase);  #say TOSHELL "dumpIN( \@blocks) " . dump(@blocks);
+		my $toitem = Sim::OPT::getitem(\@winneritems, $countcase, $countblock); #say TOSHELL "dump(\$toitem): " . dump($toitem);
+		my $from = Sim::OPT::getline($toitem); #say TOSHELL "dumpIN(\$from): " . dump($from);
+		my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say TOSHELL "dumpIN---(\%varnums): " . dump(%varnums); 
+		my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say TOSHELL "dumpIN---(\%mids): " . dump(%mids); 
 		#eval($getfly);
 		
-		my $stepsvar = Sim::OPT::getstepsvar($countvar, $countcase, \@varinumbers);
+		my $stepsvar = Sim::OPT::getstepsvar($countvar, $countcase, \@varinumbers); #say TOSHELL "dump(\$stepsvar): " . dump($stepsvar); 
+		my $varnumber = $countvar; #say TOSHELL "dump---(\$varnumber): " . dump($varnumber) . "\n\n";  # LEGACY VARIABLE
 		
 		my @ress;
 		my @flfs;
 		my $countdir = 0;
 		
-		if ( not ( $to ~~ @{ $simstruct[$countcase][$countblock] } ) )
-		{
-				push ( @{ $simstruct[$countcase][$countblock] }, $to );
-				print SIMBLOCK "$to\n";
-		}
-		
-		if ( not ( $to ~~ @{ $simcases[$countcase] } ) )
-		{
-			push ( @simcases, $to );
-			print SIMLIST "$to\n";
-		}
+		#my $prov = $to;
+		#my $prov =~ s/$mypath\/$file//;
+		#my $prov =~ s/_$//;
+		#my $prov =~ s/_-*$//;
+		#if ( not ( $to ~~ @{ $simcases[$countcase] } ) )
+		#{
+		#	push ( @simcases, $to ); say TOSHELL "simcases: " . dump(@simcases);
+		#	print SIMLIST "$to\n";
+		#}
 
 		my $simelt = $to;
 		my $countsim = 0;
@@ -212,22 +186,57 @@ sub sim    # This function launch the simulations in ESP-r
 		{
 			my $simdataref = $simdata[$countsim];
 			my @simdata = @{$simdataref};
+			my $resfile = "$simelt-$date_to_sim.res";
+			my $flfile = "$simelt-$date_to_sim.fl";
+			push (@ress, $resfile); # ERASE
+			push (@flfs, $flfile); # ERASE
 			
-			unless ( $preventsim eq "y" )
+			#if ( fileno (SIMLIST) )
+			#if (not (-e $simlist ) )
+			#{
+			#	if ( $countblock == 0 )
+			#	{
+					open ( SIMLIST, ">>$simlist") or die;
+			#	}
+			#	else 
+			#	{
+			#		open ( SIMLIST, ">>$simlist") or die;
+			#	}
+			#}
+			
+			#if ( fileno (SIMBLOCK) )
+			if (not (-e $simblock ) )
 			{
-				my $resfile = "$simelt-$date_to_sim.res";
-				my $flfile = "$simelt-$date_to_sim.fl";
-				push (@ress, $resfile); # ERASE
-				push (@flfs, $flfile); # ERASE
-				
-				if ( not ($resfile ~~ @{ $rescases[$countcase] } ) )
+				if ( $countblock == 0 )
 				{
-					push ( @{ $rescases[$countcase] }, $resfile );
-					print SIMLIST "$resfile\n";
+					open ( SIMBLOCK, ">>$simblock"); # or die;
+				}
+				else 
+				{
+					open ( SIMBLOCK, ">>$simblock"); # or die;
+				}
+			}
+			
+			#say "INSIM1\$countcase : " . dump($countcase);
+			#say "INSIM1\@rootnames : " . dump(@rootnames);
+			#say "INSIM1\$countblock : " . dump($countblock);
+			#say "INSIM1\@sweeps : " . dump(@sweeps);
+			#say "INSIM1\@varinumbers : " . dump(@varinumbers);
+			#say "INSIM1\@miditers : " . dump(@miditers);
+			#say "INSIM1\@winneritems : " . dump(@winneritems);
+			#say "INSIM1\@morphcases : " . dump(@morphcases);
+			#say "INSIM1\@morphstruct : " . dump(@morphstruct);
+		
+			push ( @{ $simstruct[$countcase][$countblock][$countsim] }, $resfile );
+			print SIMBLOCK "$resfile\n";
+			
+			if ( not ( $resfile ~~ @simcases ) )
+			{
+				push ( @simcases, $resfile );
+				print SIMLIST "$resfile\n";
 					
-					push ( @{ $resstruct[$countcase][$countblock] }, $resfile );
-					print SIMBLOCK "resfile\n";
-					
+				unless ( $preventsim eq "y" )
+				{
 					if ( not ( -e $resfile ) ) 
 					{
 						if ( $simnetwork eq "n" )
@@ -308,11 +317,11 @@ $printthis
 		}
 		$countdir++;
 	}
-
 	close SIMLIST;
 	close SIMBLOCK;
-	#close TOSHELL;
-	#close OUTFILE;
+	return ( \@simcases, \@simstruct );
+	close TOSHELL;
+	close OUTFILE;
 }    # END SUB sim;			
 
 # END OF THE CONTENT OF Sim::OPT::Sim

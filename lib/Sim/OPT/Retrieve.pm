@@ -17,7 +17,7 @@ use List::Compare;
 use Sim::OPT;
 use Sim::OPT::Morph;
 use Sim::OPT::Sim;
-use Sim::OPT::Report;
+#use Sim::OPT::Report;
 use Sim::OPT::Descend;
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
@@ -37,7 +37,7 @@ no warnings;
 retrieve retrieve_comfort_results retrieve_loads_results retrieve_temps_stats 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_7'; # our $VERSION = '';
+$VERSION = '0.39.6_11'; # our $VERSION = '';
 
 
 #########################################################################################
@@ -46,141 +46,176 @@ $VERSION = '0.39.6_7'; # our $VERSION = '';
 
 sub retrieve
 {	
-	say "Now in Sim::OPT::Retrieve.\n";
-	my $swap = shift;
+	say "\nNow in Sim::OPT::Retrieve.\n";
+	say TOSHELL "\nNow in Sim::OPT::Retrieve.\n";
+	my $swap = shift; #say TOSHELL "swapINRETRIEVE: " . dump($swap);
 	my %dat = %$swap;
-	my @instances = @{ $dat{instances} };
-	my %vals = %{ $dat{vals} };
-	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase); # IT WILL BE SHADOWED. CUT ZZZ
-	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock); # IT WILL BE SHADOWED. CUT ZZZ
-	
-	my %globs = %{ $dat{globs} };
-	
-	$configfile = $dat{configfile}; #say "dump(\$configfile): " . dump($configfile);
-	
-	my @simcases = @{ $dat{simcases} };
-	my @simstruct = @{ $dat{simstruct} };
-	my @morphcases = @{ $dat{morphcase} };
-	my @morphstruct = @{ $dat{morphstruct} };
-	my @rescases = @{ $dat{rescases} };
-	my @resstruct = @{ $dat{resstruct} };
-	my $morphlist = $dat{morphlist};
-	my $morphblock = $dat{morphblock};
-	my $simlist = $dat{simlist};
-	my $simblock = $dat{simblock};
-	my $reslist = $dat{reslist};
-	my $resblock = $dat{resblock};
-	my $retlist = $dat{retlist};
-	my $retblock = $dat{retblock};
-	my $mergecase = $dat{mergecase};
-	my $mergeblock = $dat{mergeblock};
-	
-	my $configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
+	my @instances = @{ $dat{instances} }; #say "scalar(\@instances): " . scalar(@instances);
+	my $countcase = $dat{countcase}; say TOSHELL "dump(\$countcase): " . dump($countcase); # IT WILL BE SHADOWED. CUT ZZZ
+	my $countblock = $dat{countblock}; say TOSHELL "dump(\$countblock): " . dump($countblock); # IT WILL BE SHADOWED. CUT ZZZ		
+	my %dirfiles = %{ $dat{dirfiles} }; #say "dump(\%dirfiles): " . dump(%dirfiles); 
 		
-	my $mypath = $main::mypath; #say "dumpINRETRIEVE(\$mypath): " . dump($mypath);
-	my $exeonfiles = $main::exeonfiles; #say "dumpINRETRIEVE(\$exeonfiles): " . dump($exeonfiles);
-	my $generatechance = $main::generatechance; 
-	my $file = $main::file;
-	my $preventsim = $main::preventsim;
-	my $fileconfig = $main::fileconfig;
-	my $outfile = $main::outfile;
-	my $toshell = $main::toshell;
-	my $report = $main::report;
-	my $simnetwork = $main::simnetwork;
-	my $reportloadsdata = $main::reportloadsdata;
+	$configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
+	@sweeps = @main::sweeps; say TOSHELL "dump(\@sweeps): " . dump(@sweeps);
+	@varinumbers = @main::varinumbers; #say "dump(\@varinumbers): " . dump(@varinumbers);
+	@mediumiters = @main::mediumiters;
+	@rootnames = @main::rootnames; #say "dump(\@rootnames): " . dump(@rootnames);
+	%vals = %main::vals; #say "dump(\%vals): " . dump(%vals);
+	
+	$mypath = $main::mypath;  #say TOSHELL "dumpINRETRIEVE(\$mypath): " . dump($mypath);
+	$exeonfiles = $main::exeonfiles; say TOSHELL "dumpINRETRIEVE(\$exeonfiles): " . dump($exeonfiles);
+	$generatechance = $main::generatechance; 
+	$file = $main::file;
+	$preventsim = $main::preventsim;
+	$fileconfig = $main::fileconfig; say TOSHELL "dumpINRETRIEVE(\$fileconfig): " . dump($fileconfig); # NOW GLOBAL. TO MAKE IT PRIVATE, FIX PASSING OF PARAMETERS IN CONTRAINTS PROPAGATION SECONDARY SUBROUTINES
+	$outfile = $main::outfile;
+	$toshell = $main::toshell;
+	$report = $main::report;
+	$simnetwork = $main::simnetwork;
+	$reportloadsdata = $main::reportloadsdata;
+	
+	%dowhat = %main::dowhat;
 
-	my @themereports = @main::themereports; #say "dumpINMORPH(\@themereports): " . dump(@themereports);
-	my @simtitles = @main::simtitles; #say "dumpINMORPH(\@simtitles): " . dump(@simtitles);
-	my @reporttitles = @main::reporttitles;
-	my @simdata = @main::simdata;
-	my @retrievedata = @main::retrievedata;
-	my @keepcolumns = @main::keepcolumns;
-	my @weights = @main::weights;
-	my @weightsaim = @main::weightsaim;
-	my @varthemes_report = @main::varthemes_report;
-	my @varthemes_variations = @vmain::arthemes_variations;
-	my @varthemes_steps = @main::varthemes_steps;
-	my @rankdata = @main::rankdata;
-	my @rankcolumn = @main::rankcolumn;
-	my @reporttempsdata = @main::reporttempsdata;
-	my @reportcomfortdata = @main::reportcomfortdata;
-	my @reportradiationenteringdata = @main::reportradiationenteringdata;
-	my @reporttempsstats = @main::reporttempsstats;
-	my @files_to_filter = @main::files_to_filter;
-	my @filter_reports = @main::filter_reports;
-	my @base_columns = @main::base_columns;
-	my @maketabledata = @main::maketabledata;
-	my @filter_columns = @main::filter_columns;
-		
+	@themereports = @main::themereports; say TOSHELL "dumpINRETRIEVE(\@themereports): " . dump(@themereports);
+	@simtitles = @main::simtitles; say TOSHELL "dumpINRETRIEVE(\@simtitles): " . dump(@simtitles);
+	@reporttitles = @main::reporttitles;
+	@simdata = @main::simdata;
+	@retrievedata = @main::retrievedata;
+	@keepcolumns = @main::keepcolumns;
+	@weights = @main::weights;
+	@weightsaim = @main::weightsaim;
+	@varthemes_report = @main::varthemes_report;
+	@varthemes_variations = @vmain::arthemes_variations;
+	@varthemes_steps = @main::varthemes_steps;
+	@rankdata = @main::rankdata; # CUT ZZZ
+	@rankcolumn = @main::rankcolumn;
+	@reporttempsdata = @main::reporttempsdata;
+	@reportcomfortdata = @main::reportcomfortdata;
+	@reportradiationenteringdata = @main::reportradiationenteringdata;
+	@reporttempsstats = @main::reporttempsstats;
+	@files_to_filter = @main::files_to_filter;
+	@filter_reports = @main::filter_reports;
+	@base_columns = @main::base_columns;
+	@maketabledata = @main::maketabledata;
+	@filter_columns = @main::filter_columns;
+	
+	my @simcases = @{ $dirfiles{simcases} }; say TOSHELL "dump(\@simcases): " . dump(@simcases);
+	my @simstruct = @{ $dirfiles{simstruct} }; say TOSHELL "dump(\@simstruct): " . dump(@simstruct);
+	my @morphcases = @{ $dirfiles{morphcases} };
+	my @morphstruct = @{ $dirfiles{morphstruct} };
+	my @retcases = @{ $dirfiles{retcases} };
+	my @retstruct = @{ $dirfiles{retstruct} };
+	my @repcases = @{ $dirfiles{repcases} };
+	my @repstruct = @{ $dirfiles{repstruct} };
+	my @mergecases = @{ $dirfiles{mergecases} };
+	my @mergestruct = @{ $dirfiles{mergestruct} };
+	my @descendcases = @{ $dirfiles{descendcases} };
+	my @descendstruct = @{ $dirfiles{descendstruct} };
+	
+	my $morphlist = $dirfiles{morphlist}; say TOSHELL "dump(\$morphlist): " . dump($morphlist);
+	my $morphblock = $dirfiles{morphblock};
+	my $simlist = $dirfiles{simlist}; say TOSHELL "dump(\$simlist): " . dump($simlist);
+	my $simblock = $dirfiles{simblock};
+	my $retlist = $dirfiles{retlist};
+	my $retblock = $dirfiles{retblock};
+	my $replist = $dirfiles{retpist};
+	my $repblock = $dirfiles{repblock};
+	my $mergelist = $dirfiles{mergelist};
+	my $mergeblock = $dirfiles{mergeblock};
+	my $descendlist = $dirfiles{descendlist};
+	my $descendblock = $dirfiles{descendblock};
+	
 	#my $getpars = shift;
 	#eval( $getpars );
-	
-	#my $toshellret = "$toshell" . "-3ret.txt";
-	#my $outfileret = "$outfile" . "-3ret.txt";
-		
-	#open ( TOSHELL, ">>$toshellret" );
-	#open ( OUTFILE, ">>$outfileret" );
-	
-	
-	#if ( fileno (RETLIST) )
-	if (not (-e $retlist ) )
-	{
-		if ( $countblock == 0 )
-		{
-			open ( RETLIST, ">$retlist"); # or die;
-		}
-		else 
-		{
-			open ( RETLIST, ">>$retlist"); # or die;
-		}
-	}
-	
-	#if ( fileno (RETLIST) ) # SAME LEVEL OF RETLIST. JUST ANOTHER CONTAINER.
-	if (not (-e $retblock ) )
-	{
-		if ( $countblock == 0 )
-		{
-			open ( RETBLOCK, ">$retblock"); # or die;
-		}
-		else 
-		{
-			open ( RETBLOCK, ">>$retblock"); # or die;
-		}
-	}
+
+	#if ( fileno (MORPHLIST) 
 	
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
 	
-	unless (-e "$mypath/results") 
-	{ 
-		print  `mkdir $mypath/results`; 
-		print TOSHELL "mkdir $mypath/results\n\n"; 
-	}
-
-	sub retrieve_temperatures_results 
+	
+	foreach my $instance (@instances)
 	{
-		my $result = shift;
-		my $resfile = shift;
-		my $swap = shift;
-		my @retrdata = @$swap;
-		my $reporttitle = shift;
-		my $theme = shift;
-		#my $existingfile = "$resfile-$theme.grt";
-		#if (-e $existingfile) { print `chmod 777 $existingfile\n`;} 
-		#print $_toshell_ "chmod 777 $existingfile\n";
-		#if (-e $existingfile) { print `rm $existingfile\n` ;}
-		#print $_toshell_ "rm $existingfile\n";
-		#if ($exeonfiles eq "y") { print `rm -f $existingfile*par\n`; }
-		#print $_toshell_ "rm -f $existingfile*par\n";
+		say TOSHELL "\nNow in Sim::OPT::Retrieve. INSTANCES\n";
+		my %d = %{$instance};
+		my $countcase = $d{countcase}; #say TOSHELL "dump(\$countcase): " . dump($countcase);
+		my $countblock = $d{countblock}; #say TOSHELL "dump(\$countblock): " . dump($countblock);
+		my @miditers = @{ $d{miditers} }; say TOSHELL "dump(\@miditers): " . dump(@miditers);
+		my @winneritems = @{ $d{winneritems} }; #say TOSHELL "dumpIN( \@winneritems) " . dump(@winneritems);
+		my $countvar = $d{countvar}; #say TOSHELL "dump(\$countvar): " . dump($countvar);
+		my $countstep = $d{countstep}; #say TOSHELL "dump(\$countstep): " . dump($countstep);						
+		my $to = $d{to}; say TOSHELL "dump(\$to): " . dump($to);
+		my $origin = $d{origin}; #say TOSHELL "dump(\$origin): " . dump($origin);
+		my @uplift = @{ $d{uplift} }; #say TOSHELL "dump(\@uplift): " . dump(@uplift);
+		#eval($getparshere);
+		
+		my $rootname = Sim::OPT::getrootname(\@rootnames, $countcase); #say TOSHELL "dump(\$rootname): " . dump($rootname);
+		my @blockelts = Sim::OPT::getblockelts(\@sweeps, $countcase, $countblock); #say TOSHELL "dumpIN( \@blockelts) " . dump(@blockelts);
+		my @blocks = Sim::OPT::getblocks(\@sweeps, $countcase);  #say TOSHELL "dumpIN( \@blocks) " . dump(@blocks);
+		my $toitem = Sim::OPT::getitem(\@winneritems, $countcase, $countblock); #say TOSHELL "dump(\$toitem): " . dump($toitem);
+		my $from = Sim::OPT::getline($toitem); say TOSHELL "dumpIN(\$from): " . dump($from);
+		my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say TOSHELL "dumpIN---(\%varnums): " . dump(%varnums); 
+		my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say TOSHELL "dumpIN---(\%mids): " . dump(%mids); 
+		#eval($getfly);
+		
+		my $stepsvar = Sim::OPT::getstepsvar($countvar, $countcase, \@varinumbers); #say TOSHELL "dump(\$stepsvar): " . dump($stepsvar); 
+		my $varnumber = $countvar; #say TOSHELL "dump---(\$varnumber): " . dump($varnumber) . "\n\n";  # LEGACY VARIABLE
+		
+		#say "INRETRIEVE0\$countcase : " . dump($countcase);
+		#say "INRETRIEVE0\@rootnames : " . dump(@rootnames);
+		#say "INRETRIEVE0\$countblock : " . dump($countblock);
+		#say "INRETRIEVE0\@sweeps : " . dump(@sweeps);
+		#say "INRETRIEVE0\@varinumbers : " . dump(@varinumbers);
+		#say "INRETRIEVE0\@miditers : " . dump(@miditers);
+		#say "INRETRIEVE0\@winneritems : " . dump(@winneritems);
+		#say "INRETRIEVE0\@morphcases : " . dump(@morphcases);
+		#say "INRETRIEVE0\@morphstruct : " . dump(@morphstruct);
+		
 
-		unless (-e "$result-$reporttitle-$theme-$countcase-$countblock.grt-")
+		
+		unless (-e "$mypath/results") 
+		{ 
+			print  `mkdir $mypath/results`; 
+			print TOSHELL "mkdir $mypath/results\n\n"; 
+		}
+
+		sub retrieve_temperatures_results 
 		{
-			my $printthis = 
+			my $result = shift;
+			my $resfile = shift;
+			my $swap = shift;
+			my @retrdata = @$swap;
+			my $reporttitle = shift;
+			my $theme = shift;
+			my $counttheme = shift;
+			my $countreport = shift;
+			my $retfile = shift;
+			#my $existingfile = "$resfile-$theme.grt";
+			#if (-e $existingfile) { print `chmod 777 $existingfile\n`;} 
+			#print $_toshell_ "chmod 777 $existingfile\n";
+			#if (-e $existingfile) { print `rm $existingfile\n` ;}
+			#print $_toshell_ "rm $existingfile\n";
+			#if ($exeonfiles eq "y") { print `rm -f $existingfile*par\n`; }
+			#print $_toshell_ "rm -f $existingfile*par\n";
+			
+			say "INRETRIEVE0\$countcase : " . dump($countcase);
+			say "INRETRIEVE1\@rootnames : " . dump(@rootnames);
+			say "INRETRIEVE1\$countblock : " . dump($countblock);
+			say "INRETRIEVE1\@sweeps : " . dump(@sweeps);
+			say "INRETRIEVE1\@varinumbers : " . dump(@varinumbers);
+			say "INRETRIEVE1\@miditers : " . dump(@miditers);
+			say "INRETRIEVE1\@winneritems : " . dump(@winneritems);
+			say "INRETRIEVE1\@morphcases : " . dump(@morphcases);
+			say "INRETRIEVE1\@morphstruct : " . dump(@morphstruct);
+
+			unless (-e "$retfile-")
+			{
+				my $printthis = 
 "res -file $resfile -mode script<<YYY
 
 3
 $retrdata[0]
-$retredata[1]
+$retrdata[1]
 $retrdata[2]
 c
 g
@@ -194,7 +229,7 @@ b
 f
 >
 a
-$result-$reporttitle-$theme-$countcase-$countblock.grt
+$retfile
 !
 -
 -
@@ -206,40 +241,43 @@ $result-$reporttitle-$theme-$countcase-$countblock.grt
 -
 YYY
 ";
-			if ($exeonfiles eq "y")
-			{ 	
-				say "Retrieving temperature results.";
-				say TOSHELL "#Retrieving temperature results.";
-				print `$printthis`;
+				if ($exeonfiles eq "y")
+				{ 	
+					say "Retrieving temperature results.";
+					say TOSHELL "#Retrieving temperature results.";
+					print `$printthis`;
+				}
+				print TOSHELL "
+	#Retrieving results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", simulation period $counttheme, retrieve period $countreport\n
+	$printthis";
+			#if (-e $existingfile) { print `rm -f $existingfile*par`;}
+			#print $_toshell_ "rm -f $existingfile*par\n";
 			}
-			print TOSHELL "
-#Retrieving results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar.\
-$printthis";
-		#if (-e $existingfile) { print `rm -f $existingfile*par`;}
-		#print $_toshell_ "rm -f $existingfile*par\n";
 		}
-	}
 
-	sub retrieve_comfort_results
-	{
-		my $result = shift;
-		my $resfile = shift;
-		my $swap = shift;
-		my @retrdata = @$swap;
-		my $reporttitle = shift;
-		my $stripcheck = shift;
-		my $theme = shift;
-		#my $existingfile = "$resfile-$theme.grt"; 
-		#if (-e $existingfile) { print `chmod 777 $existingfile\n`;} 
-		#print $_toshell_ "chmod 777 $existingfile\n";
-		#if (-e $existingfile) { print `rm $existingfile\n` ;}
-		#print $_toshell_ "rm $existingfile\n";
-		#if ($exeonfiles eq "y") { print `rm -f $existingfile*par\n`;}
-		#print $_toshell_ "rm -f $existingfile*par\n";
-
-		unless (-e "$result-$reporttitle-$theme-$countcase-$countblock.grt-")
+		sub retrieve_comfort_results
 		{
-			my $printthis =
+			my $result = shift;
+			my $resfile = shift;
+			my $swap = shift;
+			my @retrdata = @$swap;
+			my $reporttitle = shift;
+			my $stripcheck = shift;
+			my $theme = shift;
+			my $counttheme = shift;
+			my $countreport = shift;
+			my $retfile = shift;
+			#my $existingfile = "$resfile-$theme.grt"; 
+			#if (-e $existingfile) { print `chmod 777 $existingfile\n`;} 
+			#print $_toshell_ "chmod 777 $existingfile\n";
+			#if (-e $existingfile) { print `rm $existingfile\n` ;}
+			#print $_toshell_ "rm $existingfile\n";
+			#if ($exeonfiles eq "y") { print `rm -f $existingfile*par\n`;}
+			#print $_toshell_ "rm -f $existingfile*par\n";
+
+			unless (-e "$retfile-")
+			{
+				my $printthis =
 "res -file $resfile -mode script<<ZZZ
 
 3
@@ -257,7 +295,7 @@ b
 a
 >
 a
-$result-$reporttitle-$theme-$countcase-$countblock.grt
+$retfile
 !
 -
 -
@@ -269,37 +307,40 @@ $result-$reporttitle-$theme-$countcase-$countblock.grt
 -
 ZZZ
 ";
-				if ($exeonfiles eq "y") 
-				{ 
-					say "Retrieving comfort results.";
-					say TOSHELL "#Retrieving comfort results.";
-					print `$printthis`;
+					if ($exeonfiles eq "y") 
+					{ 
+						say "Retrieving comfort results.";
+						say TOSHELL "#Retrieving comfort results.";
+						print `$printthis`;
+					}
+					print TOSHELL "
+	#Retrieving results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", simulation period $counttheme, retrieve period $countreport\n
+	$printthis";
+					#if (-e $existingfile) { print `rm -f $existingfile*par\n`;}
+					#print $_toshell_ "rm -f $existingfile*par\n";
 				}
-				print TOSHELL "
-#Retrieving results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar.\
-$printthis";
-				#if (-e $existingfile) { `rm -f $existingfile*par\n`;}
-				#print $_toshell_ "rm -f $existingfile*par\n";
 			}
-		}
 
-		sub retrieve_loads_results
-		{	
-			my $result = shift; #say TOSHELL "\$result: " . dump($result);
-			my $resfile = shift; #say TOSHELL "\$resfile " . dump($resfile);
-			my $swap = shift; 
-			my @retrdata = @$swap; #say TOSHELL "\@retrdata " . dump(@retrdata);
-			my $reporttitle = shift; #say TOSHELL "\$reporttitle " . dump($reporttitle);
-			my $theme = shift; #say TOSHELL "\$theme " . dump($theme);
-			#my $existingfile = "$resfile-$theme.grt";
-			#if (-e $existingfile) { `chmod 777 $existingfile\n`;}
-			#print $_toshell_ "chmod 777 $existingfile\n";
-			#if (-e $existingfile) { `rm $existingfile\n` ;}
-			#print $_toshell_ "rm $existingfile\n";
+			sub retrieve_loads_results
+			{	
+				my $result = shift; #say TOSHELL "\$result: " . dump($result);
+				my $resfile = shift; #say TOSHELL "\$resfile " . dump($resfile);
+				my $swap = shift; 
+				my @retrdata = @$swap; #say TOSHELL "\@retrdata " . dump(@retrdata);
+				my $reporttitle = shift; #say TOSHELL "\$reporttitle " . dump($reporttitle);
+				my $theme = shift; #say TOSHELL "\$theme " . dump($theme);
+				my $counttheme = shift;
+				my $countreport = shift;
+				my $retfile = shift;
+				#my $existingfile = "$resfile-$theme.grt";
+				#if (-e $existingfile) { print `chmod 777 $existingfile\n`;}
+				#print $_toshell_ "chmod 777 $existingfile\n";
+				#if (-e $existingfile) { print `rm $existingfile\n` ;}
+				#print $_toshell_ "rm $existingfile\n";
 
-			unless (-e "$result-$reporttitle-$theme-$countcase-$countblock.grt-")
-			{
-				my $printthis =
+				unless (-e "$retfile-")
+				{
+					my $printthis =
 "res -file $resfile -mode script<<TTT
 
 3
@@ -309,7 +350,7 @@ $retrdata[2]
 d
 >
 a
-$result-$reporttitle-$theme-$countcase-$countblock.grt
+$retfile
 l
 a
 
@@ -322,67 +363,71 @@ a
 -
 TTT
 ";
-			if ($exeonfiles eq "y") 
-			{
-				say "Retrieving loads results.";
-				say TOSHELL "#Retrieving loads results.";
-				print `$printthis`;
-			}
-			print TOSHELL " 
-#Retrieving results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar
+				if ($exeonfiles eq "y") 
+				{
+					say "Retrieving loads results.";
+					say TOSHELL "#Retrieving loads results.";
+					print `$printthis`;
+				}
+				print TOSHELL " 
+#Retrieving results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", simulation period $counttheme, retrieve period $countreport\n
 $printthis
 ";
 
-			print RETLIST "$result-$reporttitle-$theme-$countcase-$countblock.grt ";
-			if ($stripcheck)
-			{
-				open (CHECKDATUM, "$result-$reporttitle-$theme-$countcase-$countblock.grt") or die;
-				open (STRIPPED, ">$result-$reporttitle-$theme-$countcase-$countblock.grt-") or die;
-				my @lines = <CHECKDATUM>;
-				foreach my $line (@lines)
+				print RETLIST "$retfile ";
+				if ($stripcheck)
 				{
-					$line =~ s/^\s+//;
-					@lineelms = split(/\s+|,/, $line);
-					if ($lineelms[0] eq $stripcheck) 
+					open (CHECKDATUM, "$retfile") or die;
+					open (STRIPPED, ">$retfile-") or die;
+					my @lines = <CHECKDATUM>;
+					foreach my $line (@lines)
 					{
-						print STRIPPED "$line";
+						$line =~ s/^\s+//;
+						@lineelms = split(/\s+|,/, $line);
+						if ($lineelms[0] eq $stripcheck) 
+						{
+							print STRIPPED "$line";
+						}
 					}
+					close STRIPPED;
+					close CHECKDATUM;
 				}
-				close STRIPPED;
-				close CHECKDATUM;
 			}
-		}
-		}
+			}
 
-		sub retrieve_temps_stats
-		{
-			my $result = shift;
-			my $resfile = shift;
-			my $swap = shift;
-			my @retrdata = @$swap;
-			my $reporttitle = shift;
-			my $theme = shift;
-			#my $existingfile = "$resfile-$theme.grt";
-			#if (-e $existingfile) { `chmod 777 $existingfile\n`; }
-			#print $_toshell_ "chmod 777 $existingfile\n";
-			#if (-e $existingfile) { `rm $existingfile\n` ;}
-			#print $_toshell_ "rm $existingfile\n";
-			#if (-e $existingfile) { `rm -f $existingfile*par\n`;}
-			#print $_toshell_ "rm -f $existingfile*par\n";
-
-			unless (-e "$result-$reporttitle-$theme-$countcase-$countblock.grt-")
+			sub retrieve_temps_stats
 			{
-				my $printthis =
-				"res -file $resfile -mode script<<TTT
+				say TOSHELL "\nNow in Sim::OPT::Retrieve. IN TEMPSSTATS";
+				my $result = shift; say "$result: " . dump($result); 
+				my $resfile = shift; say "$resfile " . dump($resfile); 
+				my $swap = shift; say "$swap " . dump($swap); 
+				my @retrdata = @$swap; say "@retrdata " . dump(@retrdata); 
+				my $reporttitle = shift; say "$reporttitle " . dump($reporttitle); 
+				my $theme = shift; say "$theme " . dump($theme); 
+				my $counttheme = shift; say "$counttheme " . dump($counttheme); 
+				my $countreport = shift; say "$countreport " . dump($countreport); 
+				my $retfile = shift; say "$retfile " . dump($retfile); 
+				#my $existingfile = "$resfile-$theme.grt";
+				#if (-e $existingfile) { print `chmod 777 $existingfile\n`; }
+				#print $_toshell_ "chmod 777 $existingfile\n";
+				#if (-e $existingfile) { print `rm $existingfile\n` ;}
+				#print $_toshell_ "rm $existingfile\n";
+				#if (-e $existingfile) { print `rm -f $existingfile*par\n`;}
+				#print $_toshell_ "rm -f $existingfile*par\n";
+
+				unless (-e "$retfile-")
+				{
+					my $printthis =
+					"res -file $resfile -mode script<<TTT
 
 3
-$retrdatatemps[0]
-$retrdatatemps[1]
-$retrdatatemps[2]
+$retrdata[0]
+$retrdata[1]
+$retrdata[2]
 d
 >
 a
-$result-$reporttitle-$theme-$countcase-$countblock.grt
+$retfile
 m
 -
 -
@@ -392,85 +437,155 @@ m
 TTT
 ";
 
-			if ($exeonfiles eq "y") 
-			{
-				say "Retrieving temperature statistics.";
-				say TOSHELL "#Retrieving statistics.";
-				print `$printthis`;
-				#print OUTFILE "CALLED RETRIEVE TEMPS STATS\n";
-				#print OUTFILE "\$resfile: $resfile, \$retrdata[0]: $retrdata[0], \$retrdata[1]: $retrdata[1], \$retrdata[2]:$retrdataloads[2]\n";
-				#print OUTFILE "\$reporttitle: $reporttitle, \$theme: $theme\n";
-				#print OUTFILE "\$resfile-\$reporttitle-\$theme: $resfile-$reporttitle-$theme";
-			}
-			print TOSHELL "
-#Retrieving results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar.\
+				if ($exeonfiles eq "y") 
+				{
+					say "Retrieving temperature statistics.";
+					say TOSHELL "#Retrieving statistics.";
+					print `$printthis`;
+					#print OUTFILE "CALLED RETRIEVE TEMPS STATS\n";
+					#print OUTFILE "\$resfile: $resfile, \$retrdata[0]: $retrdata[0], \$retrdata[1]: $retrdata[1], \$retrdata[2]:$retrdataloads[2]\n";
+					#print OUTFILE "\$reporttitle: $reporttitle, \$theme: $theme\n";
+					#print OUTFILE "\$resfile-\$reporttitle-\$theme: $resfile-$reporttitle-$theme";
+				}
+				print TOSHELL "
+#Retrieving results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", simulation period $counttheme, retrieve period $countreport\n
 $printthis";
 
-			#if ($exeonfiles eq "y") { print `rm -f $existingfile*par\n`;}
-			#print $_toshell_ "rm -f $existingfile*par\n";
-			print RETLIST "$resfile-$reporttitle-$theme-$countcase-$countblock.grt ";
-			if ($stripcheck) ### ZZZ
-			{
-				open (CHECKDATUM, "$result-$reporttitle-$theme-$countcase-$countblock.grt") or die;
-				open (STRIPPED, ">$result-$reporttitle-$theme-$countcase-$countblock.grt-") or die;
-				my @lines = <CHECKDATUM>;
-				foreach my $line (@lines)
+				#if ($exeonfiles eq "y") { print `rm -f $existingfile*par\n`;}
+				#print $_toshell_ "rm -f $existingfile*par\n";
+				#print RETLIST "$resfile-$reporttitle-$theme--$countcase-$countblock.grt ";
+				if ($stripcheck) ### ZZZ
 				{
-					$line =~ s/^\s+//;
-					@lineelms = split(/\s+|,/, $line);
-					if ($lineelms[0] eq $stripcheck) 
+					open (CHECKDATUM, "$retfile") or die;
+					open (STRIPPED, ">$retfile-") or die;
+					my @lines = <CHECKDATUM>;
+					foreach my $line (@lines)
 					{
-						print STRIPPED "$line";
+						$line =~ s/^\s+//;
+						#@lineelms = split(/\s+|,/, $line);
+						#if ($lineelms[0] eq $stripcheck) 
+						#{
+							print STRIPPED "$line";
+						#}
 					}
+					close STRIPPED;
+					close CHECKDATUM;
 				}
-				close STRIPPED;
-				close CHECKDATUM;
+				#print RETBLOCK "$resfile-$reporttitle-$theme--$countcase-$countblock.grt ";
+				if ($stripcheck) ### ZZZ
+				{
+					open (CHECKDATUM, "$retfile") or die;
+					open (STRIPPED, ">$retfile-") or die;
+					my @lines = <CHECKDATUM>;
+					foreach my $line (@lines)
+					{
+						$line =~ s/^\s+//;
+						#@lineelms = split(/\s+|,/, $line);
+						#if ($lineelms[0] eq $stripcheck) 
+						#{
+							print STRIPPED "$line";
+						#}
+					}
+					close STRIPPED;
+					close CHECKDATUM;
+				}
 			}
 		}
-	}
-
-	open (OPENSIMS, "$simlist") or die;
-	my @sims = <OPENSIMS>;
-	# print OUTFILE "SIMS: " . Dumper(@sims) . "\n";
-	close OPENSIMS;
-				
-	my $counttheme = 0;
-	foreach my $themereportref (@themereports)
-	{
-		# print OUTFILE "SIMS: \n";
-		my @themereports = @{$themereportref}; #say "\@themereports " . dump(@themereports);
-		my $reporttitlesref = $reporttitles[$counttheme];
-		my @reporttitles = @{$reporttitlesref}; #say "\@reporttitles " . dump(@reporttitles);
-		my $retrievedatarefsdeep = $retrievedata[$counttheme];
-		my @retrievedatarefs = @{$retrievedatarefsdeep};
-		my $simtitle = $simtitles[$counttheme];
-
-		my $countreport = 0;
-		foreach my $reporttitle (@reporttitles)
+		
+		
+		say TOSHELL "\nNow in Sim::OPT::Retrieve. INSIDE";
+		say TOSHELL "\@simcases " . dump( @simcases );
+		
+		my $resfile;
+		foreach (@simcases)
 		{
-			# print OUTFILE "SIMS: \n";
-			my $theme = $themereports[$countreport]; #say "\$theme: " . dump($theme);
-			my $reporttitle = $reporttitles[$countreport]; #say "\$reporttitle " . dump($reporttitle);
-			my $retrieveref = $retrievedatarefs[$countreport];
-			my @retrdata = @{$retrievedatarefs[$countreport]}; #say "\@retrdata " . dump(@retrdata);
-			my $countersim = 0;
-			foreach my $sim (@sims)
+			if ( $_  =~ /$toitem/ )
 			{
-				chomp($sim);
+				$resfile = $_; #say TOSHELL "\$resfile " . dump($resfile);
+			}
+		} #say TOSHELL "\$resfile " . dump($resfile);	
+			
+		my $counttheme = 0;
+		foreach my $retrievedatum (@retrievedata)
+		{
+			say TOSHELL "\nNow in Sim::OPT::Retrieve. IN THEMES";
+			
+			say TOSHELL "dumpINRETRIEVE(\@themereports): " . dump(@themereports);
+			say TOSHELL "dumpINRETRIEVE(\@simtitles): " . dump(@simtitles);
+			say TOSHELL "dump(\$dat{morphlist}): " . dump($dat{morphlist});
+			say TOSHELL "dump(\$simlist): " . dump($simlist);
+
+
+			# print OUTFILE "SIMS: \n";
+			my @themereports = @{$themereports[$counttheme]}; say TOSHELL "\@themereports " . dump(@themereports);
+			my $reporttitlesref = $reporttitles[$counttheme];
+			my @reporttitles = @{$reporttitlesref}; say TOSHELL "\@reporttitles " . dump(@reporttitles);
+			my $retrievedatarefsdeep = $retrievedata[$counttheme];
+			my @retrievedatarefs = @{$retrievedatum};
+			my $simtitle = $simtitles[$counttheme]; say TOSHELL "\$simtitle " . dump($simtitle);
+			my @sims = @{$simdata[$countheme]}; say TOSHELL "\@sims " . dump(@sims);
+			
+			
+			
+			my $countreport = 0;
+			foreach my $retrievedataref (@retrievedatarefs)
+			{
+				say TOSHELL "\nNow in Sim::OPT::Retrieve. IN RESULTS";
+				my $theme = $themereports[$countreport]; say TOSHELL "\$theme: " . dump($theme);
+				my $reporttitle = $reporttitles[$countreport]; say TOSHELL "\$reporttitle " . dump($reporttitle);
+				my @retrdata = @$retrievedataref; say TOSHELL "\@retrdata " . dump(@retrdata);
+				my $sim = $sims[$countreport]; say TOSHELL "\$sim-RESFILE" . dump($sim); 
 				my $targetprov = $sim;
 				$targetprov =~ s/$mypath\///;
-				my $result = "$mypath" . "/results/$targetprov";
-
-				if ( $theme eq "temps" ) { &retrieve_temperatures_results($result, $sim, \@retrdata, $reporttitle, $theme); }
-				if ( $theme eq "comfort"  ) { &retrieve_comfort_results($result, $sim, \@retrdata, $reporttitle, $theme); }
-				if ( $theme eq "loads" ) 	{ &retrieve_loads_results($result, $sim, \@retrdata, $reporttitle, $theme); }
-				if ( $theme eq "tempsstats"  ) { &retrieve_temps_stats($result, $sim, \@retrdata, $reporttitle, $theme); }
-				print RETBLOCK "\$sim: $sim, \$result: $result, \@retrievedata: @retrievedata, \$reporttitle: $reporttitle, \$theme: $theme\n";
-				$countersim++;
+				my $result = "$mypath" . "/results/$targetprov"; say TOSHELL "\$result " . dump($result); 
+				
+				#if ( fileno (RETLIST) )
+				#if (not (-e $retlist ) )
+				#{
+				#	if ( $countblock == 0 )
+				#	{
+						open ( RETLIST, ">>$retlist"); # or die;
+				#	}
+				#	else 
+				#	{
+				#		open ( RETLIST, ">>$retlist"); # or die;
+				#	}
+				#}
+				
+				#if ( fileno (RETLIST) ) # SAME LEVEL OF RETLIST. JUST ANOTHER CONTAINER.
+				#if (not (-e $retblock ) )
+				#{
+				#	if ( $countblock == 0 )
+				#	{
+						open ( RETBLOCK, ">>$retblock"); # or die;
+				#	}
+				#	else 
+				#	{
+				#		open ( RETBLOCK, ">>$retblock"); # or die;
+				#	}
+				#}
+				
+				my $retfile = "$to-t$counttheme-r$countreport.grt";
+				$retfile =~ s/ /_/ ; say TOSHELL "\$retfile " . dump($retfile);
+				
+				push ( @{ $retstruct[$countcase][$countblock][$counttheme][$countreport] }, $retfile );
+				print RETBLOCK "$retfile\n";
+				
+				#if ( not ($retfile ~~ @retcases ) )
+				#{
+					push ( @retcases, $retfile );
+					say RETLIST "$retfile";
+					
+					if ( $theme eq "temps" ) { &retrieve_temperatures_results($result, $resfile, \@retrdata, $reporttitle, $theme, $counttheme, $countreport, $retfile ); }
+					if ( $theme eq "comfort"  ) { &retrieve_comfort_results($result, $resfile, \@retrdata, $reporttitle, $theme, $counttheme, $countreport, $retfile ); }
+					if ( $theme eq "loads" ) 	{ &retrieve_loads_results($result, $resfile, \@retrdata, $reporttitle, $theme, $counttheme, $countreport, $retfile ); }
+					if ( $theme eq "tempsstats"  ) { &retrieve_temps_stats($result, $resfile, \@retrdata, $reporttitle, $theme, $counttheme, $countreport, $retfile ); }
+					print OUTFILE "\$sim: $sim, \$resfile: $resfile, \$result: $result, \@retrievedata: @retrievedata, \$reporttitle: $reporttitle, \$theme: $theme, \$counttheme: $counttheme, \$countreport, $countreport, \$retfile : $retfile \n";
+				#}
+				$countreport++;
 			}
-			$countreport++;
+			$counttheme++;
 		}
-		$counttheme++;
 	}
 #print `rm -f ./results/*.grt`;
 #print TOSHELL "rm -f ./results/*.grt\n";
@@ -478,6 +593,9 @@ $printthis";
 #print TOSHELL "rm -f ./results/*.par\n";
 #close OUTFILE;
 #close TOSHELL;
+	close RETLIST;
+	close RETBLOCK;
+	return (\@retcases, \@retstruct);
 }	# END SUB RETRIEVE
 
 ##############################################################################

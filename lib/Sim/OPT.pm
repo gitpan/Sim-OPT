@@ -34,7 +34,7 @@ no warnings;
 use Sim::OPT::Morph;
 use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
-use Sim::OPT::Report;
+#use Sim::OPT::Report;
 use Sim::OPT::Descend;
 #use Sim::OPT::Pursue;
 
@@ -44,27 +44,20 @@ our @ISA = qw(Exporter); # our @adamkISA = qw(Exporter);
 
 our @EXPORT = qw( 
 opt odd even _mean_ flattenvariables count_variables fromopt_tosweep fromsweep_toopt convcaseseed 
-convchanceseed makeflatvarnsnum calcoverlaps calcmiditers getitersnum definerootcases
+convchanceseed makeflatvarnsnum calcoverlaps calcmediumiters getitersnum definerootcases
 callcase callblocks deffiles makefilename extractcase setlaunch exe start
 _clean_ getblocks getblockelts getrootname definerootcases populatewinners 
-getitem getline getlines getcase getstepsvar tell
-$mypath $exeonfiles $generatechance $file $preventsim $fileconfig $outfile $toshell $report 
+getitem getline getlines getcase getstepsvar tell wash flattenbox enrichbox filterbox 
+$configfile $mypath $exeonfiles $generatechance $file $preventsim $fileconfig $outfile $toshell $report 
 $simnetwork $reportloadsdata @themereports @simtitles @reporttitles @simdata @retrievedata 
 @keepcolumns @weights @weightsaim @varthemes_report @varthemes_variations @varthemes_steps 
 @rankdata @rankcolumn @reporttempsdata @reportcomfortdata @reportradiationenteringdata 
 @reporttempsstats @files_to_filter @filter_reports @base_columns @maketabledata @filter_columns 
-@files_to_filter @filter_reports @base_columns @maketabledata @filter_columns 
+@files_to_filter @filter_reports @base_columns @maketabledata @filter_columns %vals 
+@sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance 
 ); # our @EXPORT = qw( );
 
-
-our ( $mypath, $exeonfiles, $generatechance, $file, $preventsim, $fileconfig, $outfile, $toshell, $report, 
-$simnetwork, $reportloadsdata, @themereports, @simtitles, @reporttitles, @simdata, @retrievedata, 
-@keepcolumns, @weights, @weightsaim, @varthemes_report, @varthemes_variations, @varthemes_steps, 
-@rankdata, @rankcolumn, @reporttempsdata, @reportcomfortdata, @reportradiationenteringdata, 
-@reporttempsstats, @files_to_filter, @filter_reports, @base_columns, @maketabledata, @filter_columns, 
-@files_to_filter, @filter_reports, @base_columns, @maketabledata, @filter_columns );
-
-$VERSION = '0.39.6_7'; # our $VERSION = '';
+$VERSION = '0.39.6_11'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -119,6 +112,16 @@ sub _clean_
 	}
 	return  @storeinfo; # HOW TO CALL THIS FUNCTION: clean(\@arraytoclean). IT IS DESTRUCTIVE.
 }
+
+sub present
+{
+	foreach (@_)
+	{
+		say "### $_ : " . dump($_);
+		say TOSHELL "### $_ : " . dump($_);
+	}
+}
+	
 
 sub flattenvariables # IT LISTS THE NUMBER OF VARIABLES PLAY IN A LIST OF BLOCK SEARCHES. ONE COUNT FOR EACH LIST ELEMENT.
 {		
@@ -178,7 +181,7 @@ sub fromopt_tosweep # IT CONVERTS A TREE BLOCK SEARCH FORMAT IN THE ORIGINAL OPT
 			push (@sweepblocks, [@sweepblock]);
 		}
 		push (@sweeps, [ @sweepblocks ] );
-	}	
+	}
 	# IT HAS TO BE CALLED THIS WAY: fromopt_tosweep(%hash); WHERE: %hash = ( casegroup => [@caseseed], chancegroup => [@chanceseed] );
 }
 
@@ -286,10 +289,11 @@ sub calcoverlaps
 	}
 }
 
-sub calcmiditers
+sub calcmediumiters
 {
 	my @varinumbers = @_;
 	my $countcase = 0;
+	my @mediumiters;
 	foreach (@varinumbers)
 	{
 		my $countblock = 0;
@@ -297,14 +301,15 @@ sub calcmiditers
 		{
 			#say "inner dump (\$_): " . dump ($_);
 			#say "dumpalias (\$varinumbers[\$countcase]{\$_}): " . dump ($varinumbers[$countcase]{$_});
-			unless (defined $miditers[$countcase]{$_})
+			unless (defined $mediumiters[$countcase]{$_})
 			{
-				#say "dump (\$miditers[\$countcase][\$countblock]{\$_}): " . dump ($miditers[$countcase][$countblock]{$_}); 
-				$miditers[$countcase]{$_} = ( round($varinumbers[$countcase]{$_}/2) );
+				#say "dump (\$mediumiters[\$countcase][\$countblock]{\$_}): " . dump ($mediumiters[$countcase][$countblock]{$_}); 
+				$mediumiters[$countcase]{$_} = ( round($varinumbers[$countcase]{$_}/2) );
 			}
 		}
 		$countcase++;
-	}
+	} # TO BE CALLED WITH: calcmediumiters(@varinumbers)
+	return (@mediumiters);
 }
 	
 sub getitersnum
@@ -414,28 +419,32 @@ sub definerootcases #### DEFINES THE ROOT-CASE'S NAME.
 		push ( @rootnames, $rootname);
 		$countcase++;
 	}
-	
-	return (@rootnames); # IT HAS TO BE CALLED WITH: definerootcase(@miditers).
+	return (@rootnames); # IT HAS TO BE CALLED WITH: definerootcase(@mediumiters).
 }
 
 sub populatewinners
 {
-	my $countcase = 0;
+	my @rootnames = @{ $_[0] };
+	my $countcase = $_[1];
+	my $countblock = $_[2];
 	foreach $case (@rootnames)
 	{
-		push ( @{ $winneritems[$countcase] }, $case ); #globsAL
+		push ( @{ $winneritems[$countcase][$countblock] }, $case );
 		$countcase++;
 	}
 	return(@winneritems);
 }
 
 sub getitem
-{ # IT GETS THE WINNER OR LOSER LINE. To be called with getitems(\@winner_or_loser_lines, $countcase)
+{ # IT GETS THE WINNER OR LOSER LINE. To be called with getitems(\@winner_or_loser_lines, $countcase, $countblock)
 	my $swap = shift;
 	my @items = @$swap;
 	my $countcase = shift;
-	my $item = $items[$countcase][0];
-	return ($item);
+	my $countblock = shift;
+	my $item = $items[$countcase][$countblock];
+	my @arr = @$item;
+	my $elt = $arr[0];
+	return ($elt);
 }
 	
 sub getline
@@ -485,29 +494,119 @@ sub getstepsvar
 	return ($stepsvar)
 } #getstepsvar($countvar, $countcase, \@varinumbers);
 
+sub wash # UNUSED. CUT.
+{
+	my @instances = @_;
+	my @bag;
+	my @rightbag;
+	foreach my $instanceref (@instances)
+	{
+		my %d = %{ $instanceref };
+		my $to = $d{to};
+		push (@bag, $to);
+	}
+	my $count = 0;
+	foreach my $instanceref (@instances)
+	{
+		my %d = %{ $instanceref };
+		my $to = $d{to};
+		if ( not ( $to ~~ @bag ) )
+		{
+			push ( @rightbag, \%d );
+		}
+	}
+	return (@rightbag); # TO BE CALLED WITH wash(@instances);
+}
+
+sub flattenbox
+{
+	my @basket;
+	foreach my $eltsref (@_)
+	{
+		my @elts = @$eltsref;
+		push (@basket, @elts);
+	}
+	return(@basket);
+}
+  
+  
+sub integratebox
+{
+	my $swap = shift;
+	my @arr = @$swap;
+	my $from = shift;
+	my (@newbox, @novelbox);
+	foreach (@arr)
+	{
+		my $carrier = $from;
+		my $elt = $_->[0]; #say TOSHELL "firstelt: $elt";
+		my $length = length($elt);
+		my $choppedw = substr ($carrier, $length);
+		my $neww = "$elt" . "$choppedw";
+		my $newarr = [ $neww, $_->[1], $_->[2], $_->[3] ];
+		push (@newbox, $newarr);
+	}
+	foreach (@newbox)
+	{
+		my $carrier = $from;
+		my $elt = $_->[3]; #say TOSHELL "secondelt: $elt";
+		my $length = length($elt);
+		my $choppedw = substr ($carrier, $length);
+		my $neww = "$elt" . "$choppedw";
+		my $newarr = [ $_->[0], $_->[1], $_->[2], $neww ];
+		push (@novelbox, $newarr);
+	}
+	return (@novelbox); # TO BE CALLED WITH: integratebox(\@flattened, $from)
+}
+
+sub filterbox
+{
+	@arr = @_;
+	my @basket; 
+	my @box;
+	foreach my $case (@arr)
+	{
+		my $elt = $case->[0];
+		if ( not ( $elt ~~ @box ) )
+		{
+			my @bucket;
+			foreach $caseagain (@arr)
+			{
+				my $el = $caseagain->[0];
+				if ( $elt ~~ $el )
+				{
+					push ( @bucket, $case );
+				}
+			}
+			my $parent = $bucket[0];
+			push (@basket, $parent);
+			foreach (@basket)
+			{
+				push (@box, $_->[0]);
+			}
+		}
+	}
+	return (@basket);
+}
+
 sub callcase # IT PROCESSES THE CASES.
 {
 	my $swap = shift;
 	my %dat = %{$swap};
-	my @rootnames = @{ $dat{rootnames} }; #say \"dump(\@rootnames): " . dump(@rootnames);
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
 	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
-	my @sweeps = @{ $dat{sweeps} }; #say "dump(\@sweeps): " . dump(@sweeps);
-	my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
 	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers); # IT BECOMES THE CARRIER. INITIALIZED AT FIRST BLOCKS; INHERITED AFTER.
 	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
-	my @morphcases = @{ $dat{morphcases} }; #say "dumpIN( \@morphcases) " . dump(@morphcases);
-	my @morphstruct = @{ $dat{morphstruct} }; #say "dumpIN( \@morphstruct) " . dump(@morphstruct);
-	my %vals = %{ $dat{ vals} };
+	my %dirfiles = %{ $dat{dirfiles} }; #say "dumpIN( \%dirfiles) " . dump(%dirfiles);
+	my @uplift = @{ $dat{uplift} }; #say "dumpIN( \@uplift) " . dump(@uplift);
 	#eval($getparshere);
 	
 	my $rootname = getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
 	my @blockelts = getblockelts(\@sweeps, $countcase, $countblock); #say "dumpIN( \@blockelts) " . dump(@blockelts);
 	my @blocks = getblocks(\@sweeps, $countcase);  #say "dumpIN( \@blocks) " . dump(@blocks);
-	my $winneritem = getitem(\@winneritems, $countcase, $countblock); #say "dump(\$winneritem): " . dump($winneritem);
-	my $winnerline = getline($winneritem); #say "dump(\$winnerline): " . dump($winnerline);
-	my $from = $winnerline;
-	my @winnerlines = getlines( \@winneritems ); #say "dump(\@winnerlines): " . dump(@winnerlines);
+	my $toitem = getitem(\@winneritems, $countcase, $countblock); #say "dump(\$toitem): " . dump($toitem);
+	my $from = getline($toitem); #say "dump(\$from): " . dump($from);
+	#my @winnerlines = getlines( \@winneritems ); say "dump(\@winnerlines): " . dump(@winnerlines);
 	my %varnums = getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	#eval($getfly);
@@ -534,47 +633,47 @@ sub callcase # IT PROCESSES THE CASES.
 		}
 	}
 
-	#my @taken = extractcase("$winneritem", \%mids); #say "------->taken: " . dump(@taken);
+	#my @taken = extractcase("$toitem", \%mids); #say "------->taken: " . dump(@taken);
 	#my $to = $taken[0]; #say "to-------->: $to";
 	#my %carrier = %{$taken[1]}; #say "\%instancecarrier:--------->" . dump(%instancecarrier);
 
-	my $casedata = { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
-	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
-	instancecarrier => \%instancecarrier, to => $to, basket => \@basket, morphcases => \@morphcases, 
-	morphstruct => \@morphstruct, vals => \%vals }; #say "\n\dumpCASE(\$casedata): " . dump($casedata) . "\n\n";
-	callblocks( $casedata ); 
+	my $casedata = { 
+				countcase => $countcase, countblock => $countblock,
+				miditers => \@miditers,  winneritems => \@winneritems, 
+				dirfiles => \%dirfiles, uplift => \@uplift
+			}; #say "\n\dumpCASE(\$casedata): " . dump($casedata) . "\n\n"; 
+	#say TOSHELL "IN OPT.pm, \$casedata: " . dump($casedata); 
+	if ( $countblock != 0 ) { return($casedata); }
+	callblocks( $casedata );
 }
 
 sub callblocks # IT CALLS THE SEARCH ON BLOCKS.
 {	
 	my $swap = shift;
 	my %dat = %{$swap};
-	my @rootnames = @{ $dat{rootnames} }; #say \"dump(\@rootnames): " . dump(@rootnames);
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
 	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
-	my @sweeps = @{ $dat{sweeps} }; #say "dump(\@sweeps): " . dump(@sweeps);
-	my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
 	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
 	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
-	my @morphcases = @{ $dat{morphcases} }; #say "dumpIN( \@morphcases) " . dump(@morphcases);
-	my @morphstruct = @{ $dat{morphstruct} }; #say "dumpIN( \@morphstruct) " . dump(@morphstruct);
-	my %vals = %{ $dat{ vals} };
+	my %dirfiles = %{ $dat{dirfiles} }; #say "dumpIN( \%dirfiles) " . dump(%dirfiles);
+	my @uplift = @{ $dat{uplift} }; #say "dumpIN( \@uplift) " . dump(@uplift);
 	#eval($getparshere);
 	
 	my $rootname = getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
 	my @blockelts = getblockelts(\@sweeps, $countcase, $countblock); #say "dumpIN( \@blockelts) " . dump(@blockelts);
 	my @blocks = getblocks(\@sweeps, $countcase);  #say "dumpIN( \@blocks) " . dump(@blocks);
-	my $winneritem = getitem(\@winneritems, $countcase, $countblock); #say "dump(\$winneritem): " . dump($winneritem);
-	my $winnerline = getline($winneritem); #say "dump(\$winnerline): " . dump($winnerline);
-	my $from = $winnerline;
-	my @winnerlines = getlines( \@winneritems ); #say "dump(\@winnerlines): " . dump(@winnerlines);
+	my $toitem = getitem(\@winneritems, $countcase, $countblock); #say "dump(\$toitem): " . dump($toitem);
+	my $from = getline($toitem); #say "dump(\$from): " . dump($from);
 	my %varnums = getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	#eval($getfly);
 	
-	my $blockdata = { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
-	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
-	morphcases => \@morphcases, morphstruct => \@morphstruct, vals => \%vals }; #say "\ndumpBLOCK($blockdata): " . dump($blockdata) . "\n\n";
+	my $blockdata = 
+	{ 
+		countcase => $countcase, countblock => $countblock,
+		miditers => \@miditers,  winneritems => \@winneritems, 
+		dirfiles => \%dirfiles, uplift => \@uplift, 
+	}; #say TOSHELL "\ndumpBLOCK($blockdata): " . dump($blockdata) . "\n\n";
 	deffiles( $blockdata );
 }
 	
@@ -582,66 +681,60 @@ sub deffiles # IT DEFINED THE FILES TO BE CALLED.
 {
 	my $swap = shift;
 	my %dat = %{$swap};
-	my @rootnames = @{ $dat{rootnames} }; #say \"dump(\@rootnames): " . dump(@rootnames);
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
 	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
-	my @sweeps = @{ $dat{sweeps} }; #say "dump(\@sweeps): " . dump(@sweeps);
-	my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
 	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
 	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
-	my @morphcases = @{ $dat{morphcases} }; #say "dumpIN( \@morphcases) " . dump(@morphcases);
-	my @morphstruct = @{ $dat{morphstruct} }; #say "dumpIN( \@morphstruct) " . dump(@morphstruct);
-	my %vals = %{ $dat{ vals} };
+	my %dirfiles = %{ $dat{dirfiles} }; #say "dumpIN( \%dirfiles) " . dump(%dirfiles);
+	my @uplift = @{ $dat{uplift} }; #say "dumpIN( \@uplift) " . dump(@uplift);
 	#eval($getparshere);
 	
 	my $rootname = getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
 	my @blockelts = getblockelts(\@sweeps, $countcase, $countblock); #say "dumpIN( \@blockelts) " . dump(@blockelts);
 	my @blocks = getblocks(\@sweeps, $countcase);  #say "dumpIN( \@blocks) " . dump(@blocks);
-	my $winneritem = getitem(\@winneritems, $countcase, $countblock); #say "dump(\$winneritem): " . dump($winneritem);
-	my $winnerline = getline($winneritem); #say "dump(\$winnerline): " . dump($winnerline);
-	my $from = $winnerline;
-	my @winnerlines = getlines( \@winneritems ); #say "dump(\@winnerlines): " . dump(@winnerlines);
+	my $toitem = getitem(\@winneritems, $countcase, $countblock); say TOSHELL "dump(\$toitem): " . dump($toitem);
+	my $from = getline($toitem); say TOSHELL "dump(\$from): " . dump($from);
 	my %varnums = getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids);
 	#eval($getfly);
-	
-	my $rootitem = "$mypath/$file" . "_"; #say "\$rootitem $rootitem";
+
+	my $rootitem = "$file" . "_"; #say "\$rootitem $rootitem";
 	my (@basket, @box);
-	push (@basket, $rootitem); 
-	
-	foreach my $var (@blockelts)
+	push (@basket, [ $rootitem ] );
+	foreach my $var ( @blockelts )
 	{
-		my $maxvalue = $varnums{$var}; #say "\$countblock $countblock, var: $var, maxvalue: $maxvalue";
 		my @bucket;
-		my $countbasket = 0;
-		foreach my $item (@basket)
+		my $maxvalue = $varnums{$var}; #say "\$countblock $countblock, var: $var, maxvalue: $maxvalue";
+		foreach my $elt (@basket)
 		{
-			# my $item = $basket[$countbasket];
-			my $countstep = 1;
-			while ( $countstep <= $maxvalue)
+			my $root = $elt->[0]; #say "\$root " . dump($root);
+			my $cnstep = 1;
+			while ( $cnstep <= $maxvalue)
 			{
-				my $to = "$item" . "$var" . "-" . "$countstep" . "_" ; #say "\@blockelts: @blockelts, \$countblock $countblock, var: $var, maxvalue: $maxvalue, \$countstep: $countstep, \$item: $item, \DUMP\$to: " . Dumper($to);
-				push (@bucket, $to, ); #say "bucket: " . dump(@bucket);
-				push ( @box, [ $var, $countstep ] );  #say "box: " . dump(@box); 
-				$countstep++;
-			} #say "bucketOUT: " . dump(@bucket);
-			$countbasket++;
-		}
+				my $olditem = $root;
+				my $item = "$root" . "$var" . "-" . "$cnstep" . "_" ; #say "\$item: $item, \$root: $root, \$var: $var, \$cnstep: $cnstep, \$root: $root ";
+				push (@bucket, [$item, $var, $cnstep, $olditem] ); #say "\@bucketIN " . dump(@bucket);
+				$cnstep++;
+			}
+		} 
 		@basket = ();
-		@basket = @bucket; #say "bucketOUT: " . dump(@bucket); say "boxOUT: " . dump(@box);
-	}
-	my @newbasket;
-	$cn = 0;
-	foreach (@basket)
-	{
-		unshift ( @{$box[$cn]} , $_ );
-		push ( @newbasket, $box[$cn] ); #say "newbasketOUT: " . dump(@newbasket);
-		$cn++;
+		@basket = @bucket;
+		push ( @box, [ @bucket ] );
+		#say "\@box INOUT" . dump(@box);
 	} 
-	my @basket = @newbasket; #say "newbasketOUTOUT: " . dump(@newbasket);
-	my $datatowork = { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
-	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
-	basket => \@basket, morphcases => \@morphcases, morphstruct => \@morphstruct, vals => \%vals } ; #say "\ndumper-datatowork: " . dump($datatowork) . "\n\n";
+	#say TOSHELL "\@box!: " . dump ( @box );
+	
+	my @flattened = flattenbox(@box); #say TOSHELL "\@flattened: " . dump(@flattened) . ", " . scalar(@flattened);
+	my @integrated = integratebox(\@flattened, $toitem); #say TOSHELL "\@integrated " . dump(@integrated) . ", " . scalar(@integrated);
+	my @finalbox = filterbox(@integrated); #say TOSHELL "\@finalbox " . dump(@finalbox) . ", " . scalar(@finalbox); 
+
+	my $datatowork = 
+	{ 
+		countcase => $countcase, countblock => $countblock,
+		miditers => \@miditers,  winneritems => \@winneritems, 
+		dirfiles => \%dirfiles, uplift => \@uplift, 
+		basket => \@finalbox   
+	} ; #say TOSHELL "\ndumper-datatowork: " . dump($datatowork) . "\n\n";
 	setlaunch( $datatowork );
 }	
 
@@ -649,204 +742,158 @@ sub setlaunch # IT SETS THE DATA FOR THE SEARCH ON THE ACTIVE BLOCK.
 {
 	my $swap = shift;
 	my %dat = %{$swap};
-	my @rootnames = @{ $dat{rootnames} }; #say \"dump(\@rootnames): " . dump(@rootnames);
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
 	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
-	my @sweeps = @{ $dat{sweeps} }; #say "dump(\@sweeps): " . dump(@sweeps);
-	my @varinumbers = @{ $dat{varinumbers} }; #say "dump(\@varinumbers): " . dump(@varinumbers);
 	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
 	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
-	my @morphcases = @{ $dat{morphcases} }; #say "dumpIN( \@morphcases) " . dump(@morphcases);
-	my @morphstruct = @{ $dat{morphstruct} }; #say "dumpIN( \@morphstruct) " . dump(@morphstruct);
-	my %vals = %{ $dat{ vals} };
+	my %dirfiles = %{ $dat{dirfiles} }; #say "dumpIN( \%dirfiles) " . dump(%dirfiles);
+	my @uplift = @{ $dat{uplift} }; #say "dumpIN( \@uplift) " . dump(@uplift);
+	my @basket = @{ $dat{basket} }; #say "dumpIN( \@basket) " . dump(@basket);
 	#eval($getparshere);
-	
-	my @basket = @{ $dat{basket} }; #say "dump(\@basket): " . dump(@basket);
-		
+			
 	my $rootname = getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
 	my @blockelts = getblockelts(\@sweeps, $countcase, $countblock); #say "dumpIN( \@blockelts) " . dump(@blockelts);
 	my @blocks = getblocks(\@sweeps, $countcase);  #say "dumpIN( \@blocks) " . dump(@blocks);
-	my $winneritem = getitem(\@winneritems, $countcase, $countblock); #say "dump(\$winneritem): " . dump($winneritem);
-	my $winnerline = getline($winneritem); #say "dump(\$winnerline): " . dump($winnerline);
-	my $from = $winnerline;
-	my @winnerlines = getlines( \@winneritems ); #say "dump(\@winnerlines): " . dump(@winnerlines);
+	my $toitem = getitem(\@winneritems, $countcase, $countblock); #say "dump(\$toitem): " . dump($toitem);
+	my $from = getline($toitem); #say "dump(\$from): " . dump($from);
 	my %varnums = getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	#eval($getfly);
 	
 	my ( @instances, %carrier);
-	if ($countblock == 0)
-	{
-		%carrier = %mids; #say "\%carrierA:--->" . dump(%carrier);
-	}
-	else 
-	{
-		my $prov = "_" . "$winnerline";
-		%carrier = extractcase( $prov , \%carrier ); #say "\%carrierB:--->" . dump(%carrier);
-	}
+	#if ($countblock == 0)
+	#{
+	#	%carrier = %mids; #say "\%carrier! STARTING:--->" . dump(%carrier);
+	#}
+	#else 
+	#{
+	#	my $prov = "_" . "$winnerline";
+	#	%carrier = extractcase( $prov , \%carrier ); #say "\%carrier! EXTRACTED:--->" . dump(%carrier);
+	#}
 
 	foreach my $elt ( @basket )
 	{
 		
-		my $string = $$elt[0]; #say "string : $string"; 
+		my $newpars = $$elt[0]; #say "\$newpars : $newpars"; 
 		my $countvar = $$elt[1]; #say "\$countvar : $countvar"; 
 		my $countstep = $$elt[2]; #say "\$countstep : $countstep"; 
-		my @taken = extractcase("$string", \%carrier); #say "------->taken: " . dump(@taken);
-		my $to = $taken[0]; #say "to-------->: $to";
-		my %instancecarrier = %{$taken[1]}; #say "\%instancecarrier:--------->" . dump(%instancecarrier);
-		push (@instances, { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
-					sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, 
-					to => $to, instancecarrier => \%instancecarrier, countvar => $countvar, countstep => $countstep, 
-					morphcases => \@morphcases, morphstruct => \@morphstruct, vals => \%vals } );
+		my $oldpars = $$elt[3]; #say "\$oldpars : $oldpars"; 
+		my @taken = extractcase("$newpars", \%mids); #say "--->taken: " . dump(@taken);
+		my $to = $taken[0]; #say "to--->: $to";
+		#my %instancecarrier = %{$taken[1]}; #say "\%instancecarrier!:--->" . dump(%instancecarrier); # UNUSED
+		my @olds = extractcase("$oldpars", \%mids); #say "--->@olds " . dump(@olds);
+		my $origin = $olds[0]; #say "$origin--->: $origin";
+		push (@instances, 
+		{ 
+			countcase => $countcase, countblock => $countblock,
+			miditers => \@miditers,  winneritems => \@winneritems, 
+			dirfiles => \%dirfiles, uplift => \@uplift, 
+			to => $to, countvar => $countvar, countstep => $countstep,
+			origin => $origin
+		} );
 	} 
-	#say "\ninstances: " . Dumper(@instances). "\n\n"; ### ZZZ
+	#say TOSHELL "\ninstances: " . dump(@instances). "\n\n"; ### ZZZ
 	exe( @instances ); # IT HAS TO BE CALLED WITH: setlaunch(@datatowork). @datatowork ARE CONSTITUTED BY AN ARRAY OF: ( [ \@blocks, \%varnums, \%bases, $name, $countcase, \@blockelts, $countblock ], ... )
 }	
 		
 sub exe
 {     
-	#say "EXE!";
 	my @instances = @_;
 	
 	my $firstinst = $instances[0];
-	my %dat = %{ $firstinst };
-	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
-	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
-	my %vals = %{ $dat{ vals} };
+	my %d = %{ $firstinst };
+	my $countcase = $d{countcase}; #say "dump(\$countcase): " . dump($countcase);
+	my $countblock = $d{countblock}; #say "dump(\$countblock): " . dump($countblock);
+	my %dirfiles = %{ $d{ dirfiles } };
 
-	my $simlist = "$mypath/$file-simlist-$countcase";
-	my $simblock = "$mypath/$file-simblock-$countcase-$countblock";
-	my $morphlist = "$mypath/$file-morphlist-$countcase";
-	my $morphblock = "$mypath/$file-morphblock-$countcase-$countblock";
-	my $reslist = "$mypath/$file-reslist-$countcase"; 
-	my $resblock = "$mypath/$file-resblock-$countcase-$countblock";
-	my $retlist = "$mypath/$file-retlist-$countcase"; # # FOR RETRIEVAL
-	my $retblock = "$mypath/$file-retother-$countcase"; # FOR RETRIEVAL
-	my $mergecase = "$mypath/$file-mergecase-$countcase"; # UNUSED FOR NOW
-	my $mergeblock = "$mypath/$file-mergeblock-$countcase-$countblock"; # UNUSED FOR NOW
+	$dirfiles{simlist} = "$mypath/$file-simlist--$countcase";
+	$dirfiles{morphlist} = "$mypath/$file-morphlist--$countcase";
+	$dirfiles{retlist} = "$mypath/$file-retlist--$countcase"; 
+	$dirfiles{replist} = "$mypath/$file-replist--$countcase"; # # FOR RETRIEVAL
+	$dirfiles{mergelist} = "$mypath/$file-mergelist--$countcase"; # UNUSED FOR NOW
+	$dirfiles{descendlist} = "$mypath/$file-descendlist--$countcase"; # UNUSED FOR NOW
+	$dirfiles{simblock} = "$mypath/$file-simblock--$countcase-$countblock";
+	$dirfiles{morphblock} = "$mypath/$file-morphblock--$countcase-$countblock";
+	$dirfiles{retblock} = "$mypath/$file-retblock--$countcase-$countblock"; 
+	$dirfiles{repblock} = "$mypath/$file-repblock--$countcase-$countblock"; # # FOR RETRIEVAL
+	$dirfiles{mergeblock} = "$mypath/$file-mergeblock--$countcase-$countblock"; # UNUSED FOR NOW
+	$dirfiles{descendblock} = "$mypath/$file-descendblock--$countcase-$countblock"; # UNUSED FOR NOW
 	
-	if ( ( $councase == 0 ) and ($countblock == 0 ) )
+	if ($countblock == 0 ) 
 	{
-		(@simcases, @simstruct, @morphcases, @morphstruct, @rescases, @resstruct);
+		( $dirfiles{morphcases}, $dirfiles{morphstruct}, $dirfiles{simcases}, $dirfiles{simstruct}, $dirfiles{retcases}, 
+		$dirfiles{retstruct}, $dirfiles{repcases}, $dirfiles{repstruct}, $dirfiles{mergecases}, $dirfiles{mergestruct},
+		$dirfiles{descendcases}, $dirfiles{descendstruct} );
 	}
 	
 	if ( $dowhat{morph} eq "y" ) 
 	{ 
-		Sim::OPT::Morph::morph( 
+		my @result = Sim::OPT::Morph::morph( 
 		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
+			instances => \@instances, countcase => $countcase, countblock => $countblock,
+			dirfiles => \%dirfiles
 		} );
+		$dirfiles{morphcases} = $result[0];
+		$dirfiles{morphstruct} = $result[1];
 	}
 
 	if ( $dowhat{simulate} eq "y" )
 	{ 
-		Sim::OPT::Sim::sim( 
+		my @result = Sim::OPT::Sim::sim( 
 		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
+			instances => \@instances, countcase => $countcase, countblock => $countblock, 
+			dirfiles => \%dirfiles
 		} );
-	}
-	if ( $dowhat{retrieve} eq "y" )
-	{ 
-		Sim::OPT::Retrieve::retrieve( 
-		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
-		} );
+		$dirfiles{simcases} = $result[0]; say TOSHELL "\$dirfiles{simcases} : " . dump( $dirfiles{simcases} );
+		$dirfiles{simstruct} = $result[1]; 
 	}
 	
-	if ( $dowhat{report} eq "y" ) 
+	if ( $dowhat{retrieve} eq "y" )
 	{ 
-		Sim::OPT::Report::report( 
+		my @result = Sim::OPT::Retrieve::retrieve( 
 		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
+			instances => \@instances, countcase => $countcase, countblock => $countblock, 
+			dirfiles => \%dirfiles
 		} );
+		$dirfiles{retcases} = $result[0];
+		$dirfiles{retstruct} = $result[1];
 	}
-	if ( $dowhat{mergeresults} eq "y" )
+	
+	if ( $dowhat{descend} eq "y" )
 	{ 
-		 Sim::OPT::Descend::merge_reports( 
+		my @result = Sim::OPT::Descend::descend( 
 		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
+			instances => \@instances, countcase => $countcase, countblock => $countblock, 
+			dirfiles => \%dirfiles
 		} );
+		$dirfiles{descendcases} = $result[0];
+		$dirfiles{descendstruct} = $result[1];
 	}
+	
 	if ( $dowhat{substitutenames} eq "y" )
 	{
 		 Sim::OPT::Report::filter_reports( 
 		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
+			instances => \@instances, countcase => $countcase, countblock => $countblock, 
+			dirfiles => \%dirfiles
 		} );
 	}
+	
 	if ( $dowhat{filterconverted} eq "y" )
 	{
 		 Sim::OPT::Report::convert_filtered_reports( 
 		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
+			instances => \@instances, countcase => $countcase, countblock => $countblock, 
+			dirfiles => \%dirfiles
 		} );
 	}
+	
 	if ( $dowhat{make3dtable} eq "y" )
 	{
 		 Sim::OPT::Report::maketable( 
 		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
-		} );
-	}
-	if ( $dowhat{takeoptima} eq "y" )
-	{
-		Sim::OPT::Descend::takeoptima( 
-		{ 
-			instances => \@instances, vals => \%vals, countcase => $countcase, countblock => $countblock, configfile => $configfile,
-			simlist => $simlist, simstruct => $simstruct, morphlist => $morphlist,  morphstruct => $morphstruct, 
-			simcases => @simcases, simstruct => \@simstruct, morphcases => \@morphcases, morphstruct => \@morphstruct, 
-			simlist => $simlist, simblock => $simblock, morphlist => $morphlist, morphblock => $morphblock,
-			rescases => @rescases, resblock => @resstruct, reslist => $reslist, resblock => $resblock,
-			retlist => $reslist, retblock => $resblock, mergecase => $mergecase, mergeblock => $mergeblock, 
-			morphcases => \@morphcases, morphstruct => \@morphstruct
+			instances => \@instances, countcase => $countcase, countblock => $countblock, 
+			dirfiles => \%dirfiles
 		} );
 	} #say "getexe: " . dump(@instances);
 } # END SUB exe
@@ -922,18 +969,18 @@ sub opt
 	#say "dump(\@varinumbers), " . dump(@varinumbers); #say "dumpBEFORE(\@miditers), " . dump(@miditers);
 	calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS globsAL. ZZZ
 	
-	calcmiditers(@varinumbers); #say "dumpAFTER(\@miditers), " . dump(@miditers); # globsALS. ZZZ
+	@mediumiters = calcmediumiters(@varinumbers); say "dump!(\@mediumiters), " . dump(@mediumiters); # globsALS. ZZZ
 	#$itersnum = getitersnum($countcase, $varinumber, @varinumbers); #say "\$itersnum OUT = $itersnum";
 	
-	@rootnames = definerootcases(\@sweeps, \@miditers); 
+	@rootnames = definerootcases(\@sweeps, \@mediumiters); say "\@rootnames " . dump(@rootnames); 
 	
 	my $countcase = 0;
 	my $countblock = 0;
 
-	my @winneritems = populatewinners(@rootnames);
+	my @winneritems = populatewinners(\@rootnames, $countcase, $countblock); say "\@winneritems " . dump(@winneritems);
 	
 	callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
-	sweeps => \@sweeps, varinumbers => \@varinumbers, miditers => \@miditers,  winneritems => \@winneritems, vals => \%vals } );
+	miditers => \@mediumiters,  winneritems => \@winneritems } );
 	
 
 	close(OUTFILE);
@@ -965,7 +1012,7 @@ A working knowledge of ESP-r is necessary to use OPT. Information about ESP-r ca
 To install OPT, the command <cpanm Sim::OPT> has to be issued. Perl will install all dependencies. OPT can be loaded through the command <use Sim::OPT> in Perl. For that purpose, the "Devel::REPL" module can be used. As an alternative, the batch file "opt" (which can be found packed in the "optw.tar.gz" file in "example" folder in this distribution) may be copied in a work directory and the command <opt> may be issued. That command will activate the OPT's functions, following the settings specified in a previously prepared configuration file. When launched, OPT will ask the path to that file. Its activity will start after receiving that information. 
 That file must contain a suitable description of the operations to be accomplished pointing to an existing ESP-r model.
 
-In "optw.tar.gz" there is an example of OPT configuration file ("d.pl"). That file should be decompacted and the resulting folder ("optw") may be used as a work folder for OPT, in which the ESP-r models to be worked should reside. The "mypath" variable should be set to that work directory. An example of configuration file for an earlier version of the program may be downloaded at http://figshare.com/authors/Gian_luca_Brunetti/624879 .
+In "optw.tar.gz" there is an example of OPT configuration file ("v.pl"). That file should be decompacted and the resulting folder ("optw") may be used as a work folder for OPT, in which the ESP-r models to be worked should reside. The "mypath" variable should be set to that work directory. An example of configuration file for an earlier version of the program may be downloaded at http://figshare.com/authors/Gian_luca_Brunetti/624879 .
 
 To run OPT without making it launch ESP-r, the setting <$exeonfiles = "n";> should be specified in the configuration file. Note that this can only be aimed to inspect the command that OPTS will give to ESP-r through the shell. The search obtained will be very likely to be different from that driven by simulation results. If simulations are not launched, the optimal instance  at each subspace search cannot indeed be selected. In its place, the base case will be kept by the program, just to bring the process to completion. A sequential block search (Gauss-Seidel method) cannot indeed be run "dry". The variable "$toshell" specifies the path to a file that will receive the shell commands in place of the shell.
 
@@ -977,7 +1024,7 @@ The ESP-r model folders and the result files that will be created in a parametri
 
 The structure of block searches is described through the variable "@sweeps" . Each case is listed inside square brackets. And each search subspace (block) in them is listed inside square brakets, nested in cases. For example: a sequence constituted by two brute force searches, one regarding parameters 1, 2 3 and the other regarding parameters 1, 4, 5, 7 would be described with: @sweeps = ( [ [ 1, 2, 3 ] ] , [ [ 1, 4, 5, 7 ] ] ). And a block search with the first subspace regarding parameters 1, 2, 3 and the second regarding parameters 3, 4, 5, 6 would be described with: @sweeps = ( [ [ 1, 2, 3 ] , [ 3, 4, 5, 6 ] ] ). 
 
-The number of iterations to be taken into account for each parameter for each case is specified in the "@varinumbers" variable. To specifiy that the parameters of the last example are tried for three values (iterations) each, @varinumbers has to be set to ( { 1 => '3', 2 => '3', 3 => '3', 4 => '3', 5 => '3', 6 => '3' } ).
+The number of iterations to be taken into account for each parameter for each case is specified in the "@varinumbers" variable. To specifiy that the parameters of the last example are tried for three values (iterations) each, @varinumbers has to be set to ( { 1 => 3, 2 => 3, 3 => 3, 4 => 3, 5 => 3, 6 => 3 } ).
 
 OPT is a program I have begun to write as a side project in 2008 with no funding. It is the first real program I attempted to write. From time to time I add some parts to it. The parts of it that have been written earlier or later are the ones that are coded in the strangest manner.
 
