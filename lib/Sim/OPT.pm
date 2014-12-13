@@ -14,6 +14,7 @@ use List::Util qw[ min max reduce shuffle];
 use List::MoreUtils qw(uniq);
 use List::AllUtils qw(sum);
 use Statistics::Basic qw(:all);
+#use IO::Tee;
 use Set::Intersection;
 use List::Compare;
 use Data::Dumper;
@@ -34,7 +35,7 @@ no warnings;
 use Sim::OPT::Morph;
 use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
-#use Sim::OPT::Report;
+use Sim::OPT::Report;
 use Sim::OPT::Descend;
 #use Sim::OPT::Pursue;
 
@@ -49,7 +50,7 @@ callcase callblocks deffiles makefilename extractcase setlaunch exe start
 _clean_ getblocks getblockelts getrootname definerootcases populatewinners 
 getitem getline getlines getcase getstepsvar tell wash flattenbox enrichbox filterbox 
 $configfile $mypath $exeonfiles $generatechance $file $preventsim $fileconfig $outfile $toshell $report 
-$simnetwork $reportloadsdata @themereports @simtitles @reporttitles @simdata @retrievedata 
+$simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @retrievedata 
 @keepcolumns @weights @weightsaim @varthemes_report @varthemes_variations @varthemes_steps 
 @rankdata @rankcolumn @reporttempsdata @reportcomfortdata @reportradiationenteringdata 
 @reporttempsstats @files_to_filter @filter_reports @base_columns @maketabledata @filter_columns 
@@ -57,7 +58,7 @@ $simnetwork $reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 @sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_11'; # our $VERSION = '';
+$VERSION = '0.39.6_15'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -95,6 +96,32 @@ sub countarray
 		}
 	}
 	return ($c);
+}
+
+sub sorttable # TO SORT A TABLE ON THE BASIS OF A COLUMN
+{
+	my $num = $_[0];
+	my @table = @{ $_[1] };
+	my @rows;
+	foreach my $line (@table) 
+	{
+	    chomp $line;
+	    $sth->execute(line);
+
+	    my @row = $sth->fetchrow_array;
+	    unshift (@row, $line);
+	    push @rows, \@row;
+	}
+
+	@rows = sort { $a->[$num] cmp $b->[$num] } @rows;
+
+	foreach my $row (@rows) {
+	    foreach (@$row) {
+		print "$_";
+	    }
+	    print "\n";
+	} #TO BE CALLED WITH: sorttable( $number_of column, \@table);
+	return (@table);
 }
 
 sub _clean_
@@ -611,6 +638,12 @@ sub callcase # IT PROCESSES THE CASES.
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	#eval($getfly);
 	
+	if ( ($countcase > 0) or ($countblock > 0) )
+	{
+		say "Called for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
+		say TOSHELL "Called for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
+	}
+	
 	# STOP CONDITION
 	if ( $counblock >= scalar( @{ $sweeps[$countcase] } ) ) # NUMBER OF BLOCK OF THE CURRENT CASE
 	{ 
@@ -618,9 +651,12 @@ sub callcase # IT PROCESSES THE CASES.
 		foreach my $e (@winneritems)
 		{
 			say "Optimal option for case number $countcase: $winneritems[$countcase][$#$winneritems]";
+			say TOSHELL "#Optimal option for case number $countcase: $winneritems[$countcase][$#$winneritems]";
 			say makefilename(%mids);
 			say "Gross number of instances: " . scalar ( countarray( @morphstruct ) ) ;
+			say TOSHELL "#Gross number of instances: " . scalar ( countarray( @morphstruct ) ) ;
 			say "Net number of instances: " . scalar ( @{ $morphcases[$countcase] } ) ;
+			say TOSHELL "#Net number of instances: " . scalar ( @{ $morphcases[$countcase] } ) ;                                                                           
 			$cn++;
 		}
 			
@@ -629,6 +665,7 @@ sub callcase # IT PROCESSES THE CASES.
 		if ( $countcase >= scalar( @sweeps ) )# NUMBER OF CASES OF THE CURRENT PROBLEM
 		{
 			say "END RUN.";
+			say TOSHELL "#END RUN.";
 			exit;
 		}
 	}
@@ -636,7 +673,7 @@ sub callcase # IT PROCESSES THE CASES.
 	#my @taken = extractcase("$toitem", \%mids); #say "------->taken: " . dump(@taken);
 	#my $to = $taken[0]; #say "to-------->: $to";
 	#my %carrier = %{$taken[1]}; #say "\%instancecarrier:--------->" . dump(%instancecarrier);
-
+	say "Calling a new block for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
 	my $casedata = { 
 				countcase => $countcase, countblock => $countblock,
 				miditers => \@miditers,  winneritems => \@winneritems, 
@@ -667,7 +704,8 @@ sub callblocks # IT CALLS THE SEARCH ON BLOCKS.
 	my %varnums = getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	#eval($getfly);
-	
+	say "Called for a new block for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+	say "Calling to define new files for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 	my $blockdata = 
 	{ 
 		countcase => $countcase, countblock => $countblock,
@@ -697,7 +735,9 @@ sub deffiles # IT DEFINED THE FILES TO BE CALLED.
 	my %varnums = getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids);
 	#eval($getfly);
-
+	
+	say "Called to define new files for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+	
 	my $rootitem = "$file" . "_"; #say "\$rootitem $rootitem";
 	my (@basket, @box);
 	push (@basket, [ $rootitem ] );
@@ -727,7 +767,8 @@ sub deffiles # IT DEFINED THE FILES TO BE CALLED.
 	my @flattened = flattenbox(@box); #say TOSHELL "\@flattened: " . dump(@flattened) . ", " . scalar(@flattened);
 	my @integrated = integratebox(\@flattened, $toitem); #say TOSHELL "\@integrated " . dump(@integrated) . ", " . scalar(@integrated);
 	my @finalbox = filterbox(@integrated); #say TOSHELL "\@finalbox " . dump(@finalbox) . ", " . scalar(@finalbox); 
-
+	
+	say "Calling to instruct the launch of new searches for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 	my $datatowork = 
 	{ 
 		countcase => $countcase, countblock => $countblock,
@@ -759,6 +800,8 @@ sub setlaunch # IT SETS THE DATA FOR THE SEARCH ON THE ACTIVE BLOCK.
 	my %varnums = getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	#eval($getfly);
+	
+	say "Called to instruct the launch of new searches for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 	
 	my ( @instances, %carrier);
 	#if ($countblock == 0)
@@ -792,6 +835,7 @@ sub setlaunch # IT SETS THE DATA FOR THE SEARCH ON THE ACTIVE BLOCK.
 			origin => $origin
 		} );
 	} 
+	say "Calling to execute the launch of new searches for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 	#say TOSHELL "\ninstances: " . dump(@instances). "\n\n"; ### ZZZ
 	exe( @instances ); # IT HAS TO BE CALLED WITH: setlaunch(@datatowork). @datatowork ARE CONSTITUTED BY AN ARRAY OF: ( [ \@blocks, \%varnums, \%bases, $name, $countcase, \@blockelts, $countblock ], ... )
 }	
@@ -805,29 +849,30 @@ sub exe
 	my $countcase = $d{countcase}; #say "dump(\$countcase): " . dump($countcase);
 	my $countblock = $d{countblock}; #say "dump(\$countblock): " . dump($countblock);
 	my %dirfiles = %{ $d{ dirfiles } };
+	
+	say "Called to execute the launch of new searches for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 
 	$dirfiles{simlist} = "$mypath/$file-simlist--$countcase";
 	$dirfiles{morphlist} = "$mypath/$file-morphlist--$countcase";
 	$dirfiles{retlist} = "$mypath/$file-retlist--$countcase"; 
 	$dirfiles{replist} = "$mypath/$file-replist--$countcase"; # # FOR RETRIEVAL
-	$dirfiles{mergelist} = "$mypath/$file-mergelist--$countcase"; # UNUSED FOR NOW
 	$dirfiles{descendlist} = "$mypath/$file-descendlist--$countcase"; # UNUSED FOR NOW
 	$dirfiles{simblock} = "$mypath/$file-simblock--$countcase-$countblock";
 	$dirfiles{morphblock} = "$mypath/$file-morphblock--$countcase-$countblock";
 	$dirfiles{retblock} = "$mypath/$file-retblock--$countcase-$countblock"; 
 	$dirfiles{repblock} = "$mypath/$file-repblock--$countcase-$countblock"; # # FOR RETRIEVAL
-	$dirfiles{mergeblock} = "$mypath/$file-mergeblock--$countcase-$countblock"; # UNUSED FOR NOW
 	$dirfiles{descendblock} = "$mypath/$file-descendblock--$countcase-$countblock"; # UNUSED FOR NOW
 	
 	if ($countblock == 0 ) 
 	{
 		( $dirfiles{morphcases}, $dirfiles{morphstruct}, $dirfiles{simcases}, $dirfiles{simstruct}, $dirfiles{retcases}, 
-		$dirfiles{retstruct}, $dirfiles{repcases}, $dirfiles{repstruct}, $dirfiles{mergecases}, $dirfiles{mergestruct},
+		$dirfiles{retstruct}, $dirfiles{repcases}, $dirfiles{repstruct}, $dirfiles{mergecases}, $dirfiles{mergestruct}, 
 		$dirfiles{descendcases}, $dirfiles{descendstruct} );
 	}
 	
 	if ( $dowhat{morph} eq "y" ) 
 	{ 
+		say "Calling morphing operations for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 		my @result = Sim::OPT::Morph::morph( 
 		{ 
 			instances => \@instances, countcase => $countcase, countblock => $countblock,
@@ -839,6 +884,7 @@ sub exe
 
 	if ( $dowhat{simulate} eq "y" )
 	{ 
+		say "Calling simulations for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 		my @result = Sim::OPT::Sim::sim( 
 		{ 
 			instances => \@instances, countcase => $countcase, countblock => $countblock, 
@@ -850,21 +896,38 @@ sub exe
 	
 	if ( $dowhat{retrieve} eq "y" )
 	{ 
+		say "Calling the retrieval of results for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 		my @result = Sim::OPT::Retrieve::retrieve( 
 		{ 
 			instances => \@instances, countcase => $countcase, countblock => $countblock, 
 			dirfiles => \%dirfiles
 		} );
-		$dirfiles{retcases} = $result[0];
+		$dirfiles{retcases} = $result[0]; say TOSHELL "\$dirfiles{retcases} : " . dump( $dirfiles{retcases} );
 		$dirfiles{retstruct} = $result[1];
+	}
+	
+	if ( $dowhat{report} eq "y" )
+	{ 
+		say "Calling the reporting of results for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+		my @result = Sim::OPT::Report::report( 
+		{ 
+			instances => \@instances, countcase => $countcase, countblock => $countblock, 
+			dirfiles => \%dirfiles
+		} );
+		$dirfiles{repcases} = $result[0];
+		$dirfiles{repstruct} = $result[1];
+		$dirfiles{mergestruct} = $result[2];
+		$dirfiles{mergecases} = $result[2];
+		$repfile = $result[4];
 	}
 	
 	if ( $dowhat{descend} eq "y" )
 	{ 
+		say "Calling the descent in case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 		my @result = Sim::OPT::Descend::descend( 
 		{ 
 			instances => \@instances, countcase => $countcase, countblock => $countblock, 
-			dirfiles => \%dirfiles
+			dirfiles => \%dirfiles, repfile => $repfile
 		} );
 		$dirfiles{descendcases} = $result[0];
 		$dirfiles{descendstruct} = $result[1];
@@ -936,6 +999,8 @@ sub opt
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
 	
+	#$mytee = IO::Tee->new( \*STDOUT, TOSHELL ); #GLOBAL. UNUSED FOR NOW
+	
 	unless (-e "$mypath") 
 	{ 
 		if ($exeonfiles eq "y") 
@@ -969,15 +1034,15 @@ sub opt
 	#say "dump(\@varinumbers), " . dump(@varinumbers); #say "dumpBEFORE(\@miditers), " . dump(@miditers);
 	calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS globsAL. ZZZ
 	
-	@mediumiters = calcmediumiters(@varinumbers); say "dump!(\@mediumiters), " . dump(@mediumiters); # globsALS. ZZZ
+	@mediumiters = calcmediumiters(@varinumbers); say TOSHELL "BEGINNING dump!(\@mediumiters), " . dump(@mediumiters); # globsALS. ZZZ
 	#$itersnum = getitersnum($countcase, $varinumber, @varinumbers); #say "\$itersnum OUT = $itersnum";
 	
-	@rootnames = definerootcases(\@sweeps, \@mediumiters); say "\@rootnames " . dump(@rootnames); 
+	@rootnames = definerootcases(\@sweeps, \@mediumiters); say TOSHELL "BEGINNING \@rootnames " . dump(@rootnames); 
 	
 	my $countcase = 0;
 	my $countblock = 0;
 
-	my @winneritems = populatewinners(\@rootnames, $countcase, $countblock); say "\@winneritems " . dump(@winneritems);
+	my @winneritems = populatewinners(\@rootnames, $countcase, $countblock); say TOSHELL "BEGINNING \@winneritems " . dump(@winneritems);
 	
 	callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
 	miditers => \@mediumiters,  winneritems => \@winneritems } );

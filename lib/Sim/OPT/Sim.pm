@@ -23,7 +23,7 @@ use Data::Dump qw(dump);
 use Sim::OPT;
 use Sim::OPT::Morph;
 use Sim::OPT::Retrieve;
-#use Sim::OPT::Report;
+use Sim::OPT::Report;
 use Sim::OPT::Descend;
 use feature 'say';
 no strict; 
@@ -35,7 +35,7 @@ no warnings;
 
 @EXPORT = qw( sim ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_11'; # our $VERSION = '';
+$VERSION = '0.39.6_15'; # our $VERSION = '';
 
 
 #########################################################################################
@@ -52,7 +52,6 @@ $VERSION = '0.39.6_11'; # our $VERSION = '';
 
 sub sim    # This function launch the simulations in ESP-r
 {
-	say  "\nNow in Sim::OPT::Sim.\n";
 	my $swap = shift; #say TOSHELL "swapINSIM: " . dump($swap);
 	my %dat = %$swap;
 	my @instances = @{ $dat{instances} }; #say "scalar(\@instances): " . scalar(@instances);
@@ -78,6 +77,11 @@ sub sim    # This function launch the simulations in ESP-r
 	$report = $main::report;
 	$simnetwork = $main::simnetwork;
 	$reportloadsdata = $main::reportloadsdata;
+	
+	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
+	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
+	say  "\nNow in Sim::OPT::Sim.\n";
+	say TOSHELL "\n#Now in Sim::OPT::Sim.\n";
 	
 	%dowhat = %main::dowhat;
 
@@ -123,10 +127,8 @@ sub sim    # This function launch the simulations in ESP-r
 	my $simblock = $dirfiles{simblock};
 	my $retlist = $dirfiles{retlist};
 	my $retblock = $dirfiles{retblock};
-	my $replist = $dirfiles{retpist};
+	my $replist = $dirfiles{replist};
 	my $repblock = $dirfiles{repblock};
-	my $mergelist = $dirfiles{mergelist};
-	my $mergeblock = $dirfiles{mergeblock};
 	my $descendlist = $dirfiles{descendlist};
 	my $descendblock = $dirfiles{descendblock};
 	
@@ -134,9 +136,6 @@ sub sim    # This function launch the simulations in ESP-r
 	#eval( $getpars );
 
 	#if ( fileno (MORPHLIST) 
-	
-	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
-	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
 
 	my @container;
 
@@ -227,7 +226,7 @@ sub sim    # This function launch the simulations in ESP-r
 			#say "INSIM1\@morphcases : " . dump(@morphcases);
 			#say "INSIM1\@morphstruct : " . dump(@morphstruct);
 		
-			push ( @{ $simstruct[$countcase][$countblock][$countsim] }, $resfile );
+			push ( @{ $simstruct[$countcase][$countblock] }, $resfile );
 			print SIMBLOCK "$resfile\n";
 			
 			if ( not ( $resfile ~~ @simcases ) )

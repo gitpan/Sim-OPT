@@ -18,7 +18,7 @@ use Data::Dumper;
 use Sim::OPT;
 use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
-#use Sim::OPT::Report;
+use Sim::OPT::Report;
 use Sim::OPT::Descend;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
@@ -44,7 +44,7 @@ get_obstructions write_temporary pin_obstructions apply_pin_obstructions vary_ne
 apply_component_changes constrain_net read_net_constraints propagate_constraints 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_11'; # our $VERSION = '';
+$VERSION = '0.39.6_15'; # our $VERSION = '';
 
 
 ##############################################################################
@@ -53,8 +53,7 @@ $VERSION = '0.39.6_11'; # our $VERSION = '';
 
 sub morph
 {
-	say  "\nNow in Sim::OPT::Morph.\n";
-	my $swap = shift; say TOSHELL "swapINMORPH: " . dump($swap);
+	my $swap = shift; #say TOSHELL "swapINMORPH: " . dump($swap);
 	my %dat = %$swap;
 	my @instances = @{ $dat{instances} }; #say "scalar(\@instances): " . scalar(@instances);
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase); # IT WILL BE SHADOWED. CUT ZZZ
@@ -79,6 +78,11 @@ sub morph
 	$report = $main::report;
 	$simnetwork = $main::simnetwork;
 	$reportloadsdata = $main::reportloadsdata;
+	
+	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
+	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
+	say  "\nNow in Sim::OPT::Morph.\n";
+	say TOSHELL "\n#Now in Sim::OPT::Morph.\n";
 	
 	%dowhat = %main::dowhat;
 
@@ -124,10 +128,8 @@ sub morph
 	my $simblock = $dirfiles{simblock};
 	my $retlist = $dirfiles{retlist};
 	my $retblock = $dirfiles{retblock};
-	my $replist = $dirfiles{retpist};
+	my $replist = $dirfiles{replist};
 	my $repblock = $dirfiles{repblock};
-	my $mergelist = $dirfiles{mergelist};
-	my $mergeblock = $dirfiles{mergeblock};
 	my $descendlist = $dirfiles{descendlist};
 	my $descendblock = $dirfiles{descendblock};
 	
@@ -136,16 +138,13 @@ sub morph
 
 	#if ( fileno (MORPHLIST) 
 	
-	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
-	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
-	
 	$countinstance = 1;
 	foreach my $instance (@instances)
 	{	
 		my %d = %{$instance};
 		my $countcase = $d{countcase}; #say TOSHELL "dump(\$countcase): " . dump($countcase);
 		my $countblock = $d{countblock}; #say TOSHELL "dump(\$countblock): " . dump($countblock);
-		my @miditers = @{ $d{miditers} }; #say TOSHELL "dump(\@miditers): " . dump(@miditers);
+		my @miditers = @{ $d{miditers} }; say TOSHELL "MORPH dump(\@miditers): " . dump(@miditers);
 		my @winneritems = @{ $d{winneritems} }; #say TOSHELL "dumpIN( \@winneritems) " . dump(@winneritems);
 		my $countvar = $d{countvar}; #say TOSHELL "dump(\$countvar): " . dump($countvar);
 		my $countstep = $d{countstep}; #say TOSHELL "dump(\$countstep): " . dump($countstep);						
