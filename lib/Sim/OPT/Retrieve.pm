@@ -14,6 +14,7 @@ use List::AllUtils qw(sum);
 use Statistics::Basic qw(:all);
 use Set::Intersection;
 use List::Compare;
+use IO::Tee;
 use Sim::OPT;
 use Sim::OPT::Morph;
 use Sim::OPT::Sim;
@@ -37,7 +38,7 @@ no warnings;
 retrieve retrieve_comfort_results retrieve_loads_results retrieve_temps_stats 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_15'; # our $VERSION = '';
+$VERSION = '0.39.6_17'; # our $VERSION = '';
 
 
 #########################################################################################
@@ -71,6 +72,8 @@ sub retrieve
 	$report = $main::report;
 	$simnetwork = $main::simnetwork;
 	$reportloadsdata = $main::reportloadsdata;
+	
+	$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
 	
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 

@@ -14,9 +14,10 @@ use List::Util qw[ min max reduce shuffle];
 use List::MoreUtils qw(uniq);
 use List::AllUtils qw(sum);
 use Statistics::Basic qw(:all);
-#use IO::Tee;
+use IO::Tee;
 use Set::Intersection;
 use List::Compare;
+use File::Tee qw(tee);
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
@@ -55,10 +56,10 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 @rankdata @rankcolumn @reporttempsdata @reportcomfortdata @reportradiationenteringdata 
 @reporttempsstats @files_to_filter @filter_reports @base_columns @maketabledata @filter_columns 
 @files_to_filter @filter_reports @base_columns @maketabledata @filter_columns %vals 
-@sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance 
+@sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_15'; # our $VERSION = '';
+$VERSION = '0.39.6_17'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -95,7 +96,21 @@ sub countarray
 			$c++;
 		}
 	}
-	return ($c);
+	return ($c); # TO BE CALLED WITH: countarray(@array)
+}
+
+sub countnetarray
+{
+	my @bag;
+	foreach (@_)
+	{
+		foreach (@$_)
+		{
+			push (@bag, $_);
+		}
+	}
+	@bag = uniq(@bag);
+	return scalar(@bag); # TO BE CALLED WITH: countnetarray(@array)
 }
 
 sub sorttable # TO SORT A TABLE ON THE BASIS OF A COLUMN
@@ -555,36 +570,28 @@ sub flattenbox
 	}
 	return(@basket);
 }
-  
-  
+
+
 sub integratebox
 {
-	my $swap = shift;
-	my @arr = @$swap;
-	my $from = shift;
-	my (@newbox, @novelbox);
-	foreach (@arr)
+	my @arrelts = @{ $_[0] }; #say "\@arrelts " . dump(@arrelts);
+	my %carrier = %{ $_[1] }; #say "\%carrier " . dump(%carrier);
+	my $file = $_[2]; #say "\$file " . dump($file);
+	my @newbox;
+	foreach my $eltref ( @arrelts )
 	{
-		my $carrier = $from;
-		my $elt = $_->[0]; #say TOSHELL "firstelt: $elt";
-		my $length = length($elt);
-		my $choppedw = substr ($carrier, $length);
-		my $neww = "$elt" . "$choppedw";
-		my $newarr = [ $neww, $_->[1], $_->[2], $_->[3] ];
-		push (@newbox, $newarr);
+		my @elts = @{ $eltref }; #say "\@elts " . dump(@elts);
+		my $target = $elts[0]; #say "\$target " . dump($target);
+		my $origin = $elts[3]; #say "\$origin " . dump($origin);
+		my @result = extractcase( $target, \%carrier ); say "\@result: " . dump(@result);
+		my $righttarget = $result[0];
+		my @result = extractcase( $origin, \%carrier );
+		my $rightorigin = $result[0];
+		push (@newbox, [ $righttarget, $elts[1], $elts[2], $rightorigin ] );
 	}
-	foreach (@newbox)
-	{
-		my $carrier = $from;
-		my $elt = $_->[3]; #say TOSHELL "secondelt: $elt";
-		my $length = length($elt);
-		my $choppedw = substr ($carrier, $length);
-		my $neww = "$elt" . "$choppedw";
-		my $newarr = [ $_->[0], $_->[1], $_->[2], $neww ];
-		push (@novelbox, $newarr);
-	}
-	return (@novelbox); # TO BE CALLED WITH: integratebox(\@flattened, $from)
+	return (@newbox); # TO BE CALLED WITH: integratebox(\@flattened, \%mids), $file); # %mids is %carrier. $file is the blank root folder.
 }
+
 
 sub filterbox
 {
@@ -638,80 +645,75 @@ sub callcase # IT PROCESSES THE CASES.
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	#eval($getfly);
 	
-	if ( ($countcase > 0) or ($countblock > 0) )
-	{
-		say "Called for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
-		say TOSHELL "Called for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
-	}
+	if ($countblock == 0 ) { my %dirfiles; }
+	$dirfiles{simlist} = "$mypath/$file-simlist--$countcase";
+	$dirfiles{morphlist} = "$mypath/$file-morphlist--$countcase";
+	$dirfiles{retlist} = "$mypath/$file-retlist--$countcase"; 
+	$dirfiles{replist} = "$mypath/$file-replist--$countcase"; # # FOR RETRIEVAL
+	$dirfiles{descendlist} = "$mypath/$file-descendlist--$countcase"; # UNUSED FOR NOW
+	$dirfiles{simblock} = "$mypath/$file-simblock--$countcase-$countblock";
+	$dirfiles{morphblock} = "$mypath/$file-morphblock--$countcase-$countblock";
+	$dirfiles{retblock} = "$mypath/$file-retblock--$countcase-$countblock"; 
+	$dirfiles{repblock} = "$mypath/$file-repblock--$countcase-$countblock"; # # FOR RETRIEVAL
+	$dirfiles{descendblock} = "$mypath/$file-descendblock--$countcase-$countblock"; # UNUSED FOR NOW
 	
-	# STOP CONDITION
-	if ( $counblock >= scalar( @{ $sweeps[$countcase] } ) ) # NUMBER OF BLOCK OF THE CURRENT CASE
-	{ 
-		my $cn = 0;
-		foreach my $e (@winneritems)
-		{
-			say "Optimal option for case number $countcase: $winneritems[$countcase][$#$winneritems]";
-			say TOSHELL "#Optimal option for case number $countcase: $winneritems[$countcase][$#$winneritems]";
-			say makefilename(%mids);
-			say "Gross number of instances: " . scalar ( countarray( @morphstruct ) ) ;
-			say TOSHELL "#Gross number of instances: " . scalar ( countarray( @morphstruct ) ) ;
-			say "Net number of instances: " . scalar ( @{ $morphcases[$countcase] } ) ;
-			say TOSHELL "#Net number of instances: " . scalar ( @{ $morphcases[$countcase] } ) ;                                                                           
-			$cn++;
-		}
-			
-		$countblock = 0;
-		$countcase = $countcase++;
-		if ( $countcase >= scalar( @sweeps ) )# NUMBER OF CASES OF THE CURRENT PROBLEM
-		{
-			say "END RUN.";
-			say TOSHELL "#END RUN.";
-			exit;
-		}
-	}
+	#if ($countblock == 0 ) 
+	#{
+	#	( $dirfiles{morphcases}, $dirfiles{morphstruct}, $dirfiles{simcases}, $dirfiles{simstruct}, $dirfiles{retcases}, 
+	#	$dirfiles{retstruct}, $dirfiles{repcases}, $dirfiles{repstruct}, $dirfiles{mergecases}, $dirfiles{mergestruct}, 
+	#	$dirfiles{descendcases}, $dirfiles{descendstruct} );
+	#}
+	
+	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
+	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
+	
+	#if ( ($countcase > 0) or ($countblock > 0) )
+	#{
+		say $tee "#Called for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
+	#}
 
 	#my @taken = extractcase("$toitem", \%mids); #say "------->taken: " . dump(@taken);
 	#my $to = $taken[0]; #say "to-------->: $to";
 	#my %carrier = %{$taken[1]}; #say "\%instancecarrier:--------->" . dump(%instancecarrier);
-	say "Calling a new block for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
+	#say $tee "#Calling a new block for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
 	my $casedata = { 
 				countcase => $countcase, countblock => $countblock,
 				miditers => \@miditers,  winneritems => \@winneritems, 
 				dirfiles => \%dirfiles, uplift => \@uplift
-			}; #say "\n\dumpCASE(\$casedata): " . dump($casedata) . "\n\n"; 
-	#say TOSHELL "IN OPT.pm, \$casedata: " . dump($casedata); 
-	if ( $countblock != 0 ) { return($casedata); }
+			}; #say $tee "#\n\dumpCASE(\$casedata): " . dump($casedata) . "\n\n";
+	#say $tee "IN OPT.pm, \$casedata: " . dump($casedata); 
 	callblocks( $casedata );
+	if ( $countblock != 0 ) { return($casedata); }
 }
 
 sub callblocks # IT CALLS THE SEARCH ON BLOCKS.
 {	
 	my $swap = shift;
 	my %dat = %{$swap};
-	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
-	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
-	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
-	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
-	my %dirfiles = %{ $dat{dirfiles} }; #say "dumpIN( \%dirfiles) " . dump(%dirfiles);
-	my @uplift = @{ $dat{uplift} }; #say "dumpIN( \@uplift) " . dump(@uplift);
+	my $countcase = $dat{countcase}; #say $tee "dump(\$countcase): " . dump($countcase);
+	my $countblock = $dat{countblock}; #say $tee "dump(\$countblock): " . dump($countblock);
+	my @miditers = @{ $dat{miditers} }; #say $tee "dump(\@miditers): " . dump(@miditers);
+	my @winneritems = @{ $dat{winneritems} }; #say $tee "dumpIN( \@winneritems) " . dump(@winneritems);
+	my %dirfiles = %{ $dat{dirfiles} }; #say $tee "dumpIN( \%dirfiles) " . dump(%dirfiles);
+	my @uplift = @{ $dat{uplift} }; #say $tee "dumpIN( \@uplift) " . dump(@uplift);
 	#eval($getparshere);
 	
-	my $rootname = getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
-	my @blockelts = getblockelts(\@sweeps, $countcase, $countblock); #say "dumpIN( \@blockelts) " . dump(@blockelts);
-	my @blocks = getblocks(\@sweeps, $countcase);  #say "dumpIN( \@blocks) " . dump(@blocks);
-	my $toitem = getitem(\@winneritems, $countcase, $countblock); #say "dump(\$toitem): " . dump($toitem);
-	my $from = getline($toitem); #say "dump(\$from): " . dump($from);
-	my %varnums = getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
-	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
+	my $rootname = getrootname(\@rootnames, $countcase); #say $tee "dump(\$rootname): " . dump($rootname);
+	my @blockelts = getblockelts(\@sweeps, $countcase, $countblock); #say $tee "dumpIN( \@blockelts) " . dump(@blockelts);
+	my @blocks = getblocks(\@sweeps, $countcase);  #say $tee "dumpIN( \@blocks) " . dump(@blocks);
+	my $toitem = getitem(\@winneritems, $countcase, $countblock); #say $tee "dump(\$toitem): " . dump($toitem);
+	my $from = getline($toitem); #say $tee "dump(\$from): " . dump($from);
+	my %varnums = getcase(\@varinumbers, $countcase); #say $tee "dumpININ---(\%varnums): " . dump(%varnums); 
+	my %mids = getcase(\@miditers, $countcase); #say $tee "dumpININ---(\%mids): " . dump(%mids); 
 	#eval($getfly);
-	say "Called for a new block for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
-	say "Calling to define new files for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+	say $tee "#Called for a new block for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
+	say $tee "#Calling to define new files for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
 	my $blockdata = 
 	{ 
 		countcase => $countcase, countblock => $countblock,
 		miditers => \@miditers,  winneritems => \@winneritems, 
 		dirfiles => \%dirfiles, uplift => \@uplift, 
-	}; #say TOSHELL "\ndumpBLOCK($blockdata): " . dump($blockdata) . "\n\n";
+	}; #say $tee "\ndumpBLOCK(\$blockdata): " . dump($blockdata) . "\n\n";
 	deffiles( $blockdata );
 }
 	
@@ -719,24 +721,24 @@ sub deffiles # IT DEFINED THE FILES TO BE CALLED.
 {
 	my $swap = shift;
 	my %dat = %{$swap};
-	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase);
-	my $countblock = $dat{countblock}; #say "dump(\$countblock): " . dump($countblock);
-	my @miditers = @{ $dat{miditers} }; #say "dump(\@miditers): " . dump(@miditers);
-	my @winneritems = @{ $dat{winneritems} }; #say "dumpIN( \@winneritems) " . dump(@winneritems);
-	my %dirfiles = %{ $dat{dirfiles} }; #say "dumpIN( \%dirfiles) " . dump(%dirfiles);
-	my @uplift = @{ $dat{uplift} }; #say "dumpIN( \@uplift) " . dump(@uplift);
+	my $countcase = $dat{countcase}; #say $tee  "#dump(\$countcase): " . dump($countcase);
+	my $countblock = $dat{countblock}; #say $tee  "#dump(\$countblock): " . dump($countblock);
+	my @miditers = @{ $dat{miditers} }; #say $tee  "#dump(\@miditers): " . dump(@miditers);
+	my @winneritems = @{ $dat{winneritems} }; #say $tee  "#dumpIN( \@winneritems) " . dump(@winneritems);
+	my %dirfiles = %{ $dat{dirfiles} }; #say $tee  "#dumpIN( \%dirfiles) " . dump(%dirfiles);
+	my @uplift = @{ $dat{uplift} }; #say $tee  "#dumpIN( \@uplift) " . dump(@uplift);
 	#eval($getparshere);
 	
-	my $rootname = getrootname(\@rootnames, $countcase); #say "dump(\$rootname): " . dump($rootname);
-	my @blockelts = getblockelts(\@sweeps, $countcase, $countblock); #say "dumpIN( \@blockelts) " . dump(@blockelts);
-	my @blocks = getblocks(\@sweeps, $countcase);  #say "dumpIN( \@blocks) " . dump(@blocks);
-	my $toitem = getitem(\@winneritems, $countcase, $countblock); say TOSHELL "dump(\$toitem): " . dump($toitem);
-	my $from = getline($toitem); say TOSHELL "dump(\$from): " . dump($from);
-	my %varnums = getcase(\@varinumbers, $countcase); #say "dumpININ---(\%varnums): " . dump(%varnums); 
-	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids);
+	my $rootname = getrootname(\@rootnames, $countcase); #say $tee  "#dump(\$rootname): " . dump($rootname);
+	my @blockelts = getblockelts(\@sweeps, $countcase, $countblock); #say $tee "#dumpIN( \@blockelts) " . dump(@blockelts);
+	my @blocks = getblocks(\@sweeps, $countcase);  #say $tee "#dumpIN( \@blocks) " . dump(@blocks);
+	my $toitem = getitem(\@winneritems, $countcase, $countblock); #say $tee  "#dump(\$toitem): " . dump($toitem);
+	my $from = getline($toitem); #say $tee  "#dump(\$from): " . dump($from);
+	my %varnums = getcase(\@varinumbers, $countcase); #say $tee  "#dumpININ---(\%varnums): " . dump(%varnums); 
+	my %mids = getcase(\@miditers, $countcase); #say $tee  "#dumpININ---(\%mids): " . dump(%mids);
 	#eval($getfly);
 	
-	say "Called to define new files for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+	say $tee "#Called to define new files for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
 	
 	my $rootitem = "$file" . "_"; #say "\$rootitem $rootitem";
 	my (@basket, @box);
@@ -744,38 +746,38 @@ sub deffiles # IT DEFINED THE FILES TO BE CALLED.
 	foreach my $var ( @blockelts )
 	{
 		my @bucket;
-		my $maxvalue = $varnums{$var}; #say "\$countblock $countblock, var: $var, maxvalue: $maxvalue";
+		my $maxvalue = $varnums{$var}; #say $tee  "#\$countblock $countblock, var: $var, maxvalue: $maxvalue";
 		foreach my $elt (@basket)
 		{
-			my $root = $elt->[0]; #say "\$root " . dump($root);
+			my $root = $elt->[0]; #say $tee  "#\$root " . dump($root);
 			my $cnstep = 1;
 			while ( $cnstep <= $maxvalue)
 			{
 				my $olditem = $root;
-				my $item = "$root" . "$var" . "-" . "$cnstep" . "_" ; #say "\$item: $item, \$root: $root, \$var: $var, \$cnstep: $cnstep, \$root: $root ";
-				push (@bucket, [$item, $var, $cnstep, $olditem] ); #say "\@bucketIN " . dump(@bucket);
+				my $item = "$root" . "$var" . "-" . "$cnstep" . "_" ; #say $tee  "#\$item making: $item, \$root: $root, \$var: $var, \$cnstep: $cnstep, \$root: $root ";
+				push (@bucket, [$item, $var, $cnstep, $olditem] ); #say $tee  "#\@bucketIN " . dump(@bucket);
 				$cnstep++;
 			}
 		} 
 		@basket = ();
 		@basket = @bucket;
 		push ( @box, [ @bucket ] );
-		#say "\@box INOUT" . dump(@box);
+		#say $tee  "#\@box INOUT" . dump(@box);
 	} 
-	#say TOSHELL "\@box!: " . dump ( @box );
+	#say $tee  "#\@box!: " . dump ( @box );
 	
-	my @flattened = flattenbox(@box); #say TOSHELL "\@flattened: " . dump(@flattened) . ", " . scalar(@flattened);
-	my @integrated = integratebox(\@flattened, $toitem); #say TOSHELL "\@integrated " . dump(@integrated) . ", " . scalar(@integrated);
-	my @finalbox = filterbox(@integrated); #say TOSHELL "\@finalbox " . dump(@finalbox) . ", " . scalar(@finalbox); 
+	my @flattened = flattenbox(@box);say $tee  "#\@flattened: " . dump(@flattened) . ", " . scalar(@flattened);
+	my @integrated = integratebox(\@flattened, \%mids, $file); say $tee  "#\@integrated " . dump(@integrated) . ", " . scalar(@integrated);
+	my @finalbox = filterbox(@integrated); say $tee  "#\@finalbox " . dump(@finalbox) . ", " . scalar(@finalbox); 
 	
-	say "Calling to instruct the launch of new searches for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+	say $tee "#Calling to instruct the launch of new searches for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
 	my $datatowork = 
 	{ 
 		countcase => $countcase, countblock => $countblock,
 		miditers => \@miditers,  winneritems => \@winneritems, 
 		dirfiles => \%dirfiles, uplift => \@uplift, 
 		basket => \@finalbox   
-	} ; #say TOSHELL "\ndumper-datatowork: " . dump($datatowork) . "\n\n";
+	} ; say $tee "\ndumper-datatowork: " . dump($datatowork) . "\n\n";
 	setlaunch( $datatowork );
 }	
 
@@ -801,7 +803,7 @@ sub setlaunch # IT SETS THE DATA FOR THE SEARCH ON THE ACTIVE BLOCK.
 	my %mids = getcase(\@miditers, $countcase); #say "dumpININ---(\%mids): " . dump(%mids); 
 	#eval($getfly);
 	
-	say "Called to instruct the launch of new searches for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+	say $tee "#Called to instruct the launch of new searches for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
 	
 	my ( @instances, %carrier);
 	#if ($countblock == 0)
@@ -835,8 +837,9 @@ sub setlaunch # IT SETS THE DATA FOR THE SEARCH ON THE ACTIVE BLOCK.
 			origin => $origin
 		} );
 	} 
-	say "Calling to execute the launch of new searches for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
-	#say TOSHELL "\ninstances: " . dump(@instances). "\n\n"; ### ZZZ
+	say $tee "#Calling to execute the launch of new searches for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
+	
+	say $tee "\ninstances: " . dump(@instances). "\n\n"; ### ZZZ
 	exe( @instances ); # IT HAS TO BE CALLED WITH: setlaunch(@datatowork). @datatowork ARE CONSTITUTED BY AN ARRAY OF: ( [ \@blocks, \%varnums, \%bases, $name, $countcase, \@blockelts, $countblock ], ... )
 }	
 		
@@ -850,29 +853,13 @@ sub exe
 	my $countblock = $d{countblock}; #say "dump(\$countblock): " . dump($countblock);
 	my %dirfiles = %{ $d{ dirfiles } };
 	
-	say "Called to execute the launch of new searches for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
-
-	$dirfiles{simlist} = "$mypath/$file-simlist--$countcase";
-	$dirfiles{morphlist} = "$mypath/$file-morphlist--$countcase";
-	$dirfiles{retlist} = "$mypath/$file-retlist--$countcase"; 
-	$dirfiles{replist} = "$mypath/$file-replist--$countcase"; # # FOR RETRIEVAL
-	$dirfiles{descendlist} = "$mypath/$file-descendlist--$countcase"; # UNUSED FOR NOW
-	$dirfiles{simblock} = "$mypath/$file-simblock--$countcase-$countblock";
-	$dirfiles{morphblock} = "$mypath/$file-morphblock--$countcase-$countblock";
-	$dirfiles{retblock} = "$mypath/$file-retblock--$countcase-$countblock"; 
-	$dirfiles{repblock} = "$mypath/$file-repblock--$countcase-$countblock"; # # FOR RETRIEVAL
-	$dirfiles{descendblock} = "$mypath/$file-descendblock--$countcase-$countblock"; # UNUSED FOR NOW
-	
-	if ($countblock == 0 ) 
-	{
-		( $dirfiles{morphcases}, $dirfiles{morphstruct}, $dirfiles{simcases}, $dirfiles{simstruct}, $dirfiles{retcases}, 
-		$dirfiles{retstruct}, $dirfiles{repcases}, $dirfiles{repstruct}, $dirfiles{mergecases}, $dirfiles{mergestruct}, 
-		$dirfiles{descendcases}, $dirfiles{descendstruct} );
-	}
+	say $tee "#Called to execute the launch of new searches for case " . ($countcase +1) . ", block " . ($countblock + 1) . ".";
+	#say $tee "Do what:" . dump(%dowhat);
 	
 	if ( $dowhat{morph} eq "y" ) 
 	{ 
-		say "Calling morphing operations for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+		say $tee "#Calling morphing operations for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+		#say $tee "WITH: \@instances " . dump(@instances) . ", \$countcase $countcase, \$countblock $countblock, \%dirfiles " . dump(%dirfiles) . ".";
 		my @result = Sim::OPT::Morph::morph( 
 		{ 
 			instances => \@instances, countcase => $countcase, countblock => $countblock,
@@ -884,31 +871,31 @@ sub exe
 
 	if ( $dowhat{simulate} eq "y" )
 	{ 
-		say "Calling simulations for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+		say $tee "#Calling simulations for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 		my @result = Sim::OPT::Sim::sim( 
 		{ 
 			instances => \@instances, countcase => $countcase, countblock => $countblock, 
 			dirfiles => \%dirfiles
 		} );
-		$dirfiles{simcases} = $result[0]; say TOSHELL "\$dirfiles{simcases} : " . dump( $dirfiles{simcases} );
+		$dirfiles{simcases} = $result[0]; #say $tee "\$dirfiles{simcases} : " . dump( $dirfiles{simcases} );
 		$dirfiles{simstruct} = $result[1]; 
 	}
 	
 	if ( $dowhat{retrieve} eq "y" )
 	{ 
-		say "Calling the retrieval of results for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+		say $tee "#Calling retrieval of results for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 		my @result = Sim::OPT::Retrieve::retrieve( 
 		{ 
 			instances => \@instances, countcase => $countcase, countblock => $countblock, 
 			dirfiles => \%dirfiles
 		} );
-		$dirfiles{retcases} = $result[0]; say TOSHELL "\$dirfiles{retcases} : " . dump( $dirfiles{retcases} );
+		$dirfiles{retcases} = $result[0]; #say $tee "\$dirfiles{retcases} : " . dump( $dirfiles{retcases} );
 		$dirfiles{retstruct} = $result[1];
 	}
 	
 	if ( $dowhat{report} eq "y" )
 	{ 
-		say "Calling the reporting of results for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+		say $tee "#Calling the reporting of results for case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 		my @result = Sim::OPT::Report::report( 
 		{ 
 			instances => \@instances, countcase => $countcase, countblock => $countblock, 
@@ -917,13 +904,13 @@ sub exe
 		$dirfiles{repcases} = $result[0];
 		$dirfiles{repstruct} = $result[1];
 		$dirfiles{mergestruct} = $result[2];
-		$dirfiles{mergecases} = $result[2];
+		$dirfiles{mergecases} = $result[3];
 		$repfile = $result[4];
 	}
 	
 	if ( $dowhat{descend} eq "y" )
 	{ 
-		say "Calling the descent in case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
+		say $tee "#Calling the descent in case " . ($countcase +1) . "block " . ($countblock + 1) . ".";
 		my @result = Sim::OPT::Descend::descend( 
 		{ 
 			instances => \@instances, countcase => $countcase, countblock => $countblock, 
@@ -990,6 +977,7 @@ sub opt
 	# eval `cat $configfile`; # The file where the program data are
 	
 	require $configfile;
+	$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
 
 #	if ($casefile) { eval `cat $casefile` or die; }
 #	if ($chancefile) { eval `cat $chancefile` or die; }
@@ -998,9 +986,7 @@ sub opt
 		
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
-	
-	#$mytee = IO::Tee->new( \*STDOUT, TOSHELL ); #GLOBAL. UNUSED FOR NOW
-	
+		
 	unless (-e "$mypath") 
 	{ 
 		if ($exeonfiles eq "y") 
@@ -1034,15 +1020,15 @@ sub opt
 	#say "dump(\@varinumbers), " . dump(@varinumbers); #say "dumpBEFORE(\@miditers), " . dump(@miditers);
 	calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS globsAL. ZZZ
 	
-	@mediumiters = calcmediumiters(@varinumbers); say TOSHELL "BEGINNING dump!(\@mediumiters), " . dump(@mediumiters); # globsALS. ZZZ
+	@mediumiters = calcmediumiters(@varinumbers); say $tee "BEGINNING dump!(\@mediumiters), " . dump(@mediumiters); # globsALS. ZZZ
 	#$itersnum = getitersnum($countcase, $varinumber, @varinumbers); #say "\$itersnum OUT = $itersnum";
 	
-	@rootnames = definerootcases(\@sweeps, \@mediumiters); say TOSHELL "BEGINNING \@rootnames " . dump(@rootnames); 
+	@rootnames = definerootcases(\@sweeps, \@mediumiters); say $tee "BEGINNING \@rootnames " . dump(@rootnames); 
 	
 	my $countcase = 0;
 	my $countblock = 0;
 
-	my @winneritems = populatewinners(\@rootnames, $countcase, $countblock); say TOSHELL "BEGINNING \@winneritems " . dump(@winneritems);
+	my @winneritems = populatewinners(\@rootnames, $countcase, $countblock); say $tee "BEGINNING \@winneritems " . dump(@winneritems);
 	
 	callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
 	miditers => \@mediumiters,  winneritems => \@winneritems } );
@@ -1077,7 +1063,7 @@ A working knowledge of ESP-r is necessary to use OPT. Information about ESP-r ca
 To install OPT, the command <cpanm Sim::OPT> has to be issued. Perl will install all dependencies. OPT can be loaded through the command <use Sim::OPT> in Perl. For that purpose, the "Devel::REPL" module can be used. As an alternative, the batch file "opt" (which can be found packed in the "optw.tar.gz" file in "example" folder in this distribution) may be copied in a work directory and the command <opt> may be issued. That command will activate the OPT's functions, following the settings specified in a previously prepared configuration file. When launched, OPT will ask the path to that file. Its activity will start after receiving that information. 
 That file must contain a suitable description of the operations to be accomplished pointing to an existing ESP-r model.
 
-In "optw.tar.gz" there is an example of OPT configuration file ("v.pl"). That file should be decompacted and the resulting folder ("optw") may be used as a work folder for OPT, in which the ESP-r models to be worked should reside. The "mypath" variable should be set to that work directory. An example of configuration file for an earlier version of the program may be downloaded at http://figshare.com/authors/Gian_luca_Brunetti/624879 .
+In "optw.tar.gz" there is an example of OPT configuration file ("v.pl"). That file should be decompacted and the resulting folder ("optw") may be used as a work folder for OPT, in which the ESP-r models to be worked should reside. The "$mypath" variable must be set to that work directory. An example of configuration file for an earlier version of the program may be downloaded at http://figshare.com/authors/Gian_luca_Brunetti/624879 .
 
 To run OPT without making it launch ESP-r, the setting <$exeonfiles = "n";> should be specified in the configuration file. Note that this can only be aimed to inspect the command that OPTS will give to ESP-r through the shell. The search obtained will be very likely to be different from that driven by simulation results. If simulations are not launched, the optimal instance  at each subspace search cannot indeed be selected. In its place, the base case will be kept by the program, just to bring the process to completion. A sequential block search (Gauss-Seidel method) cannot indeed be run "dry". The variable "$toshell" specifies the path to a file that will receive the shell commands in place of the shell.
 
@@ -1098,7 +1084,7 @@ gianluca.brunetti@polimi.it
 
 =head2 EXPORT
 
-"opts".
+"opt".
 
 =head1 SEE ALSO
 

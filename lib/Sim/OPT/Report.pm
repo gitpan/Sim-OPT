@@ -15,6 +15,7 @@ use List::AllUtils qw(sum);
 use Statistics::Basic qw(:all);
 use Set::Intersection;
 use List::Compare;
+use IO::Tee;
 use Sim::OPT;
 use Sim::OPT::Morph;
 use Sim::OPT::Sim;
@@ -36,7 +37,7 @@ no warnings;
 
 @EXPORT = qw( report mergereports ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_15'; # our $VERSION = '';
+$VERSION = '0.39.6_17'; # our $VERSION = '';
 
 #########################################################################################
 # HERE FOLLOWS THE CONTENT OF "Sim.pm", Sim::OPT::Sim
@@ -69,6 +70,8 @@ sub report # This function retrieves the results of interest from the text file 
 	$report = $main::report;
 	$simnetwork = $main::simnetwork;
 	$reportloadsdata = $main::reportloadsdata;
+	
+	$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
 	
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!";  

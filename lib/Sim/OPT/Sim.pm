@@ -14,6 +14,7 @@ use List::AllUtils qw(sum);
 use Statistics::Basic qw(:all);
 use Set::Intersection;
 use List::Compare;
+use IO::Tee;
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
@@ -35,7 +36,7 @@ no warnings;
 
 @EXPORT = qw( sim ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_15'; # our $VERSION = '';
+$VERSION = '0.39.6_17'; # our $VERSION = '';
 
 
 #########################################################################################
@@ -52,7 +53,7 @@ $VERSION = '0.39.6_15'; # our $VERSION = '';
 
 sub sim    # This function launch the simulations in ESP-r
 {
-	my $swap = shift; #say TOSHELL "swapINSIM: " . dump($swap);
+	my $swap = shift; #say $tee "swapINSIM: " . dump($swap);
 	my %dat = %$swap;
 	my @instances = @{ $dat{instances} }; #say "scalar(\@instances): " . scalar(@instances);
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase); # IT WILL BE SHADOWED. CUT ZZZ
@@ -66,17 +67,19 @@ sub sim    # This function launch the simulations in ESP-r
 	@rootnames = @main::rootnames; #say "dump(\@rootnames): " . dump(@rootnames);
 	%vals = %main::vals; #say "dump(\%vals): " . dump(%vals);
 	
-	$mypath = $main::mypath;  #say TOSHELL "dumpINSIM(\$mypath): " . dump($mypath);
-	$exeonfiles = $main::exeonfiles; #say TOSHELL "dumpINSIM(\$exeonfiles): " . dump($exeonfiles);
+	$mypath = $main::mypath;  #say $tee "dumpINSIM(\$mypath): " . dump($mypath);
+	$exeonfiles = $main::exeonfiles; #say $tee "dumpINSIM(\$exeonfiles): " . dump($exeonfiles);
 	$generatechance = $main::generatechance; 
 	$file = $main::file;
 	$preventsim = $main::preventsim;
-	$fileconfig = $main::fileconfig; #say TOSHELL "dumpINSIM(\$fileconfig): " . dump($fileconfig); # NOW GLOBAL. TO MAKE IT PRIVATE, FIX PASSING OF PARAMETERS IN CONTRAINTS PROPAGATION SECONDARY SUBROUTINES
+	$fileconfig = $main::fileconfig; #say $tee "dumpINSIM(\$fileconfig): " . dump($fileconfig); # NOW GLOBAL. TO MAKE IT PRIVATE, FIX PASSING OF PARAMETERS IN CONTRAINTS PROPAGATION SECONDARY SUBROUTINES
 	$outfile = $main::outfile;
 	$toshell = $main::toshell;
 	$report = $main::report;
 	$simnetwork = $main::simnetwork;
 	$reportloadsdata = $main::reportloadsdata;
+	
+	$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
 	
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 

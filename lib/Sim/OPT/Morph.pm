@@ -14,6 +14,7 @@ use List::AllUtils qw(sum);
 use Statistics::Basic qw(:all);
 use Set::Intersection;
 use List::Compare;
+use IO::Tee;
 use Data::Dumper;
 use Sim::OPT;
 use Sim::OPT::Sim;
@@ -44,7 +45,7 @@ get_obstructions write_temporary pin_obstructions apply_pin_obstructions vary_ne
 apply_component_changes constrain_net read_net_constraints propagate_constraints 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_15'; # our $VERSION = '';
+$VERSION = '0.39.6_17'; # our $VERSION = '';
 
 
 ##############################################################################
@@ -53,7 +54,7 @@ $VERSION = '0.39.6_15'; # our $VERSION = '';
 
 sub morph
 {
-	my $swap = shift; #say TOSHELL "swapINMORPH: " . dump($swap);
+	my $swap = shift; #say $tee "swapINMORPH: " . dump($swap);
 	my %dat = %$swap;
 	my @instances = @{ $dat{instances} }; #say "scalar(\@instances): " . scalar(@instances);
 	my $countcase = $dat{countcase}; #say "dump(\$countcase): " . dump($countcase); # IT WILL BE SHADOWED. CUT ZZZ
@@ -67,22 +68,23 @@ sub morph
 	@rootnames = @main::rootnames; #say "dump(\@rootnames): " . dump(@rootnames);
 	%vals = %main::vals; #say "dump(\%vals): " . dump(%vals);
 	
-	$mypath = $main::mypath;  #say TOSHELL "dumpINMORPH(\$mypath): " . dump($mypath);
-	$exeonfiles = $main::exeonfiles; #say TOSHELL "dumpINMORPH(\$exeonfiles): " . dump($exeonfiles);
+	$mypath = $main::mypath;  #say $tee "dumpINMORPH(\$mypath): " . dump($mypath);
+	$exeonfiles = $main::exeonfiles; #say $tee "dumpINMORPH(\$exeonfiles): " . dump($exeonfiles);
 	$generatechance = $main::generatechance; 
 	$file = $main::file;
 	$preventsim = $main::preventsim;
-	$fileconfig = $main::fileconfig; #say TOSHELL "dumpINMORPH(\$fileconfig): " . dump($fileconfig); # NOW GLOBAL. TO MAKE IT PRIVATE, FIX PASSING OF PARAMETERS IN CONTRAINTS PROPAGATION SECONDARY SUBROUTINES
+	$fileconfig = $main::fileconfig; #say $tee "dumpINMORPH(\$fileconfig): " . dump($fileconfig); # NOW GLOBAL. TO MAKE IT PRIVATE, FIX PASSING OF PARAMETERS IN CONTRAINTS PROPAGATION SECONDARY SUBROUTINES
 	$outfile = $main::outfile;
 	$toshell = $main::toshell;
 	$report = $main::report;
 	$simnetwork = $main::simnetwork;
 	$reportloadsdata = $main::reportloadsdata;
 	
+	$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
+	
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
-	say  "\nNow in Sim::OPT::Morph.\n";
-	say TOSHELL "\n#Now in Sim::OPT::Morph.\n";
+	say $tee "\n# Now in Sim::OPT::Morph.\n";
 	
 	%dowhat = %main::dowhat;
 
@@ -142,28 +144,28 @@ sub morph
 	foreach my $instance (@instances)
 	{	
 		my %d = %{$instance};
-		my $countcase = $d{countcase}; #say TOSHELL "dump(\$countcase): " . dump($countcase);
-		my $countblock = $d{countblock}; #say TOSHELL "dump(\$countblock): " . dump($countblock);
-		my @miditers = @{ $d{miditers} }; say TOSHELL "MORPH dump(\@miditers): " . dump(@miditers);
-		my @winneritems = @{ $d{winneritems} }; #say TOSHELL "dumpIN( \@winneritems) " . dump(@winneritems);
-		my $countvar = $d{countvar}; #say TOSHELL "dump(\$countvar): " . dump($countvar);
-		my $countstep = $d{countstep}; #say TOSHELL "dump(\$countstep): " . dump($countstep);						
-		my $to = $d{to}; #say TOSHELL "dump(\$to): " . dump($to);
-		my $origin = $d{origin}; #say TOSHELL "dump(\$origin): " . dump($origin);
-		my @uplift = @{ $d{uplift} }; #say TOSHELL "dump(\@uplift): " . dump(@uplift);
+		my $countcase = $d{countcase}; #say $tee "#dump(\$countcase): " . dump($countcase);
+		my $countblock = $d{countblock}; #say $tee "#dump(\$countblock): " . dump($countblock);
+		my @miditers = @{ $d{miditers} }; #say $tee "#MORPH dump(\@miditers): " . dump(@miditers);
+		my @winneritems = @{ $d{winneritems} }; #say $tee "#dumpIN( \@winneritems) " . dump(@winneritems);
+		my $countvar = $d{countvar}; #say $tee "#dump(\$countvar): " . dump($countvar);
+		my $countstep = $d{countstep}; #say $tee "#dump(\$countstep): " . dump($countstep);						
+		my $to = $d{to}; #say $tee "#dump(\$to): " . dump($to);
+		my $origin = $d{origin}; #say $tee "#dump(\$origin): " . dump($origin);
+		my @uplift = @{ $d{uplift} }; #say $tee "#dump(\@uplift): " . dump(@uplift);
 		#eval($getparshere);
 		
-		my $rootname = Sim::OPT::getrootname(\@rootnames, $countcase); #say TOSHELL "dump(\$rootname): " . dump($rootname);
-		my @blockelts = Sim::OPT::getblockelts(\@sweeps, $countcase, $countblock); #say TOSHELL "dumpIN( \@blockelts) " . dump(@blockelts);
-		my @blocks = Sim::OPT::getblocks(\@sweeps, $countcase);  #say TOSHELL "dumpIN( \@blocks) " . dump(@blocks);
-		my $toitem = Sim::OPT::getitem(\@winneritems, $countcase, $countblock); #say TOSHELL "dump(\$toitem): " . dump($toitem);
-		my $from = Sim::OPT::getline($toitem); #say TOSHELL "dumpIN(\$from): " . dump($from);
-		my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say TOSHELL "dumpIN---(\%varnums): " . dump(%varnums); 
-		my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say TOSHELL "dumpIN---(\%mids): " . dump(%mids); 
+		my $rootname = Sim::OPT::getrootname(\@rootnames, $countcase); #say $tee "#dump(\$rootname): " . dump($rootname);
+		my @blockelts = Sim::OPT::getblockelts(\@sweeps, $countcase, $countblock); #say $tee "#dumpIN( \@blockelts) " . dump(@blockelts);
+		my @blocks = Sim::OPT::getblocks(\@sweeps, $countcase);  #say $tee "#dumpIN( \@blocks) " . dump(@blocks);
+		my $toitem = Sim::OPT::getitem(\@winneritems, $countcase, $countblock); #say $tee "#dump(\$toitem): " . dump($toitem);
+		my $from = Sim::OPT::getline($toitem); #say $tee "#dumpIN(\$from): " . dump($from);
+		my %varnums = Sim::OPT::getcase(\@varinumbers, $countcase); #say $tee "#dumpIN---(\%varnums): " . dump(%varnums); 
+		my %mids = Sim::OPT::getcase(\@miditers, $countcase); #say $tee "#dumpIN---(\%mids): " . dump(%mids); 
 		#eval($getfly);
 		
-		my $stepsvar = Sim::OPT::getstepsvar($countvar, $countcase, \@varinumbers); #say TOSHELL "dump(\$stepsvar): " . dump($stepsvar); 
-		my $varnumber = $countvar; #say TOSHELL "dump---(\$varnumber): " . dump($varnumber) . "\n\n";  # LEGACY VARIABLE
+		my $stepsvar = Sim::OPT::getstepsvar($countvar, $countcase, \@varinumbers); #say $tee "#dump(\$stepsvar): " . dump($stepsvar); 
+		my $varnumber = $countvar; #say $tee "#dump---(\$varnumber): " . dump($varnumber) . "\n\n";  # LEGACY VARIABLE
 		
 		my $countcaseplus1 = ( $countcase + 1);
 		my $countblockplus1 = ( $countblock + 1);
@@ -236,7 +238,7 @@ sub morph
 		
 		#say "TELL ME: " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
 				
-		if ( ( $countblock == 0 ) and ( $countvar == 1) and ( $countstep == 1 ) )
+		if ( ( $countblock == 0 ) and ( $countstep == 1 ) )
 		{
 			if (not ( -e "$origin" ) )
 			{
@@ -338,13 +340,14 @@ sub morph
 			if ( eval $skip) { $skipask = "yes"; }
 						
 			if 
-			( 
-				( $generate eq "y" )
+			#( 
+				#( $generate eq "y" )
 				#and ( $countstep == $stepsvar )
-				and ( ( $sequencer eq "n" ) or ( $sequencer eq "last" ) ) 
+				#and ( ( $sequencer eq "n" ) or ( $sequencer eq "last" ) ) 
 				#and ( ($skip ne "")  and ($skipask ne "yes") )
-				and ( not (-e $to) )
-			)
+				#and 
+				( not (-e $to) )
+			#)
 			{
 				#say TOSHELL "HERE2A. MAIN. ";
 			

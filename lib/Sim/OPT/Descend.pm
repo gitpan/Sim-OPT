@@ -14,6 +14,7 @@ use List::AllUtils qw(sum);
 use Statistics::Basic qw(:all);
 use Set::Intersection;
 use List::Compare;
+use IO::Tee;
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
@@ -35,7 +36,7 @@ no warnings;
 
 @EXPORT = qw( descend ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_15'; # our $VERSION = '';
+$VERSION = '0.39.6_17'; # our $VERSION = '';
 
 
 #########################################################################################
@@ -71,12 +72,14 @@ sub descend
 	$simnetwork = $main::simnetwork;
 	$reportloadsdata = $main::reportloadsdata;
 	
+	$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
+	
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!";  
 	say "\nNow in Sim::OPT::Descend.\n";
 	say TOSHELL "\n#Now in Sim::OPT::Descend.\n";
 	
-	say TOSHELL "dump(\$repfile): " . dump($repfile); 
+	#say TOSHELL "dump(\$repfile): " . dump($repfile); 
 	%dowhat = %main::dowhat;
 
 	@themereports = @main::themereports; #say "dumpINDESCEND(\@themereports): " . dump(@themereports);
@@ -125,7 +128,7 @@ sub descend
 	my $repblock = $dirfiles{repblock};
 	my $descendlist = $dirfiles{descendlist};
 	my $descendblock = $dirfiles{descendblock};
-	
+		
 	#my $getpars = shift;
 	#eval( $getpars );
 
@@ -139,7 +142,7 @@ sub descend
 	my %d = %{$instance};
 	my $countcase = $d{countcase}; #say TOSHELL "dump(\$countcase): " . dump($countcase);
 	my $countblock = $d{countblock}; #say TOSHELL "dump(\$countblock): " . dump($countblock);
-	my @miditers = @{ $d{miditers} }; say TOSHELL "BEGINDESCENDdump(\@miditers): " . dump(@miditers);
+	my @miditers = @{ $d{miditers} }; #say TOSHELL "BEGINDESCENDdump(\@miditers): " . dump(@miditers);
 	my @winneritems = @{ $d{winneritems} }; #say TOSHELL "dumpIN( \@winneritems) " . dump(@winneritems);
 	my $countvar = $d{countvar}; #say TOSHELL "dump(\$countvar): " . dump($countvar);
 	my $countstep = $d{countstep}; #say TOSHELL "dump(\$countstep): " . dump($countstep);						
@@ -159,6 +162,8 @@ sub descend
 	
 	my $stepsvar = Sim::OPT::getstepsvar($countvar, $countcase, \@varinumbers); #say TOSHELL "dump(\$stepsvar): " . dump($stepsvar); 
 	my $varnumber = $countvar; #say TOSHELL "dump---(\$varnumber): " . dump($varnumber) . "\n\n";  # LEGACY VARIABLE
+	my $contblocksplus = ($countblock + 1);
+	my $countcaseplus = ($countcase + 1);
 	
 	#say "0\$countcase : " . dump($countcase);
 	#say "0\@rootnames : " . dump(@rootnames);
@@ -170,8 +175,8 @@ sub descend
 	#say "0\@morphcases : " . dump(@morphcases);
 	#say "0\@morphstruct : " . dump(@morphstruct);
 	
-	say "Descending into case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
-	say TOSHELL "#Descending into case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
+	say "Descending into case $countcaseplus, block $contblocksplus.";
+	say TOSHELL "#Descending into case $countcaseplus, block $contblocksplus.";
 
 	my @columns_to_report           = @{ $reporttempsdata[1] };
 	my $number_of_columns_to_report = scalar(@columns_to_report);
@@ -179,15 +184,15 @@ sub descend
 	my $number_of_dates_to_mix = scalar(@simtitles);
 	my @dates                    = @simtitles;
 
-	my $cleanfile = "$repfile-clean.csv"; say TOSHELL "dump(\$cleanfile): " . dump($cleanfile); 
+	my $cleanfile = "$repfile-clean.csv"; #say TOSHELL "dump(\$cleanfile): " . dump($cleanfile); 
 	my $throw = $cleanfile; $throw =~ s/\.csv//;
-	my $selectmixed = "$throw-select.csv"; say TOSHELL "dump(\$selectmixed): " . dump($selectmixed); 
+	my $selectmixed = "$throw-select.csv"; #say TOSHELL "dump(\$selectmixed): " . dump($selectmixed); 
 	sub cleanselect
 	{ # CLEANS THE MIXED FILE AND SELECTS SOME COLUMNS AND COPIES THEM IN ANOTHER FILE
-		say "Cleaning results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
-		say TOSHELL "#Cleaning results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
-		open ( MIXFILE, $repfile) or die; say TOSHELL "dump(\$repfile): " . dump($repfile); 
-		my @lines = <MIXFILE>; say TOSHELL "dump(MIXFILE \@lines): " . dump(@lines); 
+		say "Cleaning results for case $countcaseplus, block $contblocksplus.";
+		say TOSHELL "#Cleaning results for case $countcaseplus, block $contblocksplus.";
+		open ( MIXFILE, $repfile) or die; #say TOSHELL "dump(\$repfile): " . dump($repfile); 
+		my @lines = <MIXFILE>; #say TOSHELL "dump(MIXFILE \@lines): " . dump(@lines); 
 		close MIXFILE;
 		open ( CLEANMIXED, ">$cleanfile"); # or die;
 		foreach my $line (@lines)
@@ -202,7 +207,7 @@ sub descend
 	
 		#SELECTS SOME COLUMNS AND COPIES THEM IN ANOTHER FILE
 		open (CLEANMIXED, $cleanfile); # or die;
-		my @lines = <CLEANMIXED>; say TOSHELL "dump(CLEANMIXED \@lines): " . dump(@lines); 
+		my @lines = <CLEANMIXED>; #say TOSHELL "dump(CLEANMIXED \@lines): " . dump(@lines); 
 		close CLEANMIXED;
 		open (SELECTEDMIXED, ">$selectmixed") or die;
 		
@@ -211,7 +216,7 @@ sub descend
 		{
 			my @elts = split(/\s+|,/, $line); ### DDD
 			$elts[0] =~ /^(.*)_-(.*)/;
-			my $touse = $1; "dump(CLEANMIXED \$touse): " . dump($touse); 
+			my $touse = $1; #say "dump(CLEANMIXED \$touse): " . dump($touse); 
 			$touse =~ s/$mypath\///;
 			print SELECTEDMIXED "$touse,";
 			my $countout = 0;
@@ -245,13 +250,13 @@ sub descend
 	&cleanselect();
 	
 	my $throw = $selectmixed; $throw =~ s/\.csv//;
-	my $weight = "$throw-weight.csv"; say TOSHELL "dump(\$weight): " . dump($weight);  # THIS WILL HOST PARTIALLY SCALED VALUES, MADE POSITIVE AND WITH A CEILING OF 1
+	my $weight = "$throw-weight.csv"; #say TOSHELL "dump(\$weight): " . dump($weight);  # THIS WILL HOST PARTIALLY SCALED VALUES, MADE POSITIVE AND WITH A CEILING OF 1
 	sub weight
 	{
-		say "Scaling results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
-		say TOSHELL "#Scaling results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
-		open (SELECTEDMIXED, $selectmixed) or die; say TOSHELL "dump(\$selectmixed): " . dump($selectmixed);
-		my @lines = <SELECTEDMIXED>; say TOSHELL "dump(SELECTEDMIXED \@lines): " . dump(@lines); 
+		say "Scaling results for case $countcaseplus, block $contblocksplus.";
+		say TOSHELL "#Scaling results for case $countcaseplus, block $contblocksplus.";
+		open (SELECTEDMIXED, $selectmixed) or die; #say TOSHELL "dump(\$selectmixed): " . dump($selectmixed);
+		my @lines = <SELECTEDMIXED>; #say TOSHELL "dump(SELECTEDMIXED \@lines): " . dump(@lines); 
 		close SELECTEDMIXED;
 		my $counterline = 0;
 		open (WEIGHT, ">$weight"); # or die;
@@ -276,7 +281,7 @@ sub descend
 				$countel++;
 			}
 		} 
-		say TOSHELL "dump(SELECTEDMIXED \@containernames): " . dump(@containernames); 
+		#say TOSHELL "dump(SELECTEDMIXED \@containernames): " . dump(@containernames); 
 			
 		my @containertwo;
 		my @containerthree;
@@ -383,12 +388,12 @@ sub descend
 	my $weighttwo = "$throw-weighttwo.csv"; # THIS WILL HOST PARTIALLY SCALED VALUES, MADE POSITIVE AND WITH A CELING OF 1
 	sub weighttwo
 	{
-		say "Weighting results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
-		say TOSHELL "#Weighting results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
-		open (WEIGHT, $weight); say TOSHELL "dump(\$weight): " . dump($weight);
+		say "Weighting results for case $countcaseplus, block $contblocksplus.";
+		say TOSHELL "#Weighting results for case $countcaseplus, block $contblocksplus.";
+		open (WEIGHT, $weight); #say TOSHELL "dump(\$weight): " . dump($weight);
 		my @lines = <WEIGHT>;
 		close WEIGHT;
-		open (WEIGHTTWO, ">$weighttwo"); say TOSHELL "dump(\$weighttwo): " . dump($weighttwo);
+		open (WEIGHTTWO, ">$weighttwo"); #say TOSHELL "dump(\$weighttwo): " . dump($weighttwo);
 		my $counterline;
 		foreach my $line (@lines)
 		{
@@ -433,14 +438,14 @@ sub descend
 		}
 	}
 	&weighttwo();	
-
-	$sortmixed = "$repfile-sortmixed.csv"; # globsAL!
+	$sortmixed = "$repfile-sortmixed.csv";
+	#if ($repfile) { $sortmixed = "$repfile-sortmixed.csv"; } else { die; } # globsAL!
 	sub sortmixed
 	{
-		say "Processing results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
-		say TOSHELL "#Processing results for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ".";
-		open (WEIGHTTWO, $weighttwo)or die; say TOSHELL "dump(\$weighttwo): " . dump($weighttwo);
-		open (SORTMIXED_, ">$sortmixed") or die; say TOSHELL "dump(\$sortmixed): " . dump($sortmixed);
+		say "Processing results for case $countcaseplus, block $contblocksplus.";
+		say TOSHELL "#Processing results for case $countcaseplus, block $contblocksplus.";
+		open (WEIGHTTWO, $weighttwo)or die; #say TOSHELL "dump(\$weighttwo): " . dump($weighttwo);
+		open (SORTMIXED_, ">$sortmixed") or die; #say TOSHELL "dump(\$sortmixed): " . dump($sortmixed);
 		my @lines = <WEIGHTTWO>;
 		close WEIGHTTWO;
 		my $count = 0;
@@ -449,13 +454,14 @@ sub descend
 			$_ = "$containernames[$count]," . "$_";
 			$count++;
 		}
-		say TOSHELL "TAKEOPTIMA--dump(\@lines): " . dump(@lines);
+		#say TOSHELL "TAKEOPTIMA--dump(\@lines): " . dump(@lines);
 		
 		my $line = $lines[0];
 		my @eltstemp = split(/,/, $line);
 		my $numberelts = scalar(@eltstemp);
 		
-		my @sorted = sort { (split(/,/, $b))[$#eltstemp] <=> (split(/,/, $a))[$#eltstemp] } @lines;
+		#my @sorted = sort { (split(/,/, $b))[$#eltstemp] <=> (split(/,/, $a))[$#eltstemp] } @lines;
+		my @sorted = sort { (split(/,/, $a))[$#eltstemp] <=> (split(/,/, $b))[$#eltstemp] } @lines;
 		for (my $h = 0; $h <= $#sorted; ++$h) 
 		{
 			$sorted[$h] =~ s/^,//;
@@ -486,18 +492,18 @@ sub descend
 	{
 		#my $pass_signal = ""; # IF VOID, GAUSS SEIDEL METHOD. IF 0, JACOBI METHOD. ...
 		
-		say TOSHELL `cat $sortmixed`;
-		say TOSHELL "TAKEOPTIMA cat \$sortmixed: $sortmixed";
+		#say TOSHELL `cat $sortmixed`;
+		#say TOSHELL "TAKEOPTIMA cat \$sortmixed: $sortmixed";
 		
 		open (SORTMIXED_, $sortmixed); # or die;
 		my @lines = <SORTMIXED_>;
 		close SORTMIXED_;
 		
-		my $winnerentry = $lines[0]; say TOSHELL "dump(TAKEOPTIMA\$winnerentry): " . dump($winnerentry);
+		my $winnerentry = $lines[0]; #say TOSHELL "dump(TAKEOPTIMA\$winnerentry): " . dump($winnerentry);
 		chomp $winnerentry;
 		
 		my @winnerelms = split(/\s+|,/, $winnerentry);
-		my $winnerline = $winnerelms[0]; say TOSHELL "dump(TAKEOPTIMA\$winnerline): " . dump($winnerline);
+		my $winnerline = $winnerelms[0]; #say TOSHELL "dump(TAKEOPTIMA\$winnerline): " . dump($winnerline);
 		my $winnerval = $winnerelms[$#winnerelms];
 		
 		my $cntelm = 0;
@@ -512,7 +518,7 @@ sub descend
 				{
 					if ( $val ==  $winnerval)
 					{
-						say MESSAGE "Attention. At case " . ($countcase + 1) . ", block " . ($countblock + 1) . " There is a tie between optimal cases. Besides case $winnerline, producing a compound objective function of $winnerval, there is the case $case producing the same objective function value. Case $winnerline has been used for the search procedures which follow.\n";
+						say MESSAGE "Attention. At case $countcaseplus, block $contblocksplus. There is a tie between optimal cases. Besides case $winnerline, producing a compound objective function of $winnerval, there is the case $case producing the same objective function value. Case $winnerline has been used for the search procedures which follow.\n";
 					}
 				}
 			}
@@ -521,17 +527,17 @@ sub descend
 		close (MESSAGE);
 		
 		
-		push( @{ $winneritems{$countcase} }, $winnerline ); say TOSHELL "dump(TAKEOPTIMA\@winneritems): " . dump(@winneritems); # @downlift HAS STILL TO BE WRITTEN. IT WOULD ASCEND, NOT DESCEND (SEARCHING FOR THE WORSE RESULT. @uplift DESCENDS (SEARCHING FOR THE BEST RESULT.)
+		push( @{ $winneritems{$countcase} }, $winnerline ); #say TOSHELL "dump(TAKEOPTIMA\@winneritems): " . dump(@winneritems); # @downlift HAS STILL TO BE WRITTEN. IT WOULD ASCEND, NOT DESCEND (SEARCHING FOR THE WORSE RESULT. @uplift DESCENDS (SEARCHING FOR THE BEST RESULT.)
 		
 		my $copy = $winnerline;
 		$copy =~ s/$mypath\/$file//;
-		my @taken = Sim::OPT::extractcase("$copy", \%mids); say TOSHELL "TAKEOPTIMA--->taken: " . dump(@taken);
-		my $newtarget = $taken[0]; say TOSHELL "TAKEOPTIMA\$newtarget--->: $newtarget";
+		my @taken = Sim::OPT::extractcase("$copy", \%mids); #say TOSHELL "TAKEOPTIMA--->taken: " . dump(@taken);
+		my $newtarget = $taken[0]; #say TOSHELL "TAKEOPTIMA\$newtarget--->: $newtarget";
 		$newtarget =~ s/$mypath\///;
-		my %newcarrier = %{$taken[1]}; say TOSHELL "TAKEOPTIMA\%newcarrier--->" . dump(%newcarrier);
-		say TOSHELL "TAKEOPTIMA BEFORE->\@miditers: " . dump(@miditers);
-		%{ $miditers[$countcase] } = %newcarrier; say TOSHELL "TAKEOPTIMA AFTER->\@miditers: " . dump(@miditers);
-		push ( @{ $winneritems[$countcase][$countblock+1] }, $newtarget); say TOSHELL "TAKEOPTIMA->\@winneritems " . dump(@winneritems);
+		my %newcarrier = %{$taken[1]}; #say TOSHELL "TAKEOPTIMA\%newcarrier--->" . dump(%newcarrier);
+		#say TOSHELL "TAKEOPTIMA BEFORE->\@miditers: " . dump(@miditers);
+		%{ $miditers[$countcase] } = %newcarrier; #say TOSHELL "TAKEOPTIMA AFTER->\@miditers: " . dump(@miditers);
+		
 		
 		#say "2\$countcase : " . dump($countcase);
 		#say "2\@rootnames : " . dump(@rootnames);
@@ -543,15 +549,49 @@ sub descend
 		#say "2\@morphcases : " . dump(@morphcases);
 		#say "2\@morphstruct : " . dump(@morphstruct);
 		
-		say TOSHELL "TAKEOPTIMA FINAL ->\$countcase " . dump($countcase);
-		say TOSHELL "TAKEOPTIMA FINAL ->\$countblock " . dump($countblock);
-		say TOSHELL "TAKEOPTIMA FINAL ->\@miditers " . dump(@miditers);
-		say TOSHELL "TAKEOPTIMA FINAL ->\@winneritems " . dump(@winneritems);
-		say TOSHELL "TAKEOPTIMA FINAL ->\%dirfiles " . dump(%dirfiles);
-		say TOSHELL "TAKEOPTIMA FINAL ->\@uplift " . dump(@uplift);
-		Sim::OPT::callcase( { countcase => $countcase, countblock => ($countblock + 1), 
-		miditers => \@miditers,  winneritems => \@winneritems, 
-		dirfiles => \%dirfiles, uplift => \@uplift } );
+		#say TOSHELL "TAKEOPTIMA FINAL ->\$countcase " . dump($countcase);
+		#say TOSHELL "TAKEOPTIMA FINAL ->\$countblock " . dump($countblock);
+		#say TOSHELL "TAKEOPTIMA FINAL ->\@miditers " . dump(@miditers);
+		#say TOSHELL "TAKEOPTIMA FINAL ->\@winneritems " . dump(@winneritems);
+		#say TOSHELL "TAKEOPTIMA FINAL ->\%dirfiles " . dump(%dirfiles);
+		#say TOSHELL "TAKEOPTIMA FINAL ->\@uplift " . dump(@uplift);
+		
+		$countblock++; ### !!!
+		
+		#say $tee "TAKEOPTIMA FINAL ->\$countblock " . dump($countblock);
+		#say $tee "TAKEOPTIMA FINAL ->\scalar( \@blocks ) " . dump( scalar( @blocks ) );
+		
+		# STOP CONDITION
+		if ( $countblock == scalar( @blocks ) ) # NUMBER OF BLOCK OF THE CURRENT CASE
+		{ 
+			#say $tee "TAKEOPTIMA FINAL ->\$countblock " . dump($countblock);
+			#say $tee "TAKEOPTIMA FINAL ->\$countblock " . dump($countblock);
+			my @morphcases = grep -d, <$mypath/$file_*>;
+			say $tee "#Optimal option for case  $countcaseplus: $newtarget";
+			#my $instnum = Sim::OPT::countarray( @{ $morphstruct[$countcase] } );
+			#say $tee "#Gross number of instances: $instnum." ;
+			my $netinstnum = scalar(@morphcases);
+			say $tee "#Net number of instances: $netinstnum." ;
+			open( RESPONSE , ">$mypath/response.txt");
+			say RESPONSE "#Optimal option for case  $countcaseplus: $newtarget";
+			#say RESPONSE "#Gross number of instances: $instnum." ;
+			say RESPONSE "#Net number of instances: $netinstnum." ;
+				
+			$countblock = 0;
+			$countcase = $countcase++;
+			if ( $countcase == scalar( @sweeps ) )# NUMBER OF CASES OF THE CURRENT PROBLEM
+			{
+				exit (say $tee "#END RUN.");					
+			}
+		}
+		else
+		{
+			push ( @{ $winneritems[$countcase][$countblock] }, $newtarget); #say TOSHELL "TAKEOPTIMA->\@winneritems " . dump(@winneritems);
+		
+			Sim::OPT::callcase( { countcase => $countcase, countblock => $countblock, 
+			miditers => \@miditers,  winneritems => \@winneritems, 
+			dirfiles => \%dirfiles, uplift => \@uplift } );
+		}
 	}
 	&takeoptima();
 	close OUTFILE;
