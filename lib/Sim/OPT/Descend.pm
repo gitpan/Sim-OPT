@@ -26,6 +26,7 @@ use Sim::OPT::Morph;
 use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
 use Sim::OPT::Report;
+#use Sim::OPT::Takechance;
 use feature 'say';
 no strict; 
 no warnings;
@@ -36,7 +37,7 @@ no warnings;
 
 @EXPORT = qw( descend ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_17'; # our $VERSION = '';
+$VERSION = '0.39.6_19'; # our $VERSION = '';
 
 
 #########################################################################################
@@ -72,10 +73,9 @@ sub descend
 	$simnetwork = $main::simnetwork;
 	$reportloadsdata = $main::reportloadsdata;
 	
-	$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
-	
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!";  
+	$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
 	say "\nNow in Sim::OPT::Descend.\n";
 	say TOSHELL "\n#Now in Sim::OPT::Descend.\n";
 	
@@ -505,6 +505,7 @@ sub descend
 		my @winnerelms = split(/\s+|,/, $winnerentry);
 		my $winnerline = $winnerelms[0]; #say TOSHELL "dump(TAKEOPTIMA\$winnerline): " . dump($winnerline);
 		my $winnerval = $winnerelms[$#winnerelms];
+		push ( @{ $uplift[$countcase][$countblock] }, $winnerval); #say TOSHELL "TAKEOPTIMA->\@winneritems " . dump(@winneritems);
 		
 		my $cntelm = 0;
 		open ( MESSAGE, ">>$mypath/attention.txt");
@@ -526,9 +527,6 @@ sub descend
 		}
 		close (MESSAGE);
 		
-		
-		push( @{ $winneritems{$countcase} }, $winnerline ); #say TOSHELL "dump(TAKEOPTIMA\@winneritems): " . dump(@winneritems); # @downlift HAS STILL TO BE WRITTEN. IT WOULD ASCEND, NOT DESCEND (SEARCHING FOR THE WORSE RESULT. @uplift DESCENDS (SEARCHING FOR THE BEST RESULT.)
-		
 		my $copy = $winnerline;
 		$copy =~ s/$mypath\/$file//;
 		my @taken = Sim::OPT::extractcase("$copy", \%mids); #say TOSHELL "TAKEOPTIMA--->taken: " . dump(@taken);
@@ -537,7 +535,6 @@ sub descend
 		my %newcarrier = %{$taken[1]}; #say TOSHELL "TAKEOPTIMA\%newcarrier--->" . dump(%newcarrier);
 		#say TOSHELL "TAKEOPTIMA BEFORE->\@miditers: " . dump(@miditers);
 		%{ $miditers[$countcase] } = %newcarrier; #say TOSHELL "TAKEOPTIMA AFTER->\@miditers: " . dump(@miditers);
-		
 		
 		#say "2\$countcase : " . dump($countcase);
 		#say "2\@rootnames : " . dump(@rootnames);
@@ -587,7 +584,6 @@ sub descend
 		else
 		{
 			push ( @{ $winneritems[$countcase][$countblock] }, $newtarget); #say TOSHELL "TAKEOPTIMA->\@winneritems " . dump(@winneritems);
-		
 			Sim::OPT::callcase( { countcase => $countcase, countblock => $countblock, 
 			miditers => \@miditers,  winneritems => \@winneritems, 
 			dirfiles => \%dirfiles, uplift => \@uplift } );

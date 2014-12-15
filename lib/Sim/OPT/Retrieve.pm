@@ -20,6 +20,7 @@ use Sim::OPT::Morph;
 use Sim::OPT::Sim;
 use Sim::OPT::Report;
 use Sim::OPT::Descend;
+#use Sim::OPT::Takechance;
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
@@ -38,7 +39,7 @@ no warnings;
 retrieve retrieve_comfort_results retrieve_loads_results retrieve_temps_stats 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_17'; # our $VERSION = '';
+$VERSION = '0.39.6_19'; # our $VERSION = '';
 
 
 #########################################################################################

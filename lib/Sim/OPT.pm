@@ -17,7 +17,7 @@ use Statistics::Basic qw(:all);
 use IO::Tee;
 use Set::Intersection;
 use List::Compare;
-use File::Tee qw(tee);
+#use File::Tee qw(tee);
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
@@ -38,14 +38,15 @@ use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
 use Sim::OPT::Report;
 use Sim::OPT::Descend;
-#use Sim::OPT::Pursue;
+#use Sim::OPT::Takechance;
 
 our @ISA = qw(Exporter); # our @adamkISA = qw(Exporter);
 #%EXPORT_TAGS = ( DEFAULT => [qw( &opt &prepare )]); # our %EXPORT_TAGS = ( 'all' => [ qw( ) ] );
 #@EXPORT_OK   = qw(); # our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 our @EXPORT = qw( 
-opt odd even _mean_ flattenvariables count_variables fromopt_tosweep fromsweep_toopt convcaseseed 
+opt takechance
+odd even _mean_ flattenvariables count_variables fromopt_tosweep fromsweep_toopt convcaseseed 
 convchanceseed makeflatvarnsnum calcoverlaps calcmediumiters getitersnum definerootcases
 callcase callblocks deffiles makefilename extractcase setlaunch exe start
 _clean_ getblocks getblockelts getrootname definerootcases populatewinners 
@@ -59,7 +60,7 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 @sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_17'; # our $VERSION = '';
+$VERSION = '0.39.6_19'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -223,6 +224,7 @@ sub fromopt_tosweep # IT CONVERTS A TREE BLOCK SEARCH FORMAT IN THE ORIGINAL OPT
 			push (@sweepblocks, [@sweepblock]);
 		}
 		push (@sweeps, [ @sweepblocks ] );
+		return (@sweeps);
 	}
 	# IT HAS TO BE CALLED THIS WAY: fromopt_tosweep(%hash); WHERE: %hash = ( casegroup => [@caseseed], chancegroup => [@chanceseed] );
 }
@@ -266,6 +268,7 @@ sub fromsweep_toopt # IT CONVERTS THE ORIGINAL OPT'S BLOCKS SEARCH FORMAT IN A T
 	}
 	@chanceseed = @bucket;
 	@caseseed = @secondbucket;
+	return (\@caseseed, \@chanceseed);
 	# IT HAS TO BE CALLED THIS WAY: fromsweep_toopt(@sweep);
 }
 
@@ -280,7 +283,8 @@ sub convcaseseed # IT ADEQUATES THE POINT OF ATTACHMENT OF EACH BLOCK TO THE FAC
 			@{$_}[0] = @{$_}[0] + $flatvarnsnum[$countcase];
 		}
 		$countcase++;
-	} # TO BE CALLED WITH: convcaseseed. @caseseed IS globsAL.
+	} # TO BE CALLED WITH: convcaseseed. @caseseed IS globsAL. TO BE CALLED WITH: convcaseseed(@caseseed);
+	return(@caseseed);
 }
 
 sub convchanceseed # IT EXTENDS @chancegroup BY JOINING EACH PARAMETERS SEQUENCE WITH TWO COPIES OF ITSELF, TO IMITATE CIRCULAR LISTS.
@@ -291,22 +295,21 @@ sub convchanceseed # IT EXTENDS @chancegroup BY JOINING EACH PARAMETERS SEQUENCE
 		{
 			push (@$_, @$_, @$_);
 		}
-	} # IT ACTS ON @chanceseed, WHICH IS globsAL.
+	} # IT ACTS ON @chanceseed, WHICH IS globsAL. TP BE CALLE WITH: convchanceseed(@chanceseed);
+	return(@chanceseed);
 }
+
 
 sub makeflatvarnsnum # IT COUNTS HOW MANY PARAMETERS THERE ARE IN A SEARCH STRUCTURE,
 {
 	foreach (@_)
 	{
-		my @basket;
 		foreach (@$_)
 		{
-			my @block = @$_; #say "\@blockkkkk: @block";
-			push (@basket, @block); #say "\@basket1: @basket";
+			push (@$_, @$_, @$_); #say "\@\$_ @$_";
 		}
-		@basket = uniq(@basket); #say "\@basket2: @basket";
-		push ( @flatvarnsnum, scalar ( @basket ) ); #say "\@flatvarnsnum: @flatvarnsnum";
 	} # IT ACTS ON @chanceseed, WHICH IS globsAL.
+	return(@_);
 }
 
 sub calcoverlaps
@@ -1002,38 +1005,58 @@ sub opt
 	#####################################################################################
 	# INSTRUCTIONS THAT LAUNCH OPT AT EACH SWEEP (SUBSPACE SEARCH) CYCLE
 	
-	if (@sweeps) # IF THIS VALUE IS DEFINED
+	if (@sweeps) # IF THIS VALUE IS DEFINED. TO BE FIXED. ZZZ
 	{
-		fromsweep_toopt(@sweeps); #say "Dumper(\@chanceseed): " . Dumper(@chanceseed); say "Dumper(\@caseseed): " . Dumper(@caseseed) ;
+		my $yield = fromsweep_toopt(@sweeps); say "Dumper(\$yield): " . Dumper($yield);
+		my @caseseed = @{ $yield[0] }; say "Dumper(\@caseseed): " . Dumper(@caseseed);
+		my @chanceseed = @{ $yield[1] }; say "Dumper(\@chanceseed): " . Dumper(@chanceseed);
 	}
 	
-	makeflatvarnsnum(@chanceseed); # say "\@flatvarnsnum: @flatvarnsnum";
-	convchanceseed(@chanceseed); # say "Dumper(\@chanceseed): " . Dumper(@chanceseed);	
-	convcaseseed(@caseseed); #say "Dumper(\@caseseed): " . Dumper(@caseseed) ;
-		
-	unless (@sweeps)
+	say "\@chanceseed: " . Dumper(@chanceseed); # GLOBAL ZZZ
+	@chanceseed = makeflatvarnsnum(@chanceseed);  say "makeflatvarnsnum \@chanceseed: " . Dumper(@chanceseed); # GLOBAL ZZZ
+	@chanceseed = convchanceseed(@chanceseed); say "convchanceseed Dumper(\@chanceseed): " . Dumper(@chanceseed); # GLOBAL ZZZ	
+	@caseseed = convcaseseed(@caseseed); say "convcaseseed Dumper(\@caseseed): " . Dumper(@caseseed) ; # GLOBAL ZZZ
+	say "convcaseseed Dumper(\@chancedata): " . Dumper(@chancedata) ; # GLOBAL ZZZ
+	say "convcaseseed Dumper(\$dimchance): " . Dumper($dimchance) ; # GLOBAL ZZZ
+	
+	#if ( ( $generatechance eq "y" ) and (@chancedata) and ( $dimchance ) ) 
 	{
-		fromopt_tosweep( { casegroup => [@caseseed], chancegroup => [@chanceseed] } ); # say "\@tree: " . Dumper(@tree);
+		@sweeps = Sim::OPT::Takechance::takechance( \@caseseed, \@chanceseed, @chancedata, $dimchance );
 	}
+		
+	if ( 1 == 2)############# ERASE
+	{########################
+	#########################
+	
+	if ( not (@sweeps) )
+	{
+		fromopt_tosweep( { casegroup => \@caseseed, chancegroup => \@chanceseed } ); # say "\@tree: " . Dumper(@tree);
+	}		
 	
 	#my  $itersnum = $varinumbers[$countcase]{$varinumber}; say "\$itersnum: $itersnum"; 
 	#say "dump(\@varinumbers), " . dump(@varinumbers); #say "dumpBEFORE(\@miditers), " . dump(@miditers);
-	calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS globsAL. ZZZ
 	
+	
+	calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS globsAL. ZZZ
+		
 	@mediumiters = calcmediumiters(@varinumbers); say $tee "BEGINNING dump!(\@mediumiters), " . dump(@mediumiters); # globsALS. ZZZ
 	#$itersnum = getitersnum($countcase, $varinumber, @varinumbers); #say "\$itersnum OUT = $itersnum";
-	
+		
 	@rootnames = definerootcases(\@sweeps, \@mediumiters); say $tee "BEGINNING \@rootnames " . dump(@rootnames); 
-	
+		
 	my $countcase = 0;
 	my $countblock = 0;
 
 	my @winneritems = populatewinners(\@rootnames, $countcase, $countblock); say $tee "BEGINNING \@winneritems " . dump(@winneritems);
-	
+		
 	callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
 	miditers => \@mediumiters,  winneritems => \@winneritems } );
 	
-
+	############################
+	############################
+	}########################### ERASE
+	
+	
 	close(OUTFILE);
 	close(TOSHELL);
 	exit;

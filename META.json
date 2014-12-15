@@ -32,10 +32,19 @@
       },
       "runtime" : {
          "requires" : {
-            "List::MoreUtils" : "0.01"
+            "File::Tee" : "0",
+            "IO::Tee" : "0",
+            "List::AllUtils" : "0",
+            "List::Compare" : "0",
+            "List::MoreUtils" : "0.01",
+            "List::Util" : "0",
+            "Math::Round" : "0",
+            "Math::Trig" : "0",
+            "Set::Intersection" : "0",
+            "Statistics::Basic" : "0"
          }
       }
    },
    "release_status" : "testing",
-   "version" : "v0.39.6_17"
+   "version" : "v0.39.6_19"
 }

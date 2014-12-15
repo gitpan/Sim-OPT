@@ -21,6 +21,7 @@ use Sim::OPT::Morph;
 use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
 use Sim::OPT::Descend;
+#use Sim::OPT::Takechance;
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
@@ -37,7 +38,7 @@ no warnings;
 
 @EXPORT = qw( report mergereports ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_17'; # our $VERSION = '';
+$VERSION = '0.39.6_19'; # our $VERSION = '';
 
 #########################################################################################
 # HERE FOLLOWS THE CONTENT OF "Sim.pm", Sim::OPT::Sim
