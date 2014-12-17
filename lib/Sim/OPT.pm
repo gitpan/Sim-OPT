@@ -60,7 +60,7 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 @sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6.21'; # our $VERSION = '';
+$VERSION = '0.39.6.22'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -1075,7 +1075,7 @@ Sim-OPT.
 =head1 SYNOPSIS
 
   use Sim::OPT;
-  opts;
+  opt;
 
 =head1 DESCRIPTION
 
@@ -1086,9 +1086,9 @@ A working knowledge of ESP-r (http://www.esru.strath.ac.uk/Programs/ESP-r.htm) i
 To install OPT, the command <cpanm Sim::OPT> has to be issued. Perl will install all dependencies. OPT can be loaded through the command <use Sim::OPT> in Perl. For that purpose, the batch file "opt" (which can be found packed in the "optw.tar.gz" file in "example" folder in this distribution) may be copied in a work directory and the command <opt> may be issued. That command will activate the OPT's functions, following the settings specified in a previously prepared configuration file. When launched, OPT will ask the path to that file. Its activity will start after receiving that information. 
 That file must contain a suitable description of the operations to be accomplished pointing to an existing ESP-r model.
 
-In "optw.tar.gz" there is an example of OPT configuration file ("v.pl"). That file should be decompacted and the resulting folder ("optw") may be used as a work folder for OPT, in which the ESP-r models to be worked should reside. The "$mypath" variable in the configuration file must be set to that work directory. An example of configuration file for an earlier version of the program may be downloaded at http://figshare.com/authors/Gian_luca_Brunetti/624879 .
+In "optw.tar.gz" there is an example of OPT configuration file ("v.pl"). That file may be decompacted and the resulting folder ("optw") may be used as a work folder for OPT, in which the ESP-r models to be worked should reside. The "$mypath" variable in the configuration file must be set to the work directory. An example of configuration file for an earlier version of OPT may be downloaded at http://figshare.com/authors/Gian_luca_Brunetti/624879 .
 
-To run OPT without making it launch ESP-r, the setting <$exeonfiles = "n";> should be specified in the configuration file. Note that this can only be aimed to inspect the command that OPTS will give to ESP-r through the shell. The search obtained will be very likely to be different from that driven by simulation results. If simulations are not launched, the optimal instance  at each subspace search cannot indeed be selected. In its place, the base case will be kept by the program, just to bring the process to completion. A sequential block search (Gauss-Seidel method) cannot indeed be run "dry". The variable "$toshell" specifies the path to a file that will receive the shell commands in place of the shell.
+To run OPT without making it launch ESP-r, the setting <$exeonfiles = "n";> should be specified in the configuration file. This may only be aimed to inspect the commands that OPTS would give to ESP-r through the shell. The search obtained would likely be different from that driven by simulation results. If simulations are not launched, the optimal instance  at each subspace search cannot indeed be selected. In its place, the base case will be kept by the program to completion. A sequential block search (Gauss-Seidel method) cannot indeed be run "dry". In the variable "$toshell" the path to the file that will receive the commands in place of the shell can be specified.
 
 If $exeonfiles is set to "y", OPT will give instruction to ESP-r via shell to make it modify the building base model in different copies. Then, if asked, it will run simulations, retrieve the results, extract some information from them and order it as requested.
 
@@ -1096,7 +1096,7 @@ Besides an OPT configuration file, configuration files for propagation of constr
 
 The ESP-r model folders and the result files that will be created in a parametric search will be named as the base building model, numbers and other characters to described an instance. For example, the instance produced in the first iteration for a root model named "model" in a search constituted by 3 morphing phases and 5 iteration steps each will be named "model_1-1_2-1_3-1"; and the last one "model_1-5_2-5_3-5". 
 
-The structure of block searches is described through the variable "@sweeps" . Each case is listed inside square brackets. And each search subspace (block) in them is listed inside square brakets, nested in cases. For example: a sequence constituted by two brute force searches, one regarding parameters 1, 2 3 and the other regarding parameters 1, 4, 5, 7 would be described with: @sweeps = ( [ [ 1, 2, 3 ] ] , [ [ 1, 4, 5, 7 ] ] ). And a block search with the first subspace regarding parameters 1, 2, 3 and the second regarding parameters 3, 4, 5, 6 would be described with: @sweeps = ( [ [ 1, 2, 3 ] , [ 3, 4, 5, 6 ] ] ). 
+The structure of block searches is described through the variable "@sweeps". Each case is listed inside square brackets. And each search subspace (block) in them is listed inside square brakets, nested in cases. For example: a sequence constituted by two brute force searches, one regarding parameters 1, 2, 3 and the other regarding parameters 1, 4, 5, 7 would be described with: @sweeps = ( [ [ 1, 2, 3 ] ] , [ [ 1, 4, 5, 7 ] ] ). And a block search with the first subspace regarding parameters 1, 2, 3 and the second regarding parameters 3, 4, 5, 6 would be described with: @sweeps = ( [ [ 1, 2, 3 ] , [ 3, 4, 5, 6 ] ] ). 
 
 The number of iterations to be taken into account for each parameter for each case is specified in the "@varinumbers" variable. To specifiy that the parameters of the last example are to be tried for three values (iterations) each, @varinumbers has to be set to ( { 1 => 3, 2 => 3, 3 => 3, 4 => 3, 5 => 3, 6 => 3 } ).
 

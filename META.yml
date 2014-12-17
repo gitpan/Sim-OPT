@@ -28,4 +28,4 @@ requires:
   Math::Trig: '0'
   Set::Intersection: '0'
   Statistics::Basic: '0'
-version: v0.39.6.21
+version: v0.39.6.22
