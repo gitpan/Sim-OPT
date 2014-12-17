@@ -46,7 +46,7 @@ get_obstructions write_temporary pin_obstructions apply_pin_obstructions vary_ne
 apply_component_changes constrain_net read_net_constraints propagate_constraints 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6_19'; # our $VERSION = '';
+$VERSION = '0.39.6.20'; # our $VERSION = '';
 
 
 ##############################################################################

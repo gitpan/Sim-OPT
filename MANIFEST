@@ -11,6 +11,6 @@ lib/Sim/OPT/Retrieve.pm
 lib/Sim/OPT/Report.pm
 lib/Sim/OPT/Descend.pm
 #lib/Sim/OPT/Takechance.pm
-examples/optw.tar.zip
+examples/optw.tar.gz
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
