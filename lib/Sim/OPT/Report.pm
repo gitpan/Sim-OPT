@@ -38,7 +38,7 @@ no warnings;
 
 @EXPORT = qw( report mergereports ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6.20'; # our $VERSION = '';
+$VERSION = '0.39.6.21'; # our $VERSION = '';
 
 #########################################################################################
 # HERE FOLLOWS THE CONTENT OF "Sim.pm", Sim::OPT::Sim
