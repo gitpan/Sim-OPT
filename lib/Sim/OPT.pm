@@ -60,7 +60,7 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 @sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6.22'; # our $VERSION = '';
+$VERSION = '0.39.6.22.1'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -1023,10 +1023,6 @@ sub opt
 	{
 		@sweeps = Sim::OPT::Takechance::takechance( \@caseseed, \@chanceseed, @chancedata, $dimchance );
 	}
-		
-	if ( 1 == 2)############# ERASE
-	{########################
-	#########################
 	
 	if ( not (@sweeps) )
 	{
@@ -1051,11 +1047,6 @@ sub opt
 		
 	callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
 	miditers => \@mediumiters,  winneritems => \@winneritems } );
-	
-	############################
-	############################
-	}########################### ERASE
-	
 	
 	close(OUTFILE);
 	close(TOSHELL);
