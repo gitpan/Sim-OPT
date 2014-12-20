@@ -60,7 +60,7 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 @sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6.22.1'; # our $VERSION = '';
+$VERSION = '0.39.6.22.2'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -1070,7 +1070,7 @@ Sim-OPT.
 
 =head1 DESCRIPTION
 
-Sim::OPT it a tool for detailed metadesign of buildings. It morphs models by propagation of constraints through the ESP-r building performance simulation platform and performs optimization by overlapping block coordinate descent.
+Sim::OPT is a tool for detailed metadesign of buildings. It morphs models by propagation of constraints through the ESP-r building performance simulation platform and performs optimization by overlapping block coordinate descent.
 
 A working knowledge of ESP-r (http://www.esru.strath.ac.uk/Programs/ESP-r.htm) is necessary to use OPT.
 
