@@ -1,6 +1,6 @@
 package Sim::OPT;
 # Copyright (C) 2008-2014 by Gian Luca Brunetti and Politecnico di Milano.
-# This is Sim::OPT, a program for detailed metadesign managing parametric explorations through the ESP-r building performance simulation platform and performing optimization by block coordinate descent.
+# This is Sim::OPT, a program for detailed metadesign of buildings managing parametric explorations through the ESP-r building performance simulation platform and performing optimization by block coordinate descent.
 # This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 
 use v5.14;
@@ -17,7 +17,6 @@ use Statistics::Basic qw(:all);
 use IO::Tee;
 use Set::Intersection;
 use List::Compare;
-#use File::Tee qw(tee);
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
@@ -38,7 +37,7 @@ use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
 use Sim::OPT::Report;
 use Sim::OPT::Descend;
-#use Sim::OPT::Takechance;
+use Sim::OPT::Takechance;
 
 our @ISA = qw(Exporter); # our @adamkISA = qw(Exporter);
 #%EXPORT_TAGS = ( DEFAULT => [qw( &opt &prepare )]); # our %EXPORT_TAGS = ( 'all' => [ qw( ) ] );
@@ -50,17 +49,17 @@ odd even _mean_ flattenvariables count_variables fromopt_tosweep fromsweep_toopt
 convchanceseed makeflatvarnsnum calcoverlaps calcmediumiters getitersnum definerootcases
 callcase callblocks deffiles makefilename extractcase setlaunch exe start
 _clean_ getblocks getblockelts getrootname definerootcases populatewinners 
-getitem getline getlines getcase getstepsvar tell wash flattenbox enrichbox filterbox 
+getitem getline getlines getcase getstepsvar tell wash flattenbox enrichbox filterbox givesize 
 $configfile $mypath $exeonfiles $generatechance $file $preventsim $fileconfig $outfile $toshell $report 
 $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @retrievedata 
 @keepcolumns @weights @weightsaim @varthemes_report @varthemes_variations @varthemes_steps 
 @rankdata @rankcolumn @reporttempsdata @reportcomfortdata @reportradiationenteringdata 
 @reporttempsstats @files_to_filter @filter_reports @base_columns @maketabledata @filter_columns 
 @files_to_filter @filter_reports @base_columns @maketabledata @filter_columns %vals 
-@sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee 
+@sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee @pars_tocheck
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6.22.2'; # our $VERSION = '';
+$VERSION = '0.40.0'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -222,22 +221,63 @@ sub fromopt_tosweep # IT CONVERTS A TREE BLOCK SEARCH FORMAT IN THE ORIGINAL OPT
 			my @chances = @$chancesref; #say "dump(\@chances): " . dump(@chances);
 			my @sweepblock = @chances[ $attachpoint .. ($attachpoint + $blocklength - 1) ];	#say "dump(\@sweepblock): " . dump(@sweepblock);
 			push (@sweepblocks, [@sweepblock]);
+			$countblock++;
 		}
 		push (@sweeps, [ @sweepblocks ] );
-		return (@sweeps);
+		$countcase++;
 	}
-	# IT HAS TO BE CALLED THIS WAY: fromopt_tosweep(%hash); WHERE: %hash = ( casegroup => [@caseseed], chancegroup => [@chanceseed] );
+	# IT HAS TO BE CALLED THIS WAY: fromopt_tosweep( casegroup => \@caseseed, chancegroup => \@chanceseed );
+	return (@sweeps);
+}
+
+sub fromopt_tosweep_simple # IT CONVERTS A TREE BLOCK SEARCH FORMAT IN THE ORIGINAL OPT'S BLOCKS SEARCH FORMAT.
+{
+	my %thishash = @_; #say "dump(%thishash): " . dump(%thishash);
+	my $casegroupref = $thishash{casegroup};
+	my @blocks = @$casegroupref; #say "dump(\@casegroup): " . dump(@casegroup);
+	my $chancegroupref = $thishash{chancegroup};
+	my @chances = @$chancegroupref; #say "dump(\@chancegroup): " . dump(@chancegroup);
+	my $countblock = 0;
+	foreach my $elt (@blocks)
+	{
+		my @blockelts = @$elt; #say "dump(\@blockelts): " . dump(@blockelts);
+		my $attachpoint = $blockelts[0]; #say "attachpoint: $attachpoint";
+		my $blocklength = $blockelts[1]; #say "blocklength: $blocklength";
+		my $chancesref = $chances[$countblock]; # say "dump(\$chancesref): " . dump($chancesref);
+		my @chances = @$chancesref; #say "dump(\@chances): " . dump(@chances);
+		my @sweepblock = @chances[ $attachpoint .. ($attachpoint + $blocklength - 1) ];	#say "dump(\@sweepblock): " . dump(@sweepblock);
+		push (@sweepblocks, [@sweepblock]);
+		$countblock++;
+	}
+	# IT HAS TO BE CALLED THIS WAY: fromopt_tosweep( casegroup => [@caserefs_alias], chancegroup => [@chancerefs_alias] ); # IT IS NOT RELATIVE TO CASE: JUST ONE CASE, THE CURRENT.
+	return (@sweepblocks);
+}
+
+sub checkduplicates
+{
+	my %hash = %{$_[0]};
+	my @slice = @{$hash{slice}};
+	my @sweepblocks = @{$hash{sweepblocks}};
+	my $signal = 0;
+	foreach my $blockref (@sweepblocks)
+	{
+		@block = @$blockref;
+		if ( @slice ~~ @block )
+		{
+			$signal++;
+		}
+	}
+	if ($signal == 0) { return "no"; }
+	else { return "yes" };
 }
 
 sub fromsweep_toopt # IT CONVERTS THE ORIGINAL OPT'S BLOCKS SEARCH FORMAT IN A TREE BLOCK SEARCH FORMAT.
 {
+	my ( @bucket, @secondbucket );
 	my $countcase = 0;
-	my @bucket;
-	my @secondbucket;
 	foreach (@_) # CASES
 	{
-		my @blocks;
-		my @chances;
+		my ( @blocks, @chances );
 		my $countblock = 0;
 		foreach(@$_) # BLOCKS
 		{
@@ -274,33 +314,31 @@ sub fromsweep_toopt # IT CONVERTS THE ORIGINAL OPT'S BLOCKS SEARCH FORMAT IN A T
 
 sub convcaseseed # IT ADEQUATES THE POINT OF ATTACHMENT OF EACH BLOCK TO THE FACT THAT THE LISTS CONSTITUING THEM ARE THREE, JOINED.
 {
+	my $ref = shift;
+	my %hash = %{$ref};
+	my @chanceseed = @{ $hash{ chanceseed } }; #say $tee "IN\@chanceseed:" . dump(@chanceseed);
+	my @caseseed = @{ $hash{ caseseed } }; #say $tee "IN\@caseseed:" . dump(@caseseed);
 	my $countcase = 0;
 	foreach $case (@caseseed)
 	{
-		my @blockrfs = @$case;
-		foreach (@blockrfs)
+		my $chance = $chanceseed[$countcase];
+		my $countblock = 0;
+		my @blockrefs = @$case;
+		my @chancerefs = @$chance;
+		foreach (@blockrefs)
 		{
-			@{$_}[0] = @{$_}[0] + $flatvarnsnum[$countcase];
+			my $chancelt = scalar ( @{ $chancerefs[$countblock] } ); #say $tee "IN\$chancerefs\[\$countblock]" . dump($chancerefs[$countblock]); say $tee "IN\$chancelt" . dump($chancelt);
+			my $numofelts = ( $chancelt / 3 ); #say $tee "IN\$numofelts" . dump($numofelts);
+			${$_}[0] = ${$_}[0] + $numofelts;
+			$countblock++;
 		}
 		$countcase++;
-	} # TO BE CALLED WITH: convcaseseed. @caseseed IS globsAL. TO BE CALLED WITH: convcaseseed(@caseseed);
+	} # TO BE CALLED WITH: convcaseseed(\@caseseed, \@chanceseed). @caseseed IS globsAL. TO BE CALLED WITH: convcaseseed(@caseseed);
 	return(@caseseed);
 }
 
-sub convchanceseed # IT EXTENDS @chancegroup BY JOINING EACH PARAMETERS SEQUENCE WITH TWO COPIES OF ITSELF, TO IMITATE CIRCULAR LISTS.
-{
-	foreach (@chanceseed)
-	{
-		foreach (@$_)
-		{
-			push (@$_, @$_, @$_);
-		}
-	} # IT ACTS ON @chanceseed, WHICH IS globsAL. TP BE CALLE WITH: convchanceseed(@chanceseed);
-	return(@chanceseed);
-}
 
-
-sub makeflatvarnsnum # IT COUNTS HOW MANY PARAMETERS THERE ARE IN A SEARCH STRUCTURE,
+sub convchanceseed # IT COUNTS HOW MANY PARAMETERS THERE ARE IN A SEARCH STRUCTURE,
 {
 	foreach (@_)
 	{
@@ -308,8 +346,15 @@ sub makeflatvarnsnum # IT COUNTS HOW MANY PARAMETERS THERE ARE IN A SEARCH STRUC
 		{
 			push (@$_, @$_, @$_); #say "\@\$_ @$_";
 		}
-	} # IT ACTS ON @chanceseed, WHICH IS globsAL.
+	} # IT HAS TO BE CALLED WITH convchanceseed(@chanceseed). IT ACTS ON @chanceseed, WHICH IS globsAL.
 	return(@_);
+}
+
+sub tellnum
+{
+	@arr = @_;
+	my $response = (scalar(@_)/2);
+	return($response); # TO BE CALLED WITH tellnum(%varnums);
 }
 
 sub calcoverlaps
@@ -538,6 +583,21 @@ sub getstepsvar
 	my $stepsvar = $varnums{$countvar};
 	return ($stepsvar)
 } #getstepsvar($countvar, $countcase, \@varinumbers);
+
+sub givesize
+{	# IT RETURNS THE SEARCH SIZE OF A BLOCK.
+	my $sliceref = shift;
+	my @slice = @$sliceref;
+	my $countcase = shift;
+	my $varinumberref = shift;
+	my $product = 1;
+	foreach my $elt (@slice)
+	{
+		my $stepsize = Sim::OPT::getstepsvar($elt, $countcase, $varinumberref);
+		$product = $product * $stepsize;
+	}
+	return ($product); # TO BE CALLED WITH: givesize(\@slice, $countcase, \@varinumbers);, WHERE SLICE MAY BE @blockelts in SIM::OPT OR @presentslice OR @pastslice IN Sim::OPT::Takechance
+} 
 
 sub wash # UNUSED. CUT.
 {
@@ -990,43 +1050,60 @@ sub opt
 	open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
 	open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!"; 
 		
-	unless (-e "$mypath") 
-	{ 
-		if ($exeonfiles eq "y") 
-		{
-			`mkdir $mypath`; 
-		} 
-	}
-	unless (-e "$mypath") 
-	{ 
-		print TOSHELL "mkdir $mypath\n\n"; 
-	}
+	#unless (-e "$mypath") 
+	#{ 
+	#	if ($exeonfiles eq "y") 
+	#	{
+	#		`mkdir $mypath`; 
+	#	} 
+	#}
+	#unless (-e "$mypath") 
+	#{ 
+	#	print TOSHELL "mkdir $mypath\n\n"; 
+	#}
 	
 	#####################################################################################
 	# INSTRUCTIONS THAT LAUNCH OPT AT EACH SWEEP (SUBSPACE SEARCH) CYCLE
 	
-	if (@sweeps) # IF THIS VALUE IS DEFINED. TO BE FIXED. ZZZ
+	if ( not ( ( @chanceseed ) and ( @caseseed ) and ( @chancedata ) ) )
 	{
-		my $yield = fromsweep_toopt(@sweeps); say "Dumper(\$yield): " . Dumper($yield);
-		my @caseseed = @{ $yield[0] }; say "Dumper(\@caseseed): " . Dumper(@caseseed);
-		my @chanceseed = @{ $yield[1] }; say "Dumper(\@chanceseed): " . Dumper(@chanceseed);
+		if ( ( @sweepseed ) and ( @chancedata ) ) # IF THIS VALUE IS DEFINED. TO BE FIXED. ZZZ
+		{
+			my $yield = fromsweep_toopt(@sweeps); say $tee "Dumper(\$yield): " . Dumper($yield);
+			my @caseseed = @{ $yield[0] }; say $tee "Dumper(\@caseseed): " . Dumper(@caseseed);
+			my @chanceseed = @{ $yield[1] }; say $tee "Dumper(\@chanceseed): " . Dumper(@chanceseed);
+		}
 	}
 	
-	say "\@chanceseed: " . Dumper(@chanceseed); # GLOBAL ZZZ
-	@chanceseed = makeflatvarnsnum(@chanceseed);  say "makeflatvarnsnum \@chanceseed: " . Dumper(@chanceseed); # GLOBAL ZZZ
-	@chanceseed = convchanceseed(@chanceseed); say "convchanceseed Dumper(\@chanceseed): " . Dumper(@chanceseed); # GLOBAL ZZZ	
-	@caseseed = convcaseseed(@caseseed); say "convcaseseed Dumper(\@caseseed): " . Dumper(@caseseed) ; # GLOBAL ZZZ
-	say "convcaseseed Dumper(\@chancedata): " . Dumper(@chancedata) ; # GLOBAL ZZZ
-	say "convcaseseed Dumper(\$dimchance): " . Dumper($dimchance) ; # GLOBAL ZZZ
+	#say $tee "\@chanceseedINI: " . Dumper(@chanceseed); # GLOBAL ZZZ
+	#say $tee "\@caseseedINI: " . Dumper(@caseseed); # GLOBAL ZZZ
+	@chanceseed = convchanceseed(@chanceseed); #say $tee "convchanceseed Dumper(\@chanceseed): " . Dumper(@chanceseed); # GLOBAL ZZZ	
+	@caseseed = convcaseseed( { caseseed => \@caseseed, chanceseed => \@chanceseed } ); #say $tee "convcaseseed Dumper(\@caseseed): " . Dumper(@caseseed) ; # GLOBAL ZZZ
+	#say $tee "Dumper(\@chancedata): " . Dumper(@chancedata) ; # GLOBAL ZZZ
+	#say $tee "Dumper(\$dimchance): " . Dumper($dimchance) ; # GLOBAL ZZZ
+	my (@sweeps_);
 	
-	#if ( ( $generatechance eq "y" ) and (@chancedata) and ( $dimchance ) ) 
+	if ( ( $generatechance eq "y" ) and (@chancedata) and ( $dimchance ) ) 
 	{
-		@sweeps = Sim::OPT::Takechance::takechance( \@caseseed, \@chanceseed, @chancedata, $dimchance );
+		my @obt = Sim::OPT::Takechance::takechance( \@caseseed, \@chanceseed, \@chancedata, $dimchance ); say $tee "PASSED: \@sweeps: " . dump(@sweeps);
+		@sweeps_ = @{ $obt[0] };
+		@caseseed_ = @{ $obt[1] };
+		@chanceseed_ = @{ $obt[2] };
+		open (MESSAGE, ">./this_is_the_search_structure_that_may_be_adopted.txt");
+		say MESSAGE "\@sweeps_ " . Dumper(@sweeps_);
+		say MESSAGE "\THESE VALUES OF \@sweeps IS EQUIVALENT TO THE FOLLOWING VALUES OF \@caseseed AND \@chanceseed: ";
+		say MESSAGE "\n\@caseseed " . Dumper(@caseseed_);
+		say MESSAGE "\n\@chanceseed_ " . Dumper(@chanceseed_);
+		close MESSAGE;
 	}
+		
+	if ( 1 == 2)############# ERASE
+	{########################
+	#########################
 	
-	if ( not (@sweeps) )
+	if ( not (@sweeps) ) # CONSERVATIVE CONDITION. IT MAY BE CHANCED. ZZZ
 	{
-		fromopt_tosweep( { casegroup => \@caseseed, chancegroup => \@chanceseed } ); # say "\@tree: " . Dumper(@tree);
+		@sweeps = @sweeps_ ; # say "\@tree: " . Dumper(@tree);
 	}		
 	
 	#my  $itersnum = $varinumbers[$countcase]{$varinumber}; say "\$itersnum: $itersnum"; 
@@ -1047,6 +1124,11 @@ sub opt
 		
 	callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
 	miditers => \@mediumiters,  winneritems => \@winneritems } );
+	
+	############################
+	############################
+	}########################### ERASE
+	
 	
 	close(OUTFILE);
 	close(TOSHELL);
@@ -1090,6 +1172,8 @@ The ESP-r model folders and the result files that will be created in a parametri
 The structure of block searches is described through the variable "@sweeps". Each case is listed inside square brackets. And each search subspace (block) in them is listed inside square brakets, nested in cases. For example: a sequence constituted by two brute force searches, one regarding parameters 1, 2, 3 and the other regarding parameters 1, 4, 5, 7 would be described with: @sweeps = ( [ [ 1, 2, 3 ] ] , [ [ 1, 4, 5, 7 ] ] ). And a block search with the first subspace regarding parameters 1, 2, 3 and the second regarding parameters 3, 4, 5, 6 would be described with: @sweeps = ( [ [ 1, 2, 3 ] , [ 3, 4, 5, 6 ] ] ). 
 
 The number of iterations to be taken into account for each parameter for each case is specified in the "@varinumbers" variable. To specifiy that the parameters of the last example are to be tried for three values (iterations) each, @varinumbers has to be set to ( { 1 => 3, 2 => 3, 3 => 3, 4 => 3, 5 => 3, 6 => 3 } ).
+
+Some functionalities of OPT are not specific to the ESP-r platform. One of those is the functionality contanined in the "Takechance.pm" module. This module produces an efficient search structures for block coordinate descent given some initialization blocks. The rationale for the selection of the seach path is explained in the paper at the following web address: http://arxiv.org/abs/1407.5615 .
 
 OPT is a program I have begun to write as a side project in 2008 with no funding. It is the first real program I attempted to write. From time to time I add some parts to it. The parts of it that have been written earlier or later are the ones that are coded in the strangest manner.
 

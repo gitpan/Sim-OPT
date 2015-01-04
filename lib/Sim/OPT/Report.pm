@@ -21,13 +21,13 @@ use Sim::OPT::Morph;
 use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
 use Sim::OPT::Descend;
-#use Sim::OPT::Takechance;
+use Sim::OPT::Takechance;
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
 #$Data::Dumper::Terse  = 1;
 use Data::Dump qw(dump);
-#use Sub::Signatures;
+use Sub::Signatures;
 use feature 'say';
 no strict; 
 no warnings;
@@ -38,7 +38,7 @@ no warnings;
 
 @EXPORT = qw( report mergereports ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6.21'; # our $VERSION = '';
+$VERSION = '0.40.0'; # our $VERSION = '';
 
 #########################################################################################
 # HERE FOLLOWS THE CONTENT OF "Sim.pm", Sim::OPT::Sim

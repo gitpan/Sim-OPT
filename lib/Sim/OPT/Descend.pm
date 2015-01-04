@@ -26,7 +26,7 @@ use Sim::OPT::Morph;
 use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
 use Sim::OPT::Report;
-#use Sim::OPT::Takechance;
+use Sim::OPT::Takechance;
 use feature 'say';
 no strict; 
 no warnings;
@@ -37,7 +37,7 @@ no warnings;
 
 @EXPORT = qw( descend ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6.21'; # our $VERSION = '';
+$VERSION = '0.40.0'; # our $VERSION = '';
 
 
 #########################################################################################

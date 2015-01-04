@@ -1,5 +1,5 @@
 {
-   "abstract" : "Sim::OPT is a tool for detailed metadesign managing the ESP-r building performance simulation platform through parametric explorations and performing optimization by block coordinate descent.",
+   "abstract" : "Sim::OPT it a tool for detailed metadesign managing parametric explorations through the ESP-r building performance simulation platform and performing optimization by block coordinate descent.",
    "author" : [
       "Gian Luca Brunetti <gianluca.brunetti@polimi.it>"
    ],
@@ -32,11 +32,12 @@
       },
       "runtime" : {
          "requires" : {
-            "File::Tee" : "0",
+            "Data::Dump" : "0",
+            "Data::Dumper" : "0",
             "IO::Tee" : "0",
             "List::AllUtils" : "0",
             "List::Compare" : "0",
-            "List::MoreUtils" : "0.01",
+            "List::MoreUtils" : "0",
             "List::Util" : "0",
             "Math::Round" : "0",
             "Math::Trig" : "0",
@@ -46,5 +47,5 @@
       }
    },
    "release_status" : "stable",
-   "version" : "v0.39.6.22.2"
+   "version" : "v0.40.0"
 }

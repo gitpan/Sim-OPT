@@ -21,7 +21,7 @@ use Sim::OPT::Sim;
 use Sim::OPT::Retrieve;
 use Sim::OPT::Report;
 use Sim::OPT::Descend;
-#use Sim::OPT::Takechance;
+use Sim::OPT::Takechance;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
 #$Data::Dumper::Terse  = 1;
@@ -46,7 +46,7 @@ get_obstructions write_temporary pin_obstructions apply_pin_obstructions vary_ne
 apply_component_changes constrain_net read_net_constraints propagate_constraints 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.39.6.21'; # our $VERSION = '';
+$VERSION = '0.40.0'; # our $VERSION = '';
 
 
 ##############################################################################
