@@ -1,7 +1,9 @@
 package Sim::OPT::Takechance;
-# Copyright (C) 2008-2014 by Gian Luca Brunetti and Politecnico di Milano.
-# This is Sim::OPT, a program for detailed metadesign managing parametric explorations through the ESP-r building performance simulation platform and performing optimization by block coordinate descent.
-# This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
+# Copyright (C) 2014-2015 by Gian Luca Brunetti and Politecnico di Milano.
+# This is "Sim::OPT::Takechance", a program that can produce efficient search structures for block coordinate descent given some initialization blocks (subspaces).  
+# Its strategy is based on making a search path more efficient than the average randomly chosen ones, by selecting the search moves 
+# so that (a) the search wake is fresher than the average random ones and (b) the search moves are more novel than the average random ones. 
+# The rationale for the selection of the seach path is explained in detail (with algorithms) in my paper at the following web address: http://arxiv.org/abs/1407.5615 .
 
 use v5.14;
 # use v5.20;
@@ -44,7 +46,7 @@ our @ISA = qw(Exporter); # our @adamkISA = qw(Exporter);
 #@EXPORT_OK   = qw(); # our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 @EXPORT = qw( takechance ); # our @EXPORT = qw( );
-$VERSION = '0.40.4';
+$VERSION = '0.05';
 
 #########################################################################################
 # HERE FOLLOWS THE CONTENT OF "Takechance.pm", Sim::OPT::Takechance
@@ -52,64 +54,74 @@ $VERSION = '0.40.4';
 
 sub takechance
 {	
-	$toshell = $main::toshell;
-	$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
-	say $tee "\n#Now in Sim::OPT::Takechance.\n";
-	$configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
-	@sweeps = @main::sweeps; #say "dump(\@sweeps): " . dump(@sweeps);
-	@varinumbers = @main::varinumbers; say $tee "dump(\@varinumbers): " . dump(@varinumbers);
-	@mediumiters = @main::mediumiters;
-	@rootnames = @main::rootnames; #say "dump(\@rootnames): " . dump(@rootnames);
-	%vals = %main::vals; #say "dump(\%vals): " . dump(%vals);
-	@caseseed = @main::caseseed; say $tee "dump(INTAKE\@caseseed): " . dump(@caseseed);
-	@chanceseed = @main::chanceseed; say $tee "dump(INTAKE\@chanceseed): " . dump(@chanceseed);
-	@chancedata = @main::chancedata; #say $tee "dump(INTAKE\@chancedata): " . dump(@chancedata);
-	@pars_tocheck = @main::pars_tocheck; say $tee "dump(INTAKE\@pars_tocheck): " . dump(@pars_tocheck);
-	$dimchance = $main::dimchance; #say $tee "dump(INTAKE\$dimchance): " . dump($dimchance);
-	
-	$mypath = $main::mypath;  #say TOSHELL "dumpINDESCEND(\$mypath): " . dump($mypath);
-	$exeonfiles = $main::exeonfiles; #say TOSHELL "dumpINDESCEND(\$exeonfiles): " . dump($exeonfiles);
-	$generatechance = $main::generatechance; 
-	$file = $main::file;
-	$preventsim = $main::preventsim;
-	$fileconfig = $main::fileconfig; #say TOSHELL "dumpINDESCEND(\$fileconfig): " . dump($fileconfig); # NOW GLOBAL. TO MAKE IT PRIVATE, FIX PASSING OF PARAMETERS IN CONTRAINTS PROPAGATION SECONDARY SUBROUTINES
-	$outfile = $main::outfile;
-	$target = $main::target;
-	
-	$report = $main::report;
-	$simnetwork = $main::simnetwork;
-	$reportloadsdata = $main::reportloadsdata;
-	
-	#open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
-	#open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!";  
-	#$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
+	if ( not ( @ARGV ) )
+	{
 		
-	#say TOSHELL "dump(\$repfile): " . dump($repfile); 
-	%dowhat = %main::dowhat;
+		$toshell = $main::toshell;
+		$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
+		say $tee "\n#Now in Sim::OPT::Takechance.\n";
+		$configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
+		@sweeps = @main::sweeps; #say "dump(\@sweeps): " . dump(@sweeps);
+		@varinumbers = @main::varinumbers; say $tee "dump(\@varinumbers): " . dump(@varinumbers);
+		@mediumiters = @main::mediumiters;
+		@rootnames = @main::rootnames; #say "dump(\@rootnames): " . dump(@rootnames);
+		%vals = %main::vals; #say "dump(\%vals): " . dump(%vals);
+		@caseseed = @main::caseseed; say $tee "dump(INTAKE\@caseseed): " . dump(@caseseed);
+		@chanceseed = @main::chanceseed; say $tee "dump(INTAKE\@chanceseed): " . dump(@chanceseed);
+		@chancedata = @main::chancedata; #say $tee "dump(INTAKE\@chancedata): " . dump(@chancedata);
+		@pars_tocheck = @main::pars_tocheck; say $tee "dump(INTAKE\@pars_tocheck): " . dump(@pars_tocheck);
+		$dimchance = $main::dimchance; #say $tee "dump(INTAKE\$dimchance): " . dump($dimchance);
+		
+		$mypath = $main::mypath;  #say TOSHELL "dumpINDESCEND(\$mypath): " . dump($mypath);
+		$exeonfiles = $main::exeonfiles; #say TOSHELL "dumpINDESCEND(\$exeonfiles): " . dump($exeonfiles);
+		$generatechance = $main::generatechance; 
+		$file = $main::file;
+		$preventsim = $main::preventsim;
+		$fileconfig = $main::fileconfig; #say TOSHELL "dumpINDESCEND(\$fileconfig): " . dump($fileconfig); # NOW GLOBAL. TO MAKE IT PRIVATE, FIX PASSING OF PARAMETERS IN CONTRAINTS PROPAGATION SECONDARY SUBROUTINES
+		$outfile = $main::outfile;
+		$target = $main::target;
+		
+		$report = $main::report;
+		$simnetwork = $main::simnetwork;
+		$reportloadsdata = $main::reportloadsdata;
+		
+		#open ( OUTFILE, ">>$outfile" ) or die "Can't open $outfile: $!"; 
+		#open ( TOSHELL, ">>$toshell" ) or die "Can't open $toshell: $!";  
+		#$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
+			
+		#say TOSHELL "dump(\$repfile): " . dump($repfile); 
+		%dowhat = %main::dowhat;
 
-	@themereports = @main::themereports; #say "dumpTakechance(\@themereports): " . dump(@themereports);
-	@simtitles = @main::simtitles; #say "dumpTakechance(\@simtitles): " . dump(@simtitles);
-	@reporttitles = @main::reporttitles;
-	@simdata = @main::simdata;
-	@retrievedata = @main::retrievedata;
-	@keepcolumns = @main::keepcolumns;
-	@weights = @main::weights;
-	@weightsaim = @main::weightsaim;
-	@varthemes_report = @main::varthemes_report;
-	@varthemes_variations = @vmain::arthemes_variations;
-	@varthemes_steps = @main::varthemes_steps;
-	@rankdata = @main::rankdata; # CUT ZZZ
-	@rankcolumn = @main::rankcolumn;
-	@reporttempsdata = @main::reporttempsdata;
-	@reportcomfortdata = @main::reportcomfortdata;
-	@reportradiationenteringdata = @main::reportradiationenteringdata;
-	@reporttempsstats = @main::reporttempsstats;
-	@files_to_filter = @main::files_to_filter;
-	@filter_reports = @main::filter_reports;
-	@base_columns = @main::base_columns;
-	@maketabledata = @main::maketabledata;
-	@filter_columns = @main::filter_columns;
-	@pars_tocheck = @main::pars_tocheck; say $tee "BEGINNING dump(\@pars_tocheck): " . dump(@pars_tocheck);
+		@themereports = @main::themereports; #say "dumpTakechance(\@themereports): " . dump(@themereports);
+		@simtitles = @main::simtitles; #say "dumpTakechance(\@simtitles): " . dump(@simtitles);
+		@reporttitles = @main::reporttitles;
+		@simdata = @main::simdata;
+		@retrievedata = @main::retrievedata;
+		@keepcolumns = @main::keepcolumns;
+		@weights = @main::weights;
+		@weightsaim = @main::weightsaim;
+		@varthemes_report = @main::varthemes_report;
+		@varthemes_variations = @vmain::arthemes_variations;
+		@varthemes_steps = @main::varthemes_steps;
+		@rankdata = @main::rankdata; # CUT ZZZ
+		@rankcolumn = @main::rankcolumn;
+		@reporttempsdata = @main::reporttempsdata;
+		@reportcomfortdata = @main::reportcomfortdata;
+		@reportradiationenteringdata = @main::reportradiationenteringdata;
+		@reporttempsstats = @main::reporttempsstats;
+		@files_to_filter = @main::files_to_filter;
+		@filter_reports = @main::filter_reports;
+		@base_columns = @main::base_columns;
+		@maketabledata = @main::maketabledata;
+		@filter_columns = @main::filter_columns;
+		@pars_tocheck = @main::pars_tocheck; say $tee "BEGINNING dump(\@pars_tocheck): " . dump(@pars_tocheck);
+	}
+	else
+	{
+		my $file = $ARGV[0];
+		require $file;
+	}
+	
 	my %res;
 	my %lab;
 	my $countcase = 0;
@@ -799,14 +811,17 @@ Sim::OPT::Takechance.
 
 =head1 SYNOPSIS
 
-  use Sim::OPT;
-  opt;
+  use Sim::OPT::Takechance;
+  takechance your_configuration_file.pl;
 
 =head1 DESCRIPTION
 
 The "Sim::OPT::Takechance" module can produce efficient search structures for block coordinate descent given some initialization blocks (subspaces).  Its strategy is based on making a search path more efficient than the average randomly chosen ones, by selecting the search moves so that (a) the search wake is fresher than the average random ones and (b) the search moves are more novel than the average random ones. The rationale for the selection of the seach path is explained in detail (with algorithms) in my paper at the following web address: http://arxiv.org/abs/1407.5615 .
 
-The variables to be taken into account to describe the initialization blocks of a search are "@chanceseed" (representing the sequence of design variables at each search step) and "@caseseed" (representing the sequence of decompositions to be taken into account). How "@chanceseed" and "@caseseed" should be specified is more quickly described with a couple of examples. 
+"Sim::OPT::Takechance" can be called from Sim::OPT or directly from the command line (after issuing < re.pl > and < use Sim::OPT::Takechance >) with the command < takechance your_configuration_file.pl >.
+
+The variables to be taken into account to describe the initialization blocks of a search in the configuration file are "@chanceseed" (representing the sequence of design variables at each search step) and "@caseseed" (representing the sequence of decompositions to be taken into account). How "@chanceseed" and "@caseseed" should be specified is more quickly described with a couple of examples. 
+
 (In place of the "@chaceseed" and "@caseseed" variables, a "@sweepseed" variable can be specified, written with the same criteria of the variable "@sweeps" described in the documentation of the "Sim::OPT" module; but this possibility has not been throughly tested yet.)
 
 1) If brute force optimization is sought for a case composed by 4 parameters, the following settings should be specified: <@chanceseed = ([1, 2, 3, 4]);> and <@caseseed = ( [ [0, 4] ] ) ;>.
@@ -827,6 +842,8 @@ Other variables which are necessary to describe the operations to be performed b
 
 "@varinumbers" is a variable which is in common with the Sim::OPT module. It specifies the number of iterations to be taken into account for each parameter and each search case. For example, to specifiy that the parameters of a search structure (one case) involving 5 parameters (numbered from 1 to 5) are to be tried for 3 values (iterations) each, "@varinumbers" has to be set to "( { 1 => 3, 2 => 3, 3 => 3, 4 => 3, 5 => 3 } )".
 
+"@pars_tocheck" is a variable in which the parameter numbers to be taken into account in the creation of the added search path have to be listed. If it is not defined, all the available parameters are used.
+
 The response produced by the "Sim::OPT::Takechance" module will be written in a long-name file in the work folder: "./search_structure_that_may_be_adopted.txt".
 
 Gian Luca Brunetti, Politecnico di Milano
@@ -846,7 +863,7 @@ Gian Luca Brunetti, E<lt>gianluca.brunetti@polimi.itE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008-2014 by Gian Luca Brunetti and Politecnico di Milano. This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2 or later.
+Copyright (C) 2014-2015 by Gian Luca Brunetti and Politecnico di Milano. This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2 or later.
 
 
 =cut

@@ -1,5 +1,5 @@
 package Sim::OPT;
-# Copyright (C) 2008-2014 by Gian Luca Brunetti and Politecnico di Milano.
+# Copyright (C) 2008-2015 by Gian Luca Brunetti and Politecnico di Milano.
 # This is Sim::OPT, a program for detailed metadesign of buildings managing parametric explorations through the ESP-r building performance simulation platform and performing optimization by block coordinate descent.
 # This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 
@@ -38,6 +38,7 @@ use Sim::OPT::Retrieve;
 use Sim::OPT::Report;
 use Sim::OPT::Descend;
 use Sim::OPT::Takechance;
+use Sim::OPT::Parcoord3d;
 
 our @ISA = qw(Exporter); # our @adamkISA = qw(Exporter);
 #%EXPORT_TAGS = ( DEFAULT => [qw( &opt &prepare )]); # our %EXPORT_TAGS = ( 'all' => [ qw( ) ] );
@@ -60,7 +61,7 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 $target 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.40.04'; # our $VERSION = '';
+$VERSION = '0.40.5'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -1102,12 +1103,10 @@ sub opt
 			@sweeps = @sweeps_ ; # say "\@tree: " . Dumper(@tree);
 		}
 	}		
-	
-	#my  $itersnum = $varinumbers[$countcase]{$varinumber}; say "\$itersnum: $itersnum"; 
-	#say "dump(\@varinumbers), " . dump(@varinumbers); #say "dumpBEFORE(\@miditers), " . dump(@miditers);
-	
-	if ( $target eq "opt" )
+	elsif ( $target eq "opt" )
 	{
+		#my  $itersnum = $varinumbers[$countcase]{$varinumber}; say "\$itersnum: $itersnum"; 
+		#say "dump(\@varinumbers), " . dump(@varinumbers); #say "dumpBEFORE(\@miditers), " . dump(@miditers);
 	
 		calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS globsAL. ZZZ
 		
@@ -1123,6 +1122,10 @@ sub opt
 		
 		callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
 		miditers => \@mediumiters,  winneritems => \@winneritems } );
+	}
+	elsif ( ( $target eq "parcoord3d" ) and (@chancedata) and ( $dimchance ) ) 
+	{
+		Sim::OPT::Parcoord3d::parcoord3d;
 	}
 	
 	close(OUTFILE);
@@ -1168,9 +1171,11 @@ The structure of block searches is described through the variable "@sweeps". Eac
 
 The number of iterations to be taken into account for each parameter for each case is specified in the "@varinumbers" variable. To specifiy that the parameters of the last example are to be tried for three values (iterations) each, @varinumbers has to be set to ( { 1 => 3, 2 => 3, 3 => 3, 4 => 3, 5 => 3, 6 => 3 } ).
 
-Some functionalities of OPT are not specific to the ESP-r platform. One of those is the functionality contanined in the "Takechance.pm" module. This module produces efficient search structures for block coordinate descent given some initialization blocks.
+Some functionalities of OPT are not specific to the ESP-r platform. Those functionalities are mainly contanined in the "Sim::OPT::Takechance" and "Sim::OPT::Parcoord3d" modules. 
 
-A section of the configuration file for "Sim::OPT" is dedicated the working of the "Sim::OPT::Takechance" module. The variables "@caseseed" and "@chanceseed" specified in the  "Sim::OPT::Takechance" section of that file can be specified in place of the variable "@sweeps" for the Sim::OPT module (even if the "Sim::OPT::Takechance" is not going to be used), but this possibility is not well tested yet.
+The "Sim::OPT::Takechance" module produces efficient search structures for block coordinate descent given some initialization blocks. A section of the configuration file for "Sim::OPT" is dedicated the working of the "Sim::OPT::Takechance" module.
+
+The "Sim::OPT::Parcoord3d module receiving as input the data for a bi-dimensional parallel coordinate plot in a cvs file produces as output an Autolisp file that can be used from Autocad or an Intellicad-derived 3D CAD program to obtain a 3D parallel coordinate plot (that can subsequently saved in dwg, dxf or other suitable format). A section of the configuration file for "Sim::OPT" is dedicated the working of the "Sim::OPT::Parcoord3d" module.
 
 OPT is a program I have begun to write as a side project in 2008 with no funding. It is the first real program I attempted to write. From time to time I add some parts to it.
 
@@ -1191,7 +1196,7 @@ Gian Luca Brunetti, E<lt>gianluca.brunetti@polimi.itE<gt>
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2008-2014 by Gian Luca Brunetti and Politecnico di Milano. This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2 or later.
+Copyright (C) 2008-2015 by Gian Luca Brunetti and Politecnico di Milano. This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2 or later.
 
 
 =cut
