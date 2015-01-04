@@ -60,7 +60,7 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 $target 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.40.03'; # our $VERSION = '';
+$VERSION = '0.40.04'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
