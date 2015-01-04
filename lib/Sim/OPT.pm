@@ -59,7 +59,7 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 @sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee @pars_tocheck
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.40.0'; # our $VERSION = '';
+$VERSION = '0.40.01'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -1173,7 +1173,7 @@ The structure of block searches is described through the variable "@sweeps". Eac
 
 The number of iterations to be taken into account for each parameter for each case is specified in the "@varinumbers" variable. To specifiy that the parameters of the last example are to be tried for three values (iterations) each, @varinumbers has to be set to ( { 1 => 3, 2 => 3, 3 => 3, 4 => 3, 5 => 3, 6 => 3 } ).
 
-Some functionalities of OPT are not specific to the ESP-r platform. One of those is the functionality contanined in the "Takechance.pm" module. This module produces an efficient search structures for block coordinate descent given some initialization blocks. The rationale for the selection of the seach path is explained in the paper at the following web address: http://arxiv.org/abs/1407.5615 .
+Some functionalities of OPT are not specific to the ESP-r platform. One of those is the functionality contanined in the "Takechance.pm" module. This module produces efficient search structures for block coordinate descent given some initialization blocks. The rationale for the selection of the seach path is explained in the paper at the following web address: http://arxiv.org/abs/1407.5615 .
 
 OPT is a program I have begun to write as a side project in 2008 with no funding. It is the first real program I attempted to write. From time to time I add some parts to it. The parts of it that have been written earlier or later are the ones that are coded in the strangest manner.
 
