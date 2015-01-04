@@ -61,7 +61,7 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 $target 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.40.5'; # our $VERSION = '';
+$VERSION = '0.40.6'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -1173,9 +1173,9 @@ The number of iterations to be taken into account for each parameter for each ca
 
 Some functionalities of OPT are not specific to the ESP-r platform. Those functionalities are mainly contanined in the "Sim::OPT::Takechance" and "Sim::OPT::Parcoord3d" modules. 
 
-The "Sim::OPT::Takechance" module produces efficient search structures for block coordinate descent given some initialization blocks. A section of the configuration file for "Sim::OPT" is dedicated the working of the "Sim::OPT::Takechance" module.
+The "Sim::OPT::Takechance" module produces efficient search structures for block coordinate descent given some initialization blocks. A section of the configuration file for "Sim::OPT" is dedicated to the "Sim::OPT::Takechance" module.
 
-The "Sim::OPT::Parcoord3d module receiving as input the data for a bi-dimensional parallel coordinate plot in a cvs file produces as output an Autolisp file that can be used from Autocad or an Intellicad-derived 3D CAD program to obtain a 3D parallel coordinate plot (that can subsequently saved in dwg, dxf or other suitable format). A section of the configuration file for "Sim::OPT" is dedicated the working of the "Sim::OPT::Parcoord3d" module.
+The "Sim::OPT::Parcoord3d module receiving as input the data for a bi-dimensional parallel coordinate plot in a cvs file produces as output an Autolisp file that can be used from Autocad or an Intellicad-derived 3D CAD program to obtain a 3D parallel coordinate plot (that can subsequently saved in dwg, dxf or other suitable format). A section of the configuration file for "Sim::OPT" is dedicated to the "Sim::OPT::Parcoord3d" module.
 
 OPT is a program I have begun to write as a side project in 2008 with no funding. It is the first real program I attempted to write. From time to time I add some parts to it.
 
