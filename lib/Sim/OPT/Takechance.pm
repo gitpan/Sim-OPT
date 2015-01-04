@@ -4,6 +4,7 @@ package Sim::OPT::Takechance;
 # This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 
 use v5.14;
+# use v5.20;
 use Exporter;
 use parent 'Exporter'; # imports and subclasses Exporter
 
@@ -17,18 +18,16 @@ use Statistics::Basic qw(:all);
 use IO::Tee;
 use Set::Intersection;
 use List::Compare;
-use File::Tee qw(tee);
 use Data::Dumper;
 #$Data::Dumper::Indent = 0;
 #$Data::Dumper::Useqq  = 1;
 #$Data::Dumper::Terse  = 1;
 use Data::Dump qw(dump);
-#use experimental 'postderef';
-#use Sub::Signatures;
 use feature 'say';    
-
-# use feature qw(postderef); 
+#use feature qw(postderef);
 #no warnings qw(experimental::postderef);
+#use Sub::Signatures;
+#no warnings qw(Sub::Signatures); 
 #no strict 'refs';
 no strict; 
 no warnings;
@@ -45,7 +44,7 @@ our @ISA = qw(Exporter); # our @adamkISA = qw(Exporter);
 #@EXPORT_OK   = qw(); # our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 
 @EXPORT = qw( takechance ); # our @EXPORT = qw( );
-$VERSION = '0.40.0';
+$VERSION = '0.40.3';
 
 #########################################################################################
 # HERE FOLLOWS THE CONTENT OF "Takechance.pm", Sim::OPT::Takechance
@@ -75,6 +74,7 @@ sub takechance
 	$preventsim = $main::preventsim;
 	$fileconfig = $main::fileconfig; #say TOSHELL "dumpINDESCEND(\$fileconfig): " . dump($fileconfig); # NOW GLOBAL. TO MAKE IT PRIVATE, FIX PASSING OF PARAMETERS IN CONTRAINTS PROPAGATION SECONDARY SUBROUTINES
 	$outfile = $main::outfile;
+	$target = $main::target;
 	
 	$report = $main::report;
 	$simnetwork = $main::simnetwork;
@@ -791,6 +791,61 @@ sub takechance
 	return (\@sweeps_, \@caseseed_, \@chanceseed_ );
 }
 
-
-
 1;
+
+=head1 NAME
+
+Sim::OPT::Takechance.
+
+=head1 SYNOPSIS
+
+  use Sim::OPT;
+  opt;
+
+=head1 DESCRIPTION
+
+The "Sim::OPT::Takechance" module can produce efficient search structures for block coordinate descent given some initialization blocks (subspaces).  Its strategy is based on making a search path more efficient than a randomly chosen one, by selecting the search moves so that the search wake is (a) fresher than the average random ones and (b) the search moves are more novel than the average random ones. The rationale for the selection of the seach path is explained in detail (with algorithms) in my paper at the following web address: http://arxiv.org/abs/1407.5615 .
+
+The variables to be taken into account to describe the initialization blocks of a block search are "@chanceseed" - representing the sequence of design variables at each search step - and "@caseseed" - representing the sequence of decompositions to be taken into account. How "@chanceseed" and "@caseseed" should be specified is more quickly described with a couple of examples. (In place of the "@chaceseed" and "@caseseed" variables, a variable "@sweepseed" can be specified, written with the same criteria of the variable "@sweeps" described in the documentation of the "Sim::OPT" module; but this possibility has yet to been throughly tested.)
+
+1) If brute force optimization is sought for a case composed by 4 parameters, the following settings should be specified: <@chanceseed = ([1, 2, 3, 4]);> and <@caseseed = ( [ [0, 4] ] ) ;>.
+
+2) If optimization is sought for two cases (brute force, again, for instance, with a different and overlapping set of 5 parameters for the two of them), the two sets of parameters in questions has to be specificied as sublists of the general parameter list: <@chanceseed = ([1, 2, 3, 4, 6, 7, 8], [1, 2, 3, 4, 6, 7, 8]);> and <@caseseed = ( [ [0, 5] , [3, 8] ] ) ;>.
+
+3) If a block search is sought on the basis of 5 parameters, with 4 overlapping active blocks composed by 3 parameters each having the leftmost parameters in position 0, 1, 2 and 4, and two search sweeps are to be performed, with the second sweep having the parameters in inverted order and the leftmost parameters in position 2, 4, 3 and 1, the following settings should be specified: <@chanceseed = ( [ [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1], [5, 4, 3, 2, 1]] );> and <@caseseed = ( [ [0, 3], [1, 3], [2, 3], [4, 3] ], [2, 3], [4, 3], [3, 3], [1, 3] ] );>.
+
+4) By playing with the order of the parameters' sequence, blocks with non-contiguous parameters can be specified. Example: <@chanceseed = ( [ [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [5, 2, 4, 1, 3], [2, 4, 1, 5, 2], [5, 1, 4, 2, 3], [5, 1, 4, 2, 3] ] );> and <@caseseed = ( [ [0, 3], [1, 3], [2, 3], [4, 3] ], [2, 3], [4, 3], [3, 3], [1, 3] ] );>.
+
+5) The initialization blocks can be of different size. Example: <@chanceseed = ( [ [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [1, 2, 3, 4, 5], [5, 2, 4, 1, 3], [2, 4, 1, 5, 2], [5, 1, 4, 2, 3], [5, 1, 4, 2, 3] ] );> and <@caseseed = ( [ [0, 3], [1, 3], [2, 3], [4, 3] ], [2, 2], [4, 2], [3, 4], [1, 4] ] );>.
+
+Other variables which are necessary to describe the operations to be performed by the "Sim::OPT::Takechance" module are "@chancedata", "$dimchance", "@pars_tocheck" and "@varinumbers".
+
+"@chancedata" is composed by references to arrays (one for each search path to be taken into account, as in all the other cases), each of which composed by three values: the first specifying the length (how many variables) of the blocks to be added; the second specifying the length of the overlap between blocks; the third specifying the number of sweeps to be added. For example, the setting < @chancedata = ([4, 3, 2]); > implies that the blocks to be added to the search path  are each 4 parameters long, have each an overlap of 3 parameters with the immediately preceding block, and are 2 in number - that is, 2 sweeps (blocks, seach blocks, subspaces) have to be added to the search path.
+
+"$dimchance" tells the program among how many random samples the blocks to be added to the search path have to be choses. The higher the value, the most efficient the search structure will turn out to be, the higher the required computation time will be. High values are likely to be required by large search structures.
+
+"@varinumbers" is a variable which is in common with the Sim::OPT module. It specifies the number of iterations to be taken into account for each parameter and each search case. For example, to specifiy that the parameters of a search structure involving 5 parameters (numbered from 1 to 5) are to be tried for 3 values (iterations) each, "@varinumbers" has to be set to "( { 1 => 3, 2 => 3, 3 => 3, 4 => 3, 5 => 3 } )".
+
+The response of the "Sim::OPT::Takechance" program will be written in a long-name file in the work folder: "./search_structure_that_may_be_adopted.txt".
+
+Gian Luca Brunetti, Politecnico di Milano
+gianluca.brunetti@polimi.it
+
+=head2 EXPORT
+
+"takechance".
+
+=head1 SEE ALSO
+
+The available examples are collected in the "example" directory in this distribution.
+
+=head1 AUTHOR
+
+Gian Luca Brunetti, E<lt>gianluca.brunetti@polimi.itE<gt>
+
+=head1 COPYRIGHT AND LICENSE
+
+Copyright (C) 2008-2014 by Gian Luca Brunetti and Politecnico di Milano. This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2 or later.
+
+
+=cut

@@ -4,6 +4,7 @@ package Sim::OPT;
 # This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 
 use v5.14;
+# use v5.20;
 use Exporter;
 use parent 'Exporter'; # imports and subclasses Exporter
 
@@ -22,12 +23,11 @@ use Data::Dumper;
 #$Data::Dumper::Useqq  = 1;
 #$Data::Dumper::Terse  = 1;
 use Data::Dump qw(dump);
-#use experimental 'postderef';
-#use Sub::Signatures;
-use feature 'say';    
-
-# use feature qw(postderef); 
+use feature 'say';   
+#use feature qw(postderef);
 #no warnings qw(experimental::postderef);
+#use Sub::Signatures;
+#no warnings qw(Sub::Signatures); 
 #no strict 'refs';
 no strict; 
 no warnings;
@@ -56,10 +56,11 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 @rankdata @rankcolumn @reporttempsdata @reportcomfortdata @reportradiationenteringdata 
 @reporttempsstats @files_to_filter @filter_reports @base_columns @maketabledata @filter_columns 
 @files_to_filter @filter_reports @base_columns @maketabledata @filter_columns %vals 
-@sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee @pars_tocheck
+@sweeps @mediumiters @varinumbers @caseseed @chanceseed @chancedata $dimchance $tee @pars_tocheck 
+$target 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.40.01'; # our $VERSION = '';
+$VERSION = '0.40.03'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -1083,52 +1084,46 @@ sub opt
 	#say $tee "Dumper(\$dimchance): " . Dumper($dimchance) ; # GLOBAL ZZZ
 	my (@sweeps_);
 	
-	if ( ( $generatechance eq "y" ) and (@chancedata) and ( $dimchance ) ) 
+	if ( ( $target eq "takechance" ) and (@chancedata) and ( $dimchance ) ) 
 	{
 		my @obt = Sim::OPT::Takechance::takechance( \@caseseed, \@chanceseed, \@chancedata, $dimchance ); say $tee "PASSED: \@sweeps: " . dump(@sweeps);
 		@sweeps_ = @{ $obt[0] };
 		@caseseed_ = @{ $obt[1] };
 		@chanceseed_ = @{ $obt[2] };
-		open (MESSAGE, ">./this_is_the_search_structure_that_may_be_adopted.txt");
+		open (MESSAGE, ">./search_structure_that_may_be_adopted.txt");
 		say MESSAGE "\@sweeps_ " . Dumper(@sweeps_);
 		say MESSAGE "\THESE VALUES OF \@sweeps IS EQUIVALENT TO THE FOLLOWING VALUES OF \@caseseed AND \@chanceseed: ";
 		say MESSAGE "\n\@caseseed " . Dumper(@caseseed_);
 		say MESSAGE "\n\@chanceseed_ " . Dumper(@chanceseed_);
 		close MESSAGE;
-	}
 		
-	if ( 1 == 2)############# ERASE
-	{########################
-	#########################
-	
-	if ( not (@sweeps) ) # CONSERVATIVE CONDITION. IT MAY BE CHANCED. ZZZ
-	{
-		@sweeps = @sweeps_ ; # say "\@tree: " . Dumper(@tree);
+		if ( not (@sweeps) ) # CONSERVATIVE CONDITION. IT MAY BE CHANCED. ZZZ
+		{
+			@sweeps = @sweeps_ ; # say "\@tree: " . Dumper(@tree);
+		}
 	}		
 	
 	#my  $itersnum = $varinumbers[$countcase]{$varinumber}; say "\$itersnum: $itersnum"; 
 	#say "dump(\@varinumbers), " . dump(@varinumbers); #say "dumpBEFORE(\@miditers), " . dump(@miditers);
 	
+	if ( $target eq "opt" )
+	{
 	
-	calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS globsAL. ZZZ
+		calcoverlaps(@sweeps); # PRODUCES @calcoverlaps WHICH IS globsAL. ZZZ
 		
-	@mediumiters = calcmediumiters(@varinumbers); say $tee "BEGINNING dump!(\@mediumiters), " . dump(@mediumiters); # globsALS. ZZZ
-	#$itersnum = getitersnum($countcase, $varinumber, @varinumbers); #say "\$itersnum OUT = $itersnum";
+		@mediumiters = calcmediumiters(@varinumbers); say $tee "BEGINNING dump!(\@mediumiters), " . dump(@mediumiters); # globsALS. ZZZ
+		#$itersnum = getitersnum($countcase, $varinumber, @varinumbers); #say "\$itersnum OUT = $itersnum";
 		
-	@rootnames = definerootcases(\@sweeps, \@mediumiters); say $tee "BEGINNING \@rootnames " . dump(@rootnames); 
+		@rootnames = definerootcases(\@sweeps, \@mediumiters); say $tee "BEGINNING \@rootnames " . dump(@rootnames); 
 		
-	my $countcase = 0;
-	my $countblock = 0;
+		my $countcase = 0;
+		my $countblock = 0;
 
-	my @winneritems = populatewinners(\@rootnames, $countcase, $countblock); say $tee "BEGINNING \@winneritems " . dump(@winneritems);
+		my @winneritems = populatewinners(\@rootnames, $countcase, $countblock); say $tee "BEGINNING \@winneritems " . dump(@winneritems);
 		
-	callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
-	miditers => \@mediumiters,  winneritems => \@winneritems } );
-	
-	############################
-	############################
-	}########################### ERASE
-	
+		callcase( { countcase => $countcase, rootnames => \@rootnames, countblock => $countblock, 
+		miditers => \@mediumiters,  winneritems => \@winneritems } );
+	}
 	
 	close(OUTFILE);
 	close(TOSHELL);
@@ -1143,7 +1138,7 @@ __END__
 
 =head1 NAME
 
-Sim-OPT.
+Sim::OPT.
 
 =head1 SYNOPSIS
 
@@ -1173,9 +1168,11 @@ The structure of block searches is described through the variable "@sweeps". Eac
 
 The number of iterations to be taken into account for each parameter for each case is specified in the "@varinumbers" variable. To specifiy that the parameters of the last example are to be tried for three values (iterations) each, @varinumbers has to be set to ( { 1 => 3, 2 => 3, 3 => 3, 4 => 3, 5 => 3, 6 => 3 } ).
 
-Some functionalities of OPT are not specific to the ESP-r platform. One of those is the functionality contanined in the "Takechance.pm" module. This module produces efficient search structures for block coordinate descent given some initialization blocks. The rationale for the selection of the seach path is explained in the paper at the following web address: http://arxiv.org/abs/1407.5615 .
+Some functionalities of OPT are not specific to the ESP-r platform. One of those is the functionality contanined in the "Takechance.pm" module. This module produces efficient search structures for block coordinate descent given some initialization blocks.
 
-OPT is a program I have begun to write as a side project in 2008 with no funding. It is the first real program I attempted to write. From time to time I add some parts to it. The parts of it that have been written earlier or later are the ones that are coded in the strangest manner.
+A section of the configuration file for "Sim::OPT" is dedicated the working of the "Sim::OPT::Takechance" module. The variables "@caseseed" and "@chanceseed" specified in the  "Sim::OPT::Takechance" section of that file can be specified in place of the variable "@sweeps" for the Sim::OPT module (even if the "Sim::OPT::Takechance" is not going to be used), but this possibility is not well tested yet.
+
+OPT is a program I have begun to write as a side project in 2008 with no funding. It is the first real program I attempted to write. From time to time I add some parts to it.
 
 Gian Luca Brunetti, Politecnico di Milano
 gianluca.brunetti@polimi.it
@@ -1186,7 +1183,7 @@ gianluca.brunetti@polimi.it
 
 =head1 SEE ALSO
 
-The available examples are collected in the "example" directory in this distribution and at the figshare address specified above.
+The available examples are collected in the "example" directory in this distribution.
 
 =head1 AUTHOR
 

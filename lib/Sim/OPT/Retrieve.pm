@@ -4,6 +4,7 @@ package Sim::OPT::Retrieve;
 # This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 
 use v5.14;
+# use v5.20;
 use Exporter;
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 use Math::Trig;
@@ -26,8 +27,12 @@ use Data::Dumper;
 #$Data::Dumper::Useqq  = 1;
 #$Data::Dumper::Terse  = 1;
 use Data::Dump qw(dump);
-#use Sub::Signatures;
 use feature 'say';
+#use feature qw(postderef);
+#no warnings qw(experimental::postderef);
+#use Sub::Signatures;
+#no warnings qw(Sub::Signatures); 
+#no strict 'refs';
 no strict; 
 no warnings;
 

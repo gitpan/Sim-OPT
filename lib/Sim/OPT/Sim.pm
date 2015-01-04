@@ -4,6 +4,7 @@ package Sim::OPT::Sim;
 # This is free software.  You can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, version 2.
 
 use v5.14;
+# use v5.20;
 use Exporter;
 use vars qw( $VERSION @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS );
 use Math::Trig;
@@ -20,14 +21,18 @@ use Data::Dumper;
 #$Data::Dumper::Useqq  = 1;
 #$Data::Dumper::Terse  = 1;
 use Data::Dump qw(dump);
+use feature 'say';
+#use feature qw(postderef);
+#no warnings qw(experimental::postderef);
 #use Sub::Signatures;
+#no warnings qw(Sub::Signatures); 
+#no strict 'refs';
 use Sim::OPT;
 use Sim::OPT::Morph;
 use Sim::OPT::Retrieve;
 use Sim::OPT::Report;
 use Sim::OPT::Descend;
 use Sim::OPT::Takechance;
-use feature 'say';
 no strict; 
 no warnings;
 
