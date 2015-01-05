@@ -61,7 +61,7 @@ $simnetwork @reportloadsdata @themereports @simtitles @reporttitles @simdata @re
 $target 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.40.6'; # our $VERSION = '';
+$VERSION = '0.40.7'; # our $VERSION = '';
 $ABSTRACT = 'Sim::OPT it a tool for detailed metadesign. It manages parametric explorations through the ESP-r building performance simulation platform and performs optimization by block coordinate descent.';
 
 #################################################################################
@@ -202,25 +202,23 @@ sub count_variables # IT COUNTS THE FLATTENED VARIABLES
 
 sub fromopt_tosweep # IT CONVERTS A TREE BLOCK SEARCH FORMAT IN THE ORIGINAL OPT'S BLOCKS SEARCH FORMAT.
 {
-	my %thishash = @_; #say "dump(%thishash): " . dump(%thishash);
-	my $casegroupref = $thishash{casegroup};
-	my @casegroup = @$casegroupref; #say "dump(\@casegroup): " . dump(@casegroup);
-	my $chancegroupref = $thishash{chancegroup};
-	my @chancegroup = @$chancegroupref; #say "dump(\@chancegroup): " . dump(@chancegroup);
+	my %thishash = %{ $_[0] }; #say "dump(%thishash): " . dump(%thishash);
+	my @casegroup = @{ $thishash{casegroup} } ; #say "dump(\@casegroup): " . dump(@casegroup);
+	my @chancegroup = @{ $thishash{chancegroup} }; #say "dump(\@chancegroup): " . dump(@chancegroup);
+	my @sweeps;
 	my $countcase = 0;
 	foreach my $case (@casegroup)
 	{
-		my @blocks = @$case; #say "dump(\@blocks): " . dump(@blocks);
-		my $chancesref = $chancegroup[$countcase];
-		my @chances = @$chancesref; #say "dump(\@chances): " . dump(@chances);
+		my @blockrefs = @$case; #say "dump(\@blocks): " . dump(@blocks);
+		my @chancerefs = @{ $chancegroup[$countcase] }; #say "dump(\@chancerefs): " . dump(@chancerefs);
+		my @sweepblocks;
 		my $countblock = 0;
-		foreach my $elt (@blocks)
+		foreach my $elt (@blockrefs)
 		{
 			my @blockelts = @$elt; #say "dump(\@blockelts): " . dump(@blockelts);
 			my $attachpoint = $blockelts[0]; #say "attachpoint: $attachpoint";
 			my $blocklength = $blockelts[1]; #say "blocklength: $blocklength";
-			my $chancesref = $chances[$countblock]; # say "dump(\$chancesref): " . dump($chancesref);
-			my @chances = @$chancesref; #say "dump(\@chances): " . dump(@chances);
+			my @chances = @{ $chancerefs[$countblock] }; # say "dump(\@chancerefs): " . dump(@chancerefs);
 			my @sweepblock = @chances[ $attachpoint .. ($attachpoint + $blocklength - 1) ];	#say "dump(\@sweepblock): " . dump(@sweepblock);
 			push (@sweepblocks, [@sweepblock]);
 			$countblock++;
@@ -228,7 +226,7 @@ sub fromopt_tosweep # IT CONVERTS A TREE BLOCK SEARCH FORMAT IN THE ORIGINAL OPT
 		push (@sweeps, [ @sweepblocks ] );
 		$countcase++;
 	}
-	# IT HAS TO BE CALLED THIS WAY: fromopt_tosweep( casegroup => \@caseseed, chancegroup => \@chanceseed );
+	# IT HAS TO BE CALLED THIS WAY: fromopt_tosweep( { casegroup => \@caseseed, chancegroup => \@chanceseed } );
 	return (@sweeps);
 }
 

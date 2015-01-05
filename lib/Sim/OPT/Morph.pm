@@ -51,7 +51,7 @@ get_obstructions write_temporary pin_obstructions apply_pin_obstructions vary_ne
 apply_component_changes constrain_net read_net_constraints propagate_constraints 
 ); # our @EXPORT = qw( );
 
-$VERSION = '0.40.0'; # our $VERSION = '';
+$VERSION = '0.40.7'; # our $VERSION = '';
 
 
 ##############################################################################
@@ -461,11 +461,16 @@ sub morph
 								($to, $stepsvar, $countzone, 
 								$countstep, \@applytype, \@constrain_obstructions, $to_do, $countvar, $fileconfig ); 
 							}
-							#if ( $pin_obstructions[$countzone][0] eq "y" ) 
-							#{ 
-							#	pin_obstructions ($to, $stepsvar, $countzone, 
-							#	$countstep, \@applytype, $zone_letter, \@pin_obstructions, $countvar, $fileconfig ); 
-							#}
+							if ( $pin_obstructions[$countzone][0] eq "y" ) 
+							{ 
+								get_obstructions ($to, $stepsvar, $countzone, 
+								$countstep, \@applytype, \@get_obstructions, $countvar, $fileconfig ); 
+							}
+							if ( $pin_obstructions[$countzone][0] eq "y" ) 
+							{ 
+								pin_obstructions ($to, $stepsvar, $countzone, 
+								$countstep, \@applytype, \@pin_obstructions, $countvar, $fileconfig ); 
+							}
 							if ($recalculateish eq "y") 
 							{ 
 								&recalculateish
@@ -2444,7 +2449,7 @@ $printthis";
 
 
 ##############################################################################										
-sub daylightcalc # IT WORKS ONLY IF THE RAD DIRECTORY IS EMPTY
+sub daylightcalc # IT WORKS ONLY IF THE "RAD" DIRECTORY IS EMPTY
 {
 	my $to = shift;
 	my $stepsvar = shift; 
@@ -2532,7 +2537,7 @@ $printthis";
 	print DFFILE "$dfaverage\n";
 	close DFFILE;
 
-} # END SUB dayligjtcalc 
+} # END SUB daylightcalc 
 ##############################################################################
 
 
@@ -2714,7 +2719,7 @@ sub change_climate ### THIS SIMPLE SCRIPT HAS TO BE DEBUGGED. WHY DOES IT BLOCK 
 	my $climate = $climates[$countstep-1];
 
 	my $printthis =
-"prj -file $to/cfg/$fileconfig -mode script<<ZZZ
+"prj -file $to/cfg/$fileconfig -mode script<<YYY
 
 b
 a
@@ -2727,7 +2732,7 @@ y
 n
 -
 -
-ZZZ
+YYY
 \n
 ";
 	if ($exeonfiles eq "y")
@@ -3635,28 +3640,9 @@ sub constrain_geometry # IT APPLIES CONSTRAINTS TO ZONE GEOMETRY
 	my $to_do = shift;
 	my $countvar = shift;
 	my $fileconfig = shift;
+	my @vertexletters;
 	
 	say "Propagating constraints on geometry for case " . ($countcase + 1) . ", block " . ($countblock + 1) . ", parameter $countvar at iteration $countstep. Instance $countinstance.";
-
-	# print $_outfile_ "YOUCALLED!\n\n";
-	# print $_outfile_ "HERE: \@constrain_geometry:" . Dumper(@constrain_geometry) . "\n\n";
-	if ($longmenu eq "y")
-	{																
-		@vertexletters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", 
-		"o", "p", "0\nb\nq", "0\nb\nr", "0\nb\ns", "0\nb\nt", "0\nb\nu", "0\nb\nv", "0\nb\nw", 
-		"0\nb\nx", "0\nb\ny", "0\nb\nz", "0\nb\na", "0\nb\nb","0\nb\nc","0\nb\nd","0\nb\ne",
-		"0\nb\n0\nb\nf","0\nb\n0\nb\ng","0\nb\n0\nb\nh","0\nb\n0\nb\ni","0\nb\n0\nb\nj",
-		"0\nb\n0\nb\nk","0\nb\n0\nb\nl","0\nb\n0\nb\nm","0\nb\n0\nb\nn","0\nb\n0\nb\no",
-		"0\nb\n0\nb\np","0\nb\n0\nb\nq","0\nb\n0\nb\nr","0\nb\n0\nb\ns","0\nb\n0\nb\nt");
-	}
-	else
-	{
-		@vertexletters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
-		"n", "o", "p", "0\nq", "0\nr", "0\ns", "0\nt", "0\nu", "0\nv", "0\nw", "0\nx", 
-		"0\ny", "0\nz", "0\na", "0\nb","0\n0\nc","0\n0\nd","0\n0\ne","0\n0\nf","0\n0\ng",
-		"0\n0\nh","0\n0\ni","0\n0\nj","0\n0\nk","0\n0\nl","0\n0\nm","0\n0\nn","0\n0\no",
-		"0\n0\np","0\n0\nq","0\n0\nr","0\n0\ns","0\n0\nt");
-	}
 
 	foreach my $elm (@constrain_geometry)
 	{
@@ -3671,10 +3657,36 @@ sub constrain_geometry # IT APPLIES CONSTRAINTS TO ZONE GEOMETRY
 		my $targetaddress = "$to$targetfile";
 		my @work_letters = @{$group[5]}; 
 		my $longmenus = $group[6]; 
+		my @sentvertexletters = @{ $group[7] };
 
 		# print $_outfile_ "VARIABLES: \$to:$to, \$fileconfig:$fileconfig, \$stepsvar:$stepsvar, \$countzone:$countzone, \$countstep:$countstep, \$exeonfiles:$exeonfiles, 
 		# \$zone_letter:$zone_letter, \$sourceaddress:$sourceaddress, \$targetaddress:$targetaddress, \$longmenus:$longmenus, \@work_letters, " . Dumper(@work_letters) . "\n\n";
-
+		
+		# print $_outfile_ "YOUCALLED!\n\n";
+		# print $_outfile_ "HERE: \@constrain_geometry:" . Dumper(@constrain_geometry) . "\n\n";
+		
+		if (@sentvertexletters) { @vertexletters = @sentvertexletters; }
+		else 
+		{
+			if ($longmenu eq "y")
+			{																
+				@vertexletters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", 
+				"o", "p", "0\nb\nq", "0\nb\nr", "0\nb\ns", "0\nb\nt", "0\nb\nu", "0\nb\nv", "0\nb\nw", 
+				"0\nb\nx", "0\nb\ny", "0\nb\nz", "0\nb\na", "0\nb\nb","0\nb\nc","0\nb\nd","0\nb\ne",
+				"0\nb\n0\nb\nf","0\nb\n0\nb\ng","0\nb\n0\nb\nh","0\nb\n0\nb\ni","0\nb\n0\nb\nj",
+				"0\nb\n0\nb\nk","0\nb\n0\nb\nl","0\nb\n0\nb\nm","0\nb\n0\nb\nn","0\nb\n0\nb\no",
+				"0\nb\n0\nb\np","0\nb\n0\nb\nq","0\nb\n0\nb\nr","0\nb\n0\nb\ns","0\nb\n0\nb\nt");
+			}
+			else
+			{
+				@vertexletters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", 
+				"n", "o", "p", "0\nq", "0\nr", "0\ns", "0\nt", "0\nu", "0\nv", "0\nw", "0\nx", 
+				"0\ny", "0\nz", "0\na", "0\nb","0\n0\nc","0\n0\nd","0\n0\ne","0\n0\nf","0\n0\ng",
+				"0\n0\nh","0\n0\ni","0\n0\nj","0\n0\nk","0\n0\nl","0\n0\nm","0\n0\nn","0\n0\no",
+				"0\n0\np","0\n0\nq","0\n0\nr","0\n0\ns","0\n0\nt");
+			}
+		}
+	
 		unless ($to_do eq "justwrite")
 		{
 			checkfile($sourceaddress, $targetaddress);
@@ -3914,6 +3926,7 @@ sub vary_controls
 	my $configfile = $group[2];
 	my @buildbulk = @{$group[3]};
 	my @flowbulk = @{$group[4]};
+	
 	my $countbuild = 0;
 	my $countflow = 0;
 
@@ -4160,6 +4173,9 @@ sub constrain_controls
 	my $sourcefile = $group[2];
 	my $targetfile = $group[3];
 	my $configfile = $group[4];
+	my @sentletters = @{ $group[5] };
+	my @sentperiod_letters = @{ $group[6] };
+	
 	my $sourceaddress = "$to$sourcefile";
 	my $targetaddress = "$to$targetfile";
 	my $configaddress = "$to$configfile";
@@ -4171,8 +4187,21 @@ sub constrain_controls
 	my $semaphore_setpoint;
 	my $countline = 0;
 	my $doline;
-	my @letters = ("e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "z"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
-	my @period_letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
+	
+	my @letters;
+	if (@sentletters) { @letters = @sentletters; }
+	else 
+	{
+		@letters = ("e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "z"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
+	}
+	
+	my @period_letters;
+	if (@sentperiod_letters) { @period_letters = @sentperiod_letters; }
+	else 
+	{
+		@period_letters = ("a", "b", "c", "d", "e", "f", "g", "h", "i", "l", "m", "n", "o", "p", "q", "r", "s"); # CHECK IF THE LAST LETTERS ARE CORRECT, ZZZ
+	}
+	
 	my $loop_hour = 2; # NOTE: THE FOLLOWING VARIABLE NAMES ARE SHADOWED IN THE FOREACH LOOP BELOW, 
 	# BUT ARE THE ONES USED IN THE OPT CONSTRAINTS FILES.
 	my $max_heating_power = 3;
@@ -4512,8 +4541,6 @@ YYY
 } # END SUB apply_loopcontrol_changes();
 
 
-
-
 sub apply_flowcontrol_changes
 {	# THIS HAS TO BE CALLED WITH: apply_flowcontrol_changes($exeonfiles, \@new_flowcontrols);
 	# # THIS APPLIES CHANGES TO NETS IN CONTROLS
@@ -4571,6 +4598,7 @@ YYY
 ##############################################################################
 ##############################################################################
 
+
 ##############################################################################
 ##############################################################################
 # BEGINNING OF SECTION DEDICATED TO FUNCTIONS FOR CONSTRAINING OBSTRUCTIONS	
@@ -4609,11 +4637,12 @@ sub constrain_obstructions # IT APPLIES CONSTRAINTS TO OBSTRUCTIONS
 		my $configaddress = "$to$configfile";
 		my @work_letters = @{$group[5]}; 
 		my $actonmaterials = $group[6];
+		my @sentobs_letters = @{$group[7]}; 
 	
 		unless ($to_do eq "justwrite")
 		{
 			checkfile($sourceaddress, $targetaddress);
-			read_obstructions($to, $sourceaddress, $targetaddress, $configaddress, \@work_letters, $actonmaterials);
+			read_obstructions($to, $sourceaddress, $targetaddress, $configaddress, \@work_letters, $actonmaterials, $countvar, \@sentobs_letters);
 			read_obs_constraints($to, $stepsvar, $countzone, $countstep, $configaddress, $actonmaterials, \@tempobs, $countvar, $fileconfig  ); # IT WORKS ON THE VARIABLE @obs, WHICH IS globsAL.
 		}
 
@@ -4628,7 +4657,7 @@ sub constrain_obstructions # IT APPLIES CONSTRAINTS TO OBSTRUCTIONS
 sub read_obstructions
 {
 	# THIS READS GEOMETRY FILES. # IT HAS TO BE CALLED WITH:
-	# read_geometry($to, $sourcefile, $targetfile, $configfiles, \@work_letters, $longmenus);
+	# read_obstructions($to, $sourcefile, $targetfile, $configfiles, \@work_letters, $actonmaterials, $countvar);
 	my $to = shift;
 	my $sourceaddress = shift;
 	my $targetaddress = shift;
@@ -4637,6 +4666,9 @@ sub read_obstructions
 	@work_letters = @$swap;
 	my $actonmaterials = shift;
 	my $countvar = shift;
+	my $swap = shift;
+	my @sentobs_letters = @$swap;
+	my @obs_letters;
 				
 	open( SOURCEFILE, $sourceaddress) or die "Can't open $sourceaddress: $!\n";
 	my @lines = <SOURCEFILE>;
@@ -4654,23 +4686,30 @@ sub read_obstructions
 			}
 		}
 	}
-
-	if ( $count > 21 )
-	{																
-		@obs_letters = ("e", "f", "g", "h", "i", "j", "k", "l", "m", "n", 
-		"o", "0\nb\nf", "0\nb\ng", "0\nb\nh", "0\nb\ni", "0\nb\nj", "0\nb\nk", "0\nb\nm", 
-		"0\nb\nn", "0\nb\no", "0\nb\n0\nb\nf","0\nb\n0\nb\ng",
-		"0\nb\n0\nb\nh","0\nb\n0\nb\ni","0\nb\n0\nb\nj","0\nb\n0\nb\nk","0\nb\n0\nb\nl",
-		"0\nb\n0\nb\nm","0\nb\n0\nb\nn","0\nb\n0\nb\no","0\nb\n0\nb\n0\nb\nf",
-		"0\nb\n0\nb\n0\nb\ng","0\nb\n0\nb\n0\nb\nh","0\nb\n0\nb\n0\nb\ni","0\nb\n0\nb\n0\nb\nj",
-		"0\nb\n0\nb\n0\nb\nk","0\nb\n0\nb\n0\nb\nl","0\nb\n0\nb\n0\nb\nm","0\nb\n0\nb\n0\nb\nn",
-		"0\nb\n0\nb\n0\nb\no");
+	
+	if (@sentobs_letters)
+	{
+		@obs_letters = @sentobs_letters;
 	}
 	else
-	{	
-		@obs_letters = ("e", "f", "g", "h", "i", "j", "k", "l", "m", 
-		"n", "o", "0\nf", "0\ng", "0\nh", "0\ni", "0\nj", "0\nk", "0\nl", 
-		"0\nm", "0\nn", "0\no");
+	{
+		if ( $count > 21 )
+		{																
+			@obs_letters = ("e", "f", "g", "h", "i", "j", "k", "l", "m", "n", 
+			"o", "0\nb\nf", "0\nb\ng", "0\nb\nh", "0\nb\ni", "0\nb\nj", "0\nb\nk", "0\nb\nm", 
+			"0\nb\nn", "0\nb\no", "0\nb\n0\nb\nf","0\nb\n0\nb\ng",
+			"0\nb\n0\nb\nh","0\nb\n0\nb\ni","0\nb\n0\nb\nj","0\nb\n0\nb\nk","0\nb\n0\nb\nl",
+			"0\nb\n0\nb\nm","0\nb\n0\nb\nn","0\nb\n0\nb\no","0\nb\n0\nb\n0\nb\nf",
+			"0\nb\n0\nb\n0\nb\ng","0\nb\n0\nb\n0\nb\nh","0\nb\n0\nb\n0\nb\ni","0\nb\n0\nb\n0\nb\nj",
+			"0\nb\n0\nb\n0\nb\nk","0\nb\n0\nb\n0\nb\nl","0\nb\n0\nb\n0\nb\nm","0\nb\n0\nb\n0\nb\nn",
+			"0\nb\n0\nb\n0\nb\no");
+		}
+		else
+		{	
+			@obs_letters = ("e", "f", "g", "h", "i", "j", "k", "l", "m", 
+			"n", "o", "0\nf", "0\ng", "0\nh", "0\ni", "0\nj", "0\nk", "0\nl", 
+			"0\nm", "0\nn", "0\no");
+		}
 	}
 
 	my $count = 0;
@@ -4888,7 +4927,7 @@ YYY
 sub get_obstructions # IT APPLIES CONSTRAINTS TO ZONE GEOMETRY. TO DO. STILL UNUSED. 
 # THE SAME FUNCTIONALITIES CAN BE OBTAINED, WITH MORE WORK, BY SPECIFYING APPROPRIATE SETTINGS IN THE OPT CONFIG FILE.
 {
-	# THIS CONSTRAINS OBSTRUCTION FILES. IT HAS TO BE CALLED FROM THE MAIN FILE WITH:
+	# THIS FUNCTION CONSTRAINS OBSTRUCTION FILES. IT HAS TO BE CALLED FROM THE MAIN FILE WITH:
 	# constrain_obstruction($to, $fileconfig, $stepsvar, $countzone, $countstep, $exeonfiles, \@applytype, \@constrain_obstructions);
 	my $to = shift;
 	my $stepsvar = shift; 
@@ -4900,52 +4939,44 @@ sub get_obstructions # IT APPLIES CONSTRAINTS TO ZONE GEOMETRY. TO DO. STILL UNU
 	my $swap2 = shift;
 	my @get_obstructions = @$swap2;
 	my $countvar = shift;
-
-	my @work_letters ;
-	@obs;	# globsAL!
-	foreach my $elm (@constrain_obstructions)
+	my $fileconfig = shift;
+	
+	foreach my $elt (@get_obstructions)
 	{
-		my @group = @{$elm};
-		my $zone_letter = $group[1];
-		my $sourcefile = $group[2];
-		my $targetfile = $group[3];
-		my $sourceaddress = "$to$sourcefile";
-		my $targetaddress = "$to$targetfile";
-		my $temp = $group[4];
-		my @work_letters = @{$group[5]}; 
-		my @obs_letters;
+		my @elts = @$elt;
+		my $zone_letter = $elts[0];
+		my $sourcefile = $elts[1];
+		my $temp = $elts[2];
 		checkfile($sourceaddress, $targetaddress);
 		read_obstructions($to, $sourceaddress, $targetaddress, $configaddress, \@work_letters);
-		write_temporary(\@obs, \@obs_letters, \@work_letters, $zone_letter, $temp);
+		write_temporary(\@obs, $zone_letter, $temp, $countvar);
 	}
 } # END SUB constrain_obstructions
 
 
 sub write_temporary
 {
-	# IT APPLY USER-IMPOSED CONSTRAINTS TO A GEOMETRY FILES VIA SHELL. TO DO. STILL UNUSED. ZZZ
+	# IT APPLY USER-IMPOSED CONSTRAINTS TO A GEOMETRY FILES VIA SHELL. STILL TO BE CHECKED. ZZZ
 	# IT HAS TO BE CALLED WITH: 
 	# apply_geo_constraints(\obs, \@obsletters, \@work_letters, \$exeonfiles, \$zone_letter, $actonmaterials);
 	my $swap = shift;
 	my @obs = @$swap;
 	my $swap = shift;
-	my @obs_letters = @$swap;
-	my $swap = shift;
 	my @work_letters = @$swap;
 	my $zone_letter = shift;
 	my $temp = shift;
 	my $countvar = shift;
+	my @work_letters;
 
 	open( SOURCEFILE, ">$temp" ) or die "Can't open $temp: $!\n";
 	my $countobs = 0;
-
 	foreach my $ob (@obs)
 	{
 		my $obs_letter = $obs_letters[$countobs];
 		if ($obs_letter  ~~ @work_letters)
 		{
-			my @obs = @{$ob};
-			print SOURCEFILE . "*obs $obs[1] $obs[2] $obs[3] $obs[4] $obs[5] $obs[6] $obs[7] $obs[8] $obs[10] $obs[11] $obs[12] $obs_letter\n";
+			my @obs_ = @{$ob};
+			print SOURCEFILE . "*obs $obs_[1] $obs_[2] $obs_[3] $obs_[4] $obs_[5] $obs_[6] $obs_[7] $obs_[8] $obs_[10] $obs_[11] $obs_[12] $obs_letter\n";
 		}
 		$countobs++;
 		close SOURCEFILE;
@@ -4955,34 +4986,29 @@ sub write_temporary
 
 sub pin_obstructions  # TO DO. ZZZ
 {
-	# THIS CONSTRAINS OBSTRUCTION FILES. TO DO. STILL UNUSED. ZZZ
+	# THIS CONSTRAINS OBSTRUCTION FILES. IT IS STILL TO BE CHECKED. ZZZ
 	# IT HAS TO BE CALLED FROM THE MAIN FILE WITH:
-	# constrain_obstruction($to, $fileconfig, $stepsvar, $countzone, $countstep, $exeonfiles, \@applytype, \@pin_obstructions);
+	# pin_obstruction($to, $fileconfig, $stepsvar, $countzone, $countstep, $exeonfiles, \@applytype, \@pin_obstructions);
 	my $to = shift;
 	my $stepsvar = shift; 
 	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
 	my @applytype = @$swap;
-	my $zone_letter = $applytype[$countzone][3];
+	#my $zone_letter = $applytype[$countzone][3];
 	my $swap = shift;
 	my @pin_obstructions = @$swap;
 	my $countvar = shift;
+	my $fileconfig = shift;
 
-	my @work_letters ;
-	my @obs;	
-	my @newobs;
+	my ( @work_letters, @obs, @newobs );
+	
 	foreach my $elm (@pin_obstructions)
 	{
-		my @group = @{$elm};
-		my $zone_letter = $group[1];
-		my $sourcefile = $group[2];
-		my $targetfile = $group[3];
-		my $sourceaddress = "$to$sourcefile";
-		my $targetaddress = "$to$targetfile";
-		my $temp = $group[4];
-		my @obs_letters;
-		checkfile($sourceaddress, $targetaddress);
+		my @elms = @$elm;
+		my $zone_letter = $elms[0];
+		my $temp = $elms[1];
+		my @obs_letters = @{ $elms[2] };
 
 		open( SOURCEFILE, $temp ) or die "Can't open $temp: $!\n";
 		my @rows = < SOURCEFILE >;
@@ -4992,8 +5018,8 @@ sub pin_obstructions  # TO DO. ZZZ
 			push (@newobs, [ $elts[1],  $elts[2], $elts[3], $elts[4], $elts[5], $elts[6], $elts[7], $elts[8], $elts[9], $elts[10], $elts[11], $elts[12], $elts[13] ] );
 		}
 		apply_pin_obstructions($to, $stepsvar, $countzone, $countstep, \@newobs, $countvar, $fileconfig  );
+		close SOURCEFILE;
 	}
-	close SOURCEFILE;
 } # END SUB pin_obstructions
 
 
@@ -5004,7 +5030,6 @@ sub apply_pin_obstructions # TO DO. STILL UNUSED. ZZZ
 	# apply_pin_obstructions( $to, $fileconfig,$stepsvar, $countzone, $countstep, $exeonfiles, \@obs );
 	my $to = shift;
 	my $stepsvar = shift; 
-	
 	my $countzone = shift;
 	my $countstep = shift;
 	my $swap = shift;
@@ -5070,7 +5095,7 @@ YYY
 
 		print TOSHELL $printthis;
 	}
-	$countvertex++;
+	$countobs++;
 } # END SUB apply_pin_obstructions
 ############################################################## END OF GROUP GET AND PIN OBSTRUCTIONS
 

@@ -56,9 +56,8 @@ sub parcoord3d
 {
 	if ( not ( @ARGV ) )
 	{
-		
 		$toshell = $main::toshell;
-		$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
+		#$tee = new IO::Tee(\*STDOUT, ">>$toshell"); # GLOBAL ZZZ
 		say $tee "\n#Now in Sim::OPT::Takechance.\n";
 		$configfile = $main::configfile; #say "dump(\$configfile): " . dump($configfile);
 		@sweeps = @main::sweeps; #say "dump(\@sweeps): " . dump(@sweeps);
@@ -349,7 +348,6 @@ sub parcoord3d
 							$counthit++;
 							print "COUNTGROUP: $countgroup, HIT! $counthit\n";
 						
-						
 							if ($counthit > 0)
 							{
 								print "COUNTHITNOW: $counthit\n";
@@ -367,13 +365,8 @@ sub parcoord3d
 							{
 								push(@newnewbag, [ nlowmult(0.0001, $elms[0]), nlowmult(0.0001, $elms[1]), nlowmult(0.0001, $elms[2]), nlowmult(0.0001, $elms[3]) ]);
 							}
-				
-				
 						}
-					}
-				
-				
-							
+					}	
 				}
 			
 				$counter++
@@ -513,11 +506,11 @@ Sim::OPT::Parcoord3d.
 
 =head1 DESCRIPTION
 
-Sim::OPT::Parcoord3d is a module containing program that can receive as input the data for a bi-dimensional parallel coordinate plot in CVS format and produce as output an Autolisp file (that can be used from inside Autocad or Intellicad-based 3D CAD programs) to obtain 3D parallel coordinate plots.
+Sim::OPT::Parcoord3d is a program that can receive as input the data for a bi-dimensional parallel coordinate plot in CVS format and produce as output an Autolisp file (that can be used from inside Autocad or Intellicad-based 3D CAD programs) to obtain a 3D parallel coordinate plot made with surfaces.
 
-The objective function to be represented through colours in the 3D parallel coordinate plot has to be put in the last (right) column in the CVS file.
+The objective function to be represented through colours in the parallel coordinate plot has to be put in the last (right) column in the CVS file.
 
-"Sim::OPT::Parcoord3d" can be called from Sim::OPT or directly from the command line (after issuing < re.pl > and < use Sim::OPT::Parcoord3d >) with the command < parcoord3d your_configuration_file.pl >.
+"Sim::OPT::Parcoord3d" can be called from !Sim::OPT! or directly from the command line (after issuing < re.pl > and < use Sim::OPT::Parcoord3d >) with the command < parcoord3d your_configuration_file.pl >.
 
 The variables to be specified in the configuration file are described in the comments in the "Sim::OPT" configuration file included in the "examples" folder in this distribution. 
 
